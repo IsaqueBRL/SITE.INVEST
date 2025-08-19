@@ -69,3 +69,11 @@ tfoot td { font-weight: 700; padding-top: 12px; border-top:1px solid rgba(255,25
 .grow { flex:1 }
 
 .footer { text-align:center; opacity:.6; font-size:12px; padding: 24px 12px; }
+
+.tabs { display:flex; gap:10px; }
+.tab-btn { background:transparent!important; border:1px solid rgba(255,255,255,.08)!important; }
+.tab-btn.active {
+    background: linear-gradient(180deg, rgba(96,165,250,.2), rgba(96,165,250,.12))!important;
+    border:1px solid rgba(96,165,250,.35)!important;
+    color:#dbeafe;
+}
