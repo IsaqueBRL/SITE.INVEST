@@ -214,7 +214,6 @@ async function renderPosicoes(){
   const dolar = await buscarDolar();
   
   corpo.innerHTML = '';
-  let patrimonioNacionalTotal = 0;
 
   const filteredCarteira = activeTab === 'all'
     ? carteira
@@ -233,7 +232,6 @@ async function renderPosicoes(){
         valorAtual = valorBRL;
     } else {
         valorAtual = round2(pos.precoAtual * pos.quantidade);
-        patrimonioNacionalTotal += valorAtual;
     }
     
     const tr = document.createElement('tr');
@@ -254,22 +252,20 @@ async function renderPosicoes(){
     corpo.appendChild(tr);
   });
 
-  patrimonioTotalNacional.textContent = toBRL(patrimonioNacionalTotal);
-
   updateColVisibility();
 }
 
-function renderRebalanceamento() {
+async function renderRebalanceamento() {
     corpoRebalanceamento.innerHTML = '';
-    
+    const dolar = await buscarDolar();
+
     const patrimonioTotal = carteira.reduce((sum, pos) => {
-      const isForeign = ['Stoks', 'ETF Exterior', 'Reits'].includes(pos.tipo);
-      if (isForeign) {
-        const dolar = parseFloat(patrimonioTotalNacional.textContent.replace('R$ ', '').replace('.', '').replace(',', '.')) / 100; // Recalcula o dolar para o rebalanceamento
-        return sum + (pos.precoAtual || 0) * pos.quantidade * dolar;
-      }
-      return sum + (pos.precoAtual || 0) * pos.quantidade;
+        const isForeign = ['Stoks', 'ETF Exterior', 'Reits'].includes(pos.tipo);
+        const valor = (pos.precoAtual || 0) * pos.quantidade;
+        return sum + (isForeign ? valor * dolar : valor);
     }, 0);
+    
+    patrimonioTotalNacional.textContent = toBRL(patrimonioTotal);
 
     const categoriasComPatrimonio = {};
     Object.keys(metas).forEach(cat => {
@@ -277,7 +273,7 @@ function renderRebalanceamento() {
         const patrimonioCategoria = carteira.filter(pos => pos.tipo === cat)
                                              .reduce((sum, pos) => {
                                                 const valor = (pos.precoAtual || 0) * pos.quantidade;
-                                                return sum + (isForeign ? valor * (patrimonioTotal / 100) : valor);
+                                                return sum + (isForeign ? valor * dolar : valor);
                                              }, 0);
         categoriasComPatrimonio[cat] = patrimonioCategoria;
     });
@@ -340,7 +336,8 @@ function updateColVisibility() {
     }
 }
 
-function render() {
+async function render() {
+    await buscarPrecosDaCarteira();
     renderTabs();
     renderSelectOptions();
     renderPosicoes();
