@@ -82,9 +82,7 @@ const corpo = document.getElementById('corpoTabela');
 const tabelaPosicoes = document.getElementById('tabela');
 const corpoRebalanceamento = document.getElementById('corpoTabelaRebalanceamento');
 const tabsContainer = document.getElementById('tabs-container');
-const sumInvestido = document.getElementById('sumInvestido');
-const sumAtual = document.getElementById('sumAtual');
-const sumResultado = document.getElementById('sumResultado');
+const patrimonioTotalNacional = document.getElementById('patrimonioTotalNacional');
 
 const modalAddCategory = document.getElementById('modalAddCategory');
 const openAddCategoryModal = document.getElementById('openAddCategoryModal');
@@ -216,7 +214,7 @@ async function renderPosicoes(){
   const dolar = await buscarDolar();
   
   corpo.innerHTML = '';
-  let totalInv = 0, totalAtual = 0;
+  let patrimonioNacionalTotal = 0;
 
   const filteredCarteira = activeTab === 'all'
     ? carteira
@@ -232,14 +230,12 @@ async function renderPosicoes(){
     if (isForeign) {
         valorUSD = round2(pos.precoAtual * pos.quantidade);
         valorBRL = round2(valorUSD * dolar);
-        valorAtual = valorBRL; // Para o resumo, o valor é em BRL
+        valorAtual = valorBRL;
     } else {
         valorAtual = round2(pos.precoAtual * pos.quantidade);
+        patrimonioNacionalTotal += valorAtual;
     }
     
-    totalInv += pos.investido;
-    totalAtual += valorAtual;
-
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="nowrap"><strong>${pos.ticker}</strong></td>
@@ -258,22 +254,18 @@ async function renderPosicoes(){
     corpo.appendChild(tr);
   });
 
-  sumInvestido.textContent = toBRL(totalInv);
-  sumAtual.textContent = toBRL(totalAtual);
-  const res = round2(totalAtual - totalInv);
-  const perc = totalInv ? (res/totalInv)*100 : 0;
-  sumResultado.innerHTML = `${res>=0?'<span class="green">'+toBRL(res)+'</span>':'<span class="red">'+toBRL(res)+'</span>'} <span class="muted">(${perc.toFixed(2)}%)</span>`;
+  patrimonioTotalNacional.textContent = toBRL(patrimonioNacionalTotal);
 
   updateColVisibility();
 }
 
 function renderRebalanceamento() {
     corpoRebalanceamento.innerHTML = '';
-    const dolar = parseFloat(sumAtual.textContent.replace('R$ ', '').replace('.', '').replace(',', '.'));
     
     const patrimonioTotal = carteira.reduce((sum, pos) => {
       const isForeign = ['Stoks', 'ETF Exterior', 'Reits'].includes(pos.tipo);
       if (isForeign) {
+        const dolar = parseFloat(patrimonioTotalNacional.textContent.replace('R$ ', '').replace('.', '').replace(',', '.')) / 100; // Recalcula o dolar para o rebalanceamento
         return sum + (pos.precoAtual || 0) * pos.quantidade * dolar;
       }
       return sum + (pos.precoAtual || 0) * pos.quantidade;
@@ -285,7 +277,7 @@ function renderRebalanceamento() {
         const patrimonioCategoria = carteira.filter(pos => pos.tipo === cat)
                                              .reduce((sum, pos) => {
                                                 const valor = (pos.precoAtual || 0) * pos.quantidade;
-                                                return sum + (isForeign ? valor * dolar : valor);
+                                                return sum + (isForeign ? valor * (patrimonioTotal / 100) : valor);
                                              }, 0);
         categoriasComPatrimonio[cat] = patrimonioCategoria;
     });
