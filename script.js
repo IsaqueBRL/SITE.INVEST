@@ -1,11 +1,13 @@
 // ===== Utilidades de número e moeda (pt-BR) =====
 const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const fmtUSD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const fmtNum = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
 function parseBRL(str) {
   if (str == null || str === '') return 0;
   return Number(String(str).replace(/\./g,'').replace(',', '.')) || 0;
 }
 function toBRL(n) { return fmtBRL.format(n || 0); }
+function toUSD(n) { return fmtUSD.format(n || 0); }
 function toPct(n) { return (n || 0).toFixed(2) + '%'; }
 function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
 
@@ -47,6 +49,19 @@ async function buscarPreco(ticker) {
     console.error(err);
     return null;
   }
+}
+
+// Nova função para buscar a cotação do dólar
+async function buscarDolar() {
+    const url = "https://economia.awesomeapi.com.br/json/last/USD-BRL";
+    try {
+        const resp = await fetch(url);
+        const json = await resp.json();
+        return parseFloat(json.USDBRL.bid);
+    } catch (err) {
+        console.error("Erro ao buscar cotação do dólar:", err);
+        return null;
+    }
 }
 
 // ===== DOM =====
@@ -190,6 +205,7 @@ function renderSelectOptions() {
 
 async function renderPosicoes(){
   await buscarPrecosDaCarteira();
+  const dolar = await buscarDolar();
   
   corpo.innerHTML = '';
   let totalInv = 0, totalAtual = 0;
@@ -199,7 +215,20 @@ async function renderPosicoes(){
     : carteira.filter(pos => pos.tipo === activeTab);
 
   filteredCarteira.forEach(pos => {
-    const valorAtual = round2((pos.precoAtual || 0) * pos.quantidade);
+    let valorAtual = 0;
+    let valorUSD = 0;
+    let valorBRL = 0;
+
+    const isForeign = ['Stoks', 'ETF Exterior', 'Reits'].includes(pos.tipo);
+
+    if (isForeign) {
+        valorUSD = round2(pos.precoAtual * pos.quantidade);
+        valorBRL = round2(valorUSD * dolar);
+        valorAtual = valorBRL; // Para o resumo, o valor é em BRL
+    } else {
+        valorAtual = round2(pos.precoAtual * pos.quantidade);
+    }
+    
     totalInv += pos.investido;
     totalAtual += valorAtual;
 
@@ -208,7 +237,9 @@ async function renderPosicoes(){
       <td class="nowrap"><strong>${pos.ticker}</strong></td>
       <td><span class="pill">${pos.tipo}</span></td>
       <td class="right editable-qty" data-id="${pos.id}">${fmtNum.format(pos.quantidade)}</td>
-      <td class="right editable" data-id="${pos.id}">${pos.precoAtual ? toBRL(pos.precoAtual) : '<span class="muted">—</span>'}</td>
+      <td class="right editable" data-id="${pos.id}">${isForeign ? toUSD(pos.precoAtual) : toBRL(pos.precoAtual)}</td>
+      <td class="right">${isForeign ? toUSD(valorUSD) : '<span class="muted">—</span>'}</td>
+      <td class="right">${isForeign ? toBRL(valorBRL) : '<span class="muted">—</span>'}</td>
       <td class="right">
         <div class="actions" style="justify-content:flex-end">
           <button class="btn sec" data-edit="${pos.id}">Editar</button>
@@ -228,13 +259,25 @@ async function renderPosicoes(){
 
 function renderRebalanceamento() {
     corpoRebalanceamento.innerHTML = '';
+    const dolar = parseFloat(sumAtual.textContent.replace('R$ ', '').replace('.', '').replace(',', '.'));
     
-    const patrimonioTotal = carteira.reduce((sum, pos) => sum + (pos.precoAtual || 0) * pos.quantidade, 0);
+    const patrimonioTotal = carteira.reduce((sum, pos) => {
+      const isForeign = ['Stoks', 'ETF Exterior', 'Reits'].includes(pos.tipo);
+      if (isForeign) {
+        return sum + (pos.precoAtual || 0) * pos.quantidade * dolar;
+      }
+      return sum + (pos.precoAtual || 0) * pos.quantidade;
+    }, 0);
 
     const categoriasComPatrimonio = {};
     Object.keys(metas).forEach(cat => {
-        categoriasComPatrimonio[cat] = carteira.filter(pos => pos.tipo === cat)
-                                             .reduce((sum, pos) => sum + (pos.precoAtual || 0) * pos.quantidade, 0);
+        const isForeign = ['Stoks', 'ETF Exterior', 'Reits'].includes(cat);
+        const patrimonioCategoria = carteira.filter(pos => pos.tipo === cat)
+                                             .reduce((sum, pos) => {
+                                                const valor = (pos.precoAtual || 0) * pos.quantidade;
+                                                return sum + (isForeign ? valor * dolar : valor);
+                                             }, 0);
+        categoriasComPatrimonio[cat] = patrimonioCategoria;
     });
 
     Object.keys(metas).forEach(cat => {
