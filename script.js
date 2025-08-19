@@ -13,8 +13,14 @@ function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
 
 const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
 
-// Variável de estado para controlar a aba ativa
+// Variável de estado para controlar a aba ativa e visibilidade das colunas
 let activeTab = 'all';
+let colVisibility = load('column_visibility', {
+    '2': true, // Qtde
+    '3': true, // Preço Atual
+    '4': true, // Valor USD
+    '5': true, // Valor BRL
+});
 
 // Chaves para o LocalStorage
 const CARTEIRA_KEY = 'carteira_b3_v1';
@@ -73,6 +79,7 @@ const tickerInput = document.getElementById('ticker');
 const precoInput = document.getElementById('preco');
 const tipoSelect = document.getElementById('tipo');
 const corpo = document.getElementById('corpoTabela');
+const tabelaPosicoes = document.getElementById('tabela');
 const corpoRebalanceamento = document.getElementById('corpoTabelaRebalanceamento');
 const tabsContainer = document.getElementById('tabs-container');
 const sumInvestido = document.getElementById('sumInvestido');
@@ -83,6 +90,7 @@ const modalAddCategory = document.getElementById('modalAddCategory');
 const openAddCategoryModal = document.getElementById('openAddCategoryModal');
 const closeAddCategoryModal = document.getElementById('closeAddCategoryModal');
 const formAddCategory = document.getElementById('formAddCategory');
+const colControls = document.querySelectorAll('.column-controls input[type="checkbox"]');
 
 // Eventos
 document.getElementById('apagarTudo').addEventListener('click', () => {
@@ -255,6 +263,8 @@ async function renderPosicoes(){
   const res = round2(totalAtual - totalInv);
   const perc = totalInv ? (res/totalInv)*100 : 0;
   sumResultado.innerHTML = `${res>=0?'<span class="green">'+toBRL(res)+'</span>':'<span class="red">'+toBRL(res)+'</span>'} <span class="muted">(${perc.toFixed(2)}%)</span>`;
+
+  updateColVisibility();
 }
 
 function renderRebalanceamento() {
@@ -300,6 +310,42 @@ function renderRebalanceamento() {
         `;
         corpoRebalanceamento.appendChild(tr);
     });
+}
+
+// Nova função para aplicar a visibilidade das colunas
+function updateColVisibility() {
+    const tableHeaders = tabelaPosicoes.querySelectorAll('thead th');
+    const tableRows = tabelaPosicoes.querySelectorAll('tbody tr');
+    
+    // Atualiza o estado dos checkboxes com base no localStorage
+    colControls.forEach(checkbox => {
+        const colIndex = checkbox.dataset.colIndex;
+        checkbox.checked = colVisibility[colIndex];
+    });
+
+    // Aplica a classe de ocultação nas colunas
+    Object.keys(colVisibility).forEach(index => {
+        const isVisible = colVisibility[index];
+        const colHeader = tableHeaders[index];
+
+        if (colHeader) {
+            colHeader.classList.toggle('hidden-column', !isVisible);
+        }
+
+        tableRows.forEach(row => {
+            const cell = row.cells[index];
+            if (cell) {
+                cell.classList.toggle('hidden-column', !isVisible);
+            }
+        });
+    });
+
+    // Ajusta o colspan do tfoot
+    const visibleCols = Object.keys(colVisibility).filter(key => colVisibility[key]).length + 3; // 3 colunas fixas
+    const tfootCell = tabelaPosicoes.querySelector('tfoot td');
+    if (tfootCell) {
+        tfootCell.colSpan = visibleCols;
+    }
 }
 
 function render() {
@@ -374,6 +420,16 @@ function hookEvents(){
       button.classList.add('active');
       activeTab = button.dataset.tab;
       render();
+    });
+  });
+
+  // Listener para os checkboxes de visibilidade
+  colControls.forEach(checkbox => {
+    checkbox.addEventListener('change', (e) => {
+        const colIndex = e.target.dataset.colIndex;
+        colVisibility[colIndex] = e.target.checked;
+        save('column_visibility', colVisibility);
+        updateColVisibility();
     });
   });
 }
