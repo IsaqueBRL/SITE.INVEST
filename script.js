@@ -7,12 +7,22 @@ function parseBRL(str) {
   return Number(String(str).replace(/\./g,'').replace(',', '.')) || 0;
 }
 function toBRL(n) { return fmtBRL.format(n || 0); }
+function toPct(n) { return (n || 0).toFixed(2) + '%'; }
 function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
 
 const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
 
 // Variável de estado para controlar a aba ativa
 let activeTab = 'all';
+
+// Metas de porcentagem por categoria
+const metas = {
+    'Ação': 50,
+    'FII': 30,
+    'ETF': 10,
+    'BDR': 5,
+    'Outros': 5
+};
 
 // Função para buscar preço atual da ação na API
 async function buscarPreco(ticker) {
@@ -37,18 +47,36 @@ function load(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
 
 // ===== DOM =====
 const form = document.getElementById('formAtivo');
+const modalForm = document.getElementById('modalForm');
+const openModalBtn = document.getElementById('openModalBtn');
+const closeModalBtn = document.getElementById('closeModalBtn');
 const tickerInput = document.getElementById('ticker');
 const precoInput = document.getElementById('preco');
 const corpo = document.getElementById('corpoTabela');
+const corpoRebalanceamento = document.getElementById('corpoTabelaRebalanceamento');
 const sumInvestido = document.getElementById('sumInvestido');
 const sumAtual = document.getElementById('sumAtual');
 const sumResultado = document.getElementById('sumResultado');
 
-document.getElementById('limpar').addEventListener('click', () => form.reset());
 document.getElementById('apagarTudo').addEventListener('click', () => {
   if(confirm('Tem certeza que deseja apagar toda a carteira?')){
     carteira = []; save(); render();
   }
+});
+
+// Eventos do Modal
+openModalBtn.addEventListener('click', () => {
+    modalForm.showModal();
+    form.reset();
+});
+closeModalBtn.addEventListener('click', () => {
+    modalForm.close();
+});
+modalForm.addEventListener('click', e => {
+    const dialogDimensions = modalForm.getBoundingClientRect()
+    if (e.clientX < dialogDimensions.left || e.clientX > dialogDimensions.right || e.clientY < dialogDimensions.top || e.clientY > dialogDimensions.bottom) {
+        modalForm.close();
+    }
 });
 
 // Evento para buscar o preço quando o usuário digita o ticker
@@ -98,7 +126,7 @@ form.addEventListener('submit', async (e) => {
     });
   }
   save();
-  form.reset();
+  modalForm.close();
   render();
 });
 
@@ -112,8 +140,8 @@ async function buscarPrecosDaCarteira() {
   save();
 }
 
-// ===== Render =====
-async function render(){
+// ===== Renderizar Tabela de Posições =====
+async function renderPosicoes(){
   await buscarPrecosDaCarteira(); // Atualiza os preços antes de renderizar
   
   corpo.innerHTML = '';
@@ -160,6 +188,45 @@ async function render(){
   hookEvents();
 }
 
+// ===== Renderizar Tabela de Rebalanceamento =====
+function renderRebalanceamento() {
+    corpoRebalanceamento.innerHTML = '';
+    
+    // Calcular patrimônio total
+    const patrimonioTotal = carteira.reduce((sum, pos) => sum + (pos.precoAtual || 0) * pos.quantidade, 0);
+
+    const categorias = ['Ação', 'FII', 'ETF', 'BDR', 'Outros'];
+    const categoriasComPatrimonio = {};
+
+    categorias.forEach(cat => {
+        categoriasComPatrimonio[cat] = carteira.filter(pos => pos.tipo === cat)
+                                             .reduce((sum, pos) => sum + (pos.precoAtual || 0) * pos.quantidade, 0);
+    });
+
+    categorias.forEach(cat => {
+        const meta = metas[cat] || 0;
+        const patrimonio = categoriasComPatrimonio[cat];
+        const atual = patrimonioTotal > 0 ? (patrimonio / patrimonioTotal) * 100 : 0;
+        const aportar = (meta - atual) > 0 ? ((meta - atual) * patrimonioTotal) / atual : 0;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${cat}</strong></td>
+            <td class="right">${toPct(meta)}</td>
+            <td class="right ${atual > meta * 1.05 ? 'red' : atual < meta * 0.95 ? 'green' : ''}">${toPct(atual)}</td>
+            <td class="right">${toBRL(patrimonio)}</td>
+            <td class="right ${aportar > 0 ? 'green' : 'muted'}">${toBRL(aportar)}</td>
+        `;
+        corpoRebalanceamento.appendChild(tr);
+    });
+}
+
+function render() {
+    renderPosicoes();
+    renderRebalanceamento();
+}
+
+// ===== Funções de Edição =====
 function hookEvents(){
   // Editar registro (carrega no form)
   document.querySelectorAll('[data-edit]').forEach(btn => {
@@ -171,7 +238,7 @@ function hookEvents(){
       form.quantidade.value = pos.quantidade;
       form.preco.value = pos.precoMedio.toString().replace('.', ',');
       form.corretagem.value = '0,00';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      modalForm.showModal();
     });
   });
 
