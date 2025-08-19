@@ -20,8 +20,12 @@
 
     <main class="wrap" style="padding: 18px 0 34px">
         <section class="card">
-            <div class="hd">Rebalanceamento de Carteira</div>
+            <div class="hd" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Rebalanceamento de Carteira</span>
+                <button class="btn primary" id="openAddCategoryModal">Adicionar Categoria</button>
+            </div>
             <div class="bd">
+                <div class="hint" style="margin-bottom:10px">Dê duplo clique na porcentagem da coluna <b>Meta</b> para editar.</div>
                 <div style="overflow:auto">
                     <table id="tabelaRebalanceamento">
                         <thead>
@@ -31,6 +35,7 @@
                                 <th class="right">Atual</th>
                                 <th class="right">Patrimônio</th>
                                 <th class="right">Aportar</th>
+                                <th class="right">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="corpoTabelaRebalanceamento">
@@ -76,14 +81,8 @@
         <section class="card" style="margin-top:18px">
             <div class="hd" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap">
                 <span>Posições</span>
-                <div class="tabs">
-                    <button class="btn sec tab-btn active" data-tab="all">Todos</button>
-                    <button class="btn sec tab-btn" data-tab="Ação">Ações</button>
-                    <button class="btn sec tab-btn" data-tab="FII">FIIs</button>
-                    <button class="btn sec tab-btn" data-tab="ETF">ETFs</button>
-                    <button class="btn sec tab-btn" data-tab="BDR">BDRs</button>
-                    <button class="btn sec tab-btn" data-tab="Outros">Outros</button>
-                </div>
+                <div class="tabs" id="tabs-container">
+                    </div>
             </div>
             <div class="bd">
                 <div class="hint" style="margin-bottom:10px">Dê duplo clique na coluna <b>Preço Atual</b> ou <b>Quantidade</b> para editar e simular cenários.</div>
@@ -129,12 +128,7 @@
                         <div class="col" style="grid-column: span 3;">
                             <label for="tipo">Tipo</label>
                             <select id="tipo" name="tipo">
-                                <option value="Ação">Ação</option>
-                                <option value="FII">FII</option>
-                                <option value="ETF">ETF</option>
-                                <option value="BDR">BDR</option>
-                                <option value="Outros">Outros</option>
-                            </select>
+                                </select>
                         </div>
                         <div class="col" style="grid-column: span 2;">
                             <label for="quantidade">Quantidade</label>
@@ -162,6 +156,34 @@
                         </div>
                     </div>
                     <p class="hint" style="margin-top:10px">Dica: use vírgula como separador decimal (ex: 10,50). O preço é o valor por cota/ação.</p>
+                </form>
+            </div>
+        </div>
+    </dialog>
+
+    <dialog id="modalAddCategory" class="modal">
+        <div class="modal-content">
+            <div class="hd">Adicionar Categoria</div>
+            <div class="bd">
+                <form id="formAddCategory">
+                    <div class="row">
+                        <div class="col" style="grid-column: span 12;">
+                            <label for="categoryName">Nome da Categoria</label>
+                            <input id="categoryName" name="categoryName" placeholder="ex: Fiagro" required />
+                        </div>
+                        <div class="col" style="grid-column: span 12;">
+                            <label for="categoryMeta">Meta (%)</label>
+                            <input id="categoryMeta" name="categoryMeta" type="number" min="0" max="100" step="1" placeholder="ex: 10" required />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col" style="grid-column: span 12; display:flex; justify-content:flex-end">
+                            <div class="actions">
+                                <button class="btn" type="button" id="closeAddCategoryModal">Cancelar</button>
+                                <button class="btn primary" type="submit">Adicionar</button>
+                            </div>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>
