@@ -1,4 +1,3 @@
-let activeTab = 'all';
 // ===== Utilidades de número e moeda (pt-BR) =====
 const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtNum = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
@@ -11,6 +10,9 @@ function toBRL(n) { return fmtBRL.format(n || 0); }
 function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
 
 const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
+
+// Variável de estado para controlar a aba ativa
+let activeTab = 'all';
 
 // Função para buscar preço atual da ação na API
 async function buscarPreco(ticker) {
@@ -117,7 +119,11 @@ async function render(){
   corpo.innerHTML = '';
   let totalInv = 0, totalAtual = 0;
 
-  carteira.forEach(pos => {
+  const filteredCarteira = activeTab === 'all'
+    ? carteira
+    : carteira.filter(pos => pos.tipo === activeTab);
+
+  filteredCarteira.forEach(pos => {
     const valorAtual = round2((pos.precoAtual || 0) * pos.quantidade);
     const resultado = round2(valorAtual - pos.investido);
     const perc = pos.investido ? ((resultado / pos.investido) * 100) : 0;
@@ -128,7 +134,7 @@ async function render(){
     tr.innerHTML = `
       <td class="nowrap"><strong>${pos.ticker}</strong></td>
       <td><span class="pill">${pos.tipo}</span></td>
-      <td class="right">${fmtNum.format(pos.quantidade)}</td>
+      <td class="right editable-qty" data-id="${pos.id}">${fmtNum.format(pos.quantidade)}</td>
       <td class="right">${toBRL(pos.precoMedio)}</td>
       <td class="right">${toBRL(pos.investido)}</td>
       <td class="right editable" data-id="${pos.id}">${pos.precoAtual ? toBRL(pos.precoAtual) : '<span class="muted">—</span>'}</td>
@@ -182,6 +188,21 @@ function hookEvents(){
   document.querySelectorAll('td.editable').forEach(td => {
     td.addEventListener('dblclick', () => makeEditable(td));
   });
+
+  // Duplo clique para editar Quantidade
+  document.querySelectorAll('td.editable-qty').forEach(td => {
+    td.addEventListener('dblclick', () => makeQtyEditable(td));
+  });
+
+  // Adicionar evento de clique nos botões das abas
+  document.querySelectorAll('.tab-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      button.classList.add('active');
+      activeTab = button.dataset.tab;
+      render();
+    });
+  });
 }
 
 function makeEditable(td){
@@ -204,6 +225,32 @@ function makeEditable(td){
     if(ev.key === 'Enter') commit();
     if(ev.key === 'Escape') render();
   });
+}
+
+function makeQtyEditable(td){
+    const id = td.dataset.id;
+    const pos = carteira.find(p => p.id === id);
+    if(!pos) return;
+    const old = pos.quantidade;
+
+    td.innerHTML = `<input id="_edit_qty" type="number" min="1" step="1" style="width:110px; background:#0b1020; color:var(--text); padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,.2)" placeholder="0,00" value="${old}">`;
+    const input = td.querySelector('#_edit_qty');
+    input.focus();
+
+    function commit(){
+        const v = Number(input.value);
+        if (v > 0) {
+            pos.quantidade = v;
+            pos.investido = round2(v * pos.precoMedio);
+        }
+        save();
+        render();
+    }
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (ev) => {
+        if(ev.key === 'Enter') commit();
+        if(ev.key === 'Escape') render();
+    });
 }
 
 // ===== CSV Export / Import =====
