@@ -99,3 +99,28 @@ tfoot td { font-weight: 700; padding-top: 12px; border-top:1px solid rgba(255,25
     box-shadow: var(--shadow); 
     border-radius: var(--radius);
 }
+
+.column-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 15px;
+  padding-top: 5px;
+}
+.column-controls label {
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.column-controls input[type="checkbox"] {
+  width: auto;
+  margin-bottom: 0;
+  accent-color: var(--accent);
+}
+
+.hidden-column {
+  display: none !important;
+}
