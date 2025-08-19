@@ -1,3 +1,4 @@
+let activeTab = 'all';
 // ===== Utilidades de número e moeda (pt-BR) =====
 const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtNum = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
