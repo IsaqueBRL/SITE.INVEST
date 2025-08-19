@@ -16,6 +16,13 @@
             <h1>Carteira B3 – Estática</h1>
             <span class="badge">HTML + JS + LocalStorage</span>
         </div>
+        <div class="header-actions">
+            <div class="patrimonio-total">
+                <div class="muted">Patrimônio Nacional</div>
+                <div id="patrimonioTotalNacional">R$ 0,00</div>
+            </div>
+            <button class="btn primary" id="openModalBtn">Adicionar ativo</button>
+        </div>
     </header>
 
     <main class="wrap" style="padding: 18px 0 34px">
@@ -47,26 +54,10 @@
 
         <div class="grid">
             <section class="card">
-                <div class="hd">Resumo</div>
-                <div class="bd">
+                <div class="bd" style="padding:0">
                     <div class="row">
-                        <div class="col" style="grid-column: span 6;">
-                            <div class="muted">Investido</div>
-                            <div id="sumInvestido" style="font-size: 22px; font-weight:700; margin-top:6px">R$ 0,00</div>
-                        </div>
-                        <div class="col" style="grid-column: span 6;">
-                            <div class="muted">Valor Atual (manual)</div>
-                            <div id="sumAtual" style="font-size: 22px; font-weight:700; margin-top:6px">R$ 0,00</div>
-                        </div>
-                    </div>
-                    <div class="row" style="margin-top:12px">
-                        <div class="col" style="grid-column: span 6;">
-                            <div class="muted">Resultado</div>
-                            <div id="sumResultado" style="font-size: 20px; font-weight:700; margin-top:6px">R$ 0,00 <span class="muted">(0,00%)</span></div>
-                        </div>
-                        <div class="col" style="grid-column: span 6; display:flex; align-items:end; justify-content:flex-end">
-                            <div class="actions">
-                                <button class="btn primary" id="openModalBtn">Adicionar ativo</button>
+                        <div class="col" style="grid-column: span 12; display:flex; align-items:end; justify-content:flex-end">
+                            <div class="actions" style="padding:18px">
                                 <button class="btn sec" id="exportarCsv">Exportar CSV</button>
                                 <label class="btn warn" for="importCsv">Importar CSV</label>
                                 <input id="importCsv" type="file" accept=".csv" style="display:none" />
