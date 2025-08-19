@@ -6,7 +6,7 @@
   <title>Carteira B3 – Simples (HTML + LocalStorage)</title>
   <style>
     :root {
-      --bg: #0f172a;        /* slate-900 */
+      --bg: #0c1427;        /* slate-900 */
       --panel: #111827;     /* gray-900 */
       --muted: #1f2937;     /* gray-800 */
       --soft: #0b1220;      /* custom */
@@ -425,6 +425,51 @@
 
   // ===== Inicialização =====
   render();
+  // Função para buscar preço atual da ação na API
+async function buscarPreco(ticker) {
+  const url = `https://brapi.dev/api/quote/${ticker}`;
+  try {
+    const resp = await fetch(url);
+    const json = await resp.json();
+    return json.results?.[0]?.regularMarketPrice || null;
+  } catch (err) {
+    console.error(err);
+    return null;
+  }
+}
+
+// Dentro do evento de adicionar ativo
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const ticker = String(form.ticker.value).trim().toUpperCase();
+  const tipo = form.tipo.value;
+  const quantidade = Number(form.quantidade.value);
+  const preco = parseBRL(form.preco.value);
+  const corretagem = parseBRL(form.corretagem.value);
+
+  if(!ticker || !quantidade || !preco) return;
+
+  const investido = round2(quantidade * preco + corretagem);
+  const precoMedio = round2(investido / quantidade);
+
+  // Busca preço atual na API
+  const precoAtual = await buscarPreco(ticker);
+
+  const existente = carteira.find(p => p.ticker === ticker && p.tipo === tipo);
+  if (existente){
+    ...
+  } else {
+    carteira.push({
+      id: crypto.randomUUID(),
+      ticker, tipo, quantidade,
+      investido, precoMedio,
+      precoAtual: precoAtual || 0   // se não conseguir buscar, coloca 0
+    });
+  }
+  save();
+  form.reset();
+  render();
+});
 </script>
 </body>
 </html>
