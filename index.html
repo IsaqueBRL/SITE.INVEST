@@ -19,56 +19,28 @@
     </header>
 
     <main class="wrap" style="padding: 18px 0 34px">
-        <div class="grid">
-            <section class="card">
-                <div class="hd">Adicionar ativo</div>
-                <div class="bd">
-                    <form id="formAtivo">
-                        <div class="row">
-                            <div class="col" style="grid-column: span 4;">
-                                <label for="ticker">Ticker (B3)</label>
-                                <input id="ticker" name="ticker" placeholder="ex: PETR4, VALE3, MXRF11" required />
-                            </div>
-                            <div class="col" style="grid-column: span 3;">
-                                <label for="tipo">Tipo</label>
-                                <select id="tipo" name="tipo">
-                                    <option value="Ação">Ação</option>
-                                    <option value="FII">FII</option>
-                                    <option value="ETF">ETF</option>
-                                    <option value="BDR">BDR</option>
-                                    <option value="Outros">Outros</option>
-                                </select>
-                            </div>
-                            <div class="col" style="grid-column: span 2;">
-                                <label for="quantidade">Quantidade</label>
-                                <input id="quantidade" name="quantidade" type="number" min="1" step="1" placeholder="ex: 10" required />
-                            </div>
-                            <div class="col" style="grid-column: span 3;">
-                                <label for="preco">Preço (R$)</label>
-                                <input id="preco" name="preco" inputmode="decimal" placeholder="ex: 28,75" required />
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col" style="grid-column: span 3;">
-                                <label for="corretagem">Taxas (R$)</label>
-                                <input id="corretagem" name="corretagem" inputmode="decimal" placeholder="0,00" />
-                            </div>
-                            <div class="col" style="grid-column: span 3;">
-                                <label for="data">Data</label>
-                                <input id="data" name="data" type="date" />
-                            </div>
-                            <div class="col" style="grid-column: span 6; display:flex; align-items:flex-end; justify-content:flex-end">
-                                <div class="actions">
-                                    <button class="btn" type="button" id="limpar">Limpar</button>
-                                    <button class="btn primary" type="submit">Adicionar</button>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="hint" style="margin-top:10px">Dica: use vírgula como separador decimal (ex: 10,50). O preço é o valor por cota/ação.</p>
-                    </form>
+        <section class="card">
+            <div class="hd">Rebalanceamento de Carteira</div>
+            <div class="bd">
+                <div style="overflow:auto">
+                    <table id="tabelaRebalanceamento">
+                        <thead>
+                            <tr>
+                                <th>Categoria</th>
+                                <th class="right">Meta</th>
+                                <th class="right">Atual</th>
+                                <th class="right">Patrimônio</th>
+                                <th class="right">Aportar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabelaRebalanceamento">
+                            </tbody>
+                    </table>
                 </div>
-            </section>
+            </div>
+        </section>
 
+        <div class="grid">
             <section class="card">
                 <div class="hd">Resumo</div>
                 <div class="bd">
@@ -89,6 +61,7 @@
                         </div>
                         <div class="col" style="grid-column: span 6; display:flex; align-items:end; justify-content:flex-end">
                             <div class="actions">
+                                <button class="btn primary" id="openModalBtn">Adicionar ativo</button>
                                 <button class="btn sec" id="exportarCsv">Exportar CSV</button>
                                 <label class="btn warn" for="importCsv">Importar CSV</label>
                                 <input id="importCsv" type="file" accept=".csv" style="display:none" />
@@ -142,6 +115,58 @@
             </div>
         </section>
     </main>
+    
+    <dialog id="modalForm" class="modal">
+        <div class="modal-content">
+            <div class="hd">Adicionar ativo</div>
+            <div class="bd">
+                <form id="formAtivo">
+                    <div class="row">
+                        <div class="col" style="grid-column: span 4;">
+                            <label for="ticker">Ticker (B3)</label>
+                            <input id="ticker" name="ticker" placeholder="ex: PETR4, VALE3, MXRF11" required />
+                        </div>
+                        <div class="col" style="grid-column: span 3;">
+                            <label for="tipo">Tipo</label>
+                            <select id="tipo" name="tipo">
+                                <option value="Ação">Ação</option>
+                                <option value="FII">FII</option>
+                                <option value="ETF">ETF</option>
+                                <option value="BDR">BDR</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+                        <div class="col" style="grid-column: span 2;">
+                            <label for="quantidade">Quantidade</label>
+                            <input id="quantidade" name="quantidade" type="number" min="1" step="1" placeholder="ex: 10" required />
+                        </div>
+                        <div class="col" style="grid-column: span 3;">
+                            <label for="preco">Preço (R$)</label>
+                            <input id="preco" name="preco" inputmode="decimal" placeholder="ex: 28,75" required />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col" style="grid-column: span 3;">
+                            <label for="corretagem">Taxas (R$)</label>
+                            <input id="corretagem" name="corretagem" inputmode="decimal" placeholder="0,00" />
+                        </div>
+                        <div class="col" style="grid-column: span 3;">
+                            <label for="data">Data</label>
+                            <input id="data" name="data" type="date" />
+                        </div>
+                        <div class="col" style="grid-column: span 6; display:flex; align-items:flex-end; justify-content:flex-end">
+                            <div class="actions">
+                                <button class="btn" type="button" id="closeModalBtn">Cancelar</button>
+                                <button class="btn primary" type="submit">Adicionar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="hint" style="margin-top:10px">Dica: use vírgula como separador decimal (ex: 10,50). O preço é o valor por cota/ação.</p>
+                </form>
+            </div>
+        </div>
+    </dialog>
+    
 
     <div class="footer">Criado por isaque Pavão.</div>
 
