@@ -107,7 +107,6 @@ formAddCategory.addEventListener('submit', (e) => {
     }
 });
 
-
 tickerInput.addEventListener('change', async () => {
   const ticker = tickerInput.value.trim().toUpperCase();
   if (ticker) {
@@ -201,8 +200,6 @@ async function renderPosicoes(){
 
   filteredCarteira.forEach(pos => {
     const valorAtual = round2((pos.precoAtual || 0) * pos.quantidade);
-    const resultado = round2(valorAtual - pos.investido);
-    const perc = pos.investido ? ((resultado / pos.investido) * 100) : 0;
     totalInv += pos.investido;
     totalAtual += valorAtual;
 
@@ -211,12 +208,7 @@ async function renderPosicoes(){
       <td class="nowrap"><strong>${pos.ticker}</strong></td>
       <td><span class="pill">${pos.tipo}</span></td>
       <td class="right editable-qty" data-id="${pos.id}">${fmtNum.format(pos.quantidade)}</td>
-      <td class="right">${toBRL(pos.precoMedio)}</td>
-      <td class="right">${toBRL(pos.investido)}</td>
       <td class="right editable" data-id="${pos.id}">${pos.precoAtual ? toBRL(pos.precoAtual) : '<span class="muted">—</span>'}</td>
-      <td class="right">${valorAtual ? toBRL(valorAtual) : '<span class="muted">—</span>'}</td>
-      <td class="right ${resultado>=0?'green':'red'}">${resultado ? toBRL(resultado) : toBRL(0)}</td>
-      <td class="right ${resultado>=0?'green':'red'}">${perc.toFixed(2)}%</td>
       <td class="right">
         <div class="actions" style="justify-content:flex-end">
           <button class="btn sec" data-edit="${pos.id}">Editar</button>
@@ -249,7 +241,10 @@ function renderRebalanceamento() {
         const meta = metas[cat] || 0;
         const patrimonio = categoriasComPatrimonio[cat] || 0;
         const atual = patrimonioTotal > 0 ? (patrimonio / patrimonioTotal) * 100 : 0;
-        const aportar = (meta - atual) > 0 ? round2(((meta - atual) * patrimonioTotal) / atual) : 0;
+        let aportar = 0;
+        if (atual > 0) {
+            aportar = (meta - atual) > 0 ? round2(((meta - atual) * patrimonioTotal) / atual) : 0;
+        }
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
