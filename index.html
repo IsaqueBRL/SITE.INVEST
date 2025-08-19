@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Invest Dashboard</title>
+  <link rel="stylesheet" href="./css/base.css" />
+  <link rel="stylesheet" href="./css/components.css" />
+  <link rel="stylesheet" href="./css/dashboard.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="site-header"></div>
+
+    <main class="container">
+      <section class="hero">
+        <h1>Minha Carteira</h1>
+        <p class="muted">Exemplo de dashboard estático com dados em <code>data/sample/portfolio.json</code>.</p>
+        <div class="grid cards" id="cards"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Resumo</h2>
+        <div class="kpis" id="kpis">
+          <div class="kpi"><div class="kpi-label">Patrimônio</div><div class="kpi-value" id="kpi-total">—</div></div>
+          <div class="kpi"><div class="kpi-label">Aportes (30d)</div><div class="kpi-value" id="kpi-deposits">—</div></div>
+          <div class="kpi"><div class="kpi-label">Rentab. YTD</div><div class="kpi-value" id="kpi-ytd">—</div></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Alocação</h2>
+        <canvas id="allocChart" width="640" height="320" aria-label="Gráfico de Alocação" role="img"></canvas>
+      </section>
+    </main>
+
+    <div id="site-footer"></div>
+  </div>
+
+  <script src="./js/ui.js"></script>
+  <script src="./js/services/api.js"></script>
+  <script src="./js/charts.js"></script>
+  <script src="./js/main.js"></script>
+</body>
+</html>
