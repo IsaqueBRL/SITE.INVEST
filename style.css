@@ -107,6 +107,14 @@ input, select { width: 100%; background: #141829; color: var(--text); padding: 1
 table { width:100%; border-collapse: collapse; }
 th, td { text-align:left; padding: 10px; border-bottom:1px dashed var(--border); }
 th { font-size: 12px; font-weight:600; opacity:.8; }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { background-color: rgba(255,255,255,0.05); }
+.sort-indicator { display: inline-block; margin-left: 8px; font-size: 10px; color: var(--muted-text); }
+th.sortable.asc .sort-indicator { content: "▲"; color: var(--primary-color); }
+th.sortable.desc .sort-indicator { content: "▼"; color: var(--primary-color); }
+th.sortable.active .sort-indicator { color: var(--primary-color); }
+th.sortable:not(.active) .sort-indicator::before { content: "•"; font-size: 18px; line-height: 1; vertical-align: sub; }
+
 tbody tr:hover { background-color: rgba(255,255,255,0.05); }
 
 .pill { padding: 4px 8px; border-radius:999px; font-size: 11px; border:1px solid var(--border); opacity:.9; background-color: #2a3145; }
