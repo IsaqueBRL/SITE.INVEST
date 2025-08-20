@@ -43,6 +43,12 @@ let carteira = {};
 let metas = {};
 let colVisibility = {};
 
+// Estado da ordenação
+let sortState = {
+    sortBy: 'patrimonio',
+    sortDirection: 'desc'
+};
+
 // Função para buscar preço atual da ação na API
 async function buscarPreco(ticker) {
     const url = `https://brapi.dev/api/quote/${ticker}?token=${API_KEY}`;
@@ -269,16 +275,26 @@ async function renderRebalanceamento() {
     // Renderizar métrica do dashboard
     patrimonioTotalDashboard.textContent = toBRL(patrimonioTotal);
 
-    const categoriasComPatrimonio = {};
+    const categoriasComValores = {};
     Object.keys(metas).forEach(cat => {
         const isForeign = ['Stoks', 'ETF Exterior', 'Reits'].includes(cat);
-        const patrimonioCategoria = Object.keys(carteira).filter(key => carteira[key].tipo === cat)
-                                                            .reduce((sum, key) => {
-                                                                const pos = carteira[key];
-                                                                const valor = (pos.precoAtual || 0) * pos.quantidade;
-                                                                return sum + (isForeign ? valor * dolar : valor);
-                                                            }, 0);
-        categoriasComPatrimonio[cat] = patrimonioCategoria;
+        const patrimonio = Object.keys(carteira).filter(key => carteira[key].tipo === cat)
+            .reduce((sum, key) => {
+                const pos = carteira[key];
+                const valor = (pos.precoAtual || 0) * pos.quantidade;
+                return sum + (isForeign ? valor * dolar : valor);
+            }, 0);
+        
+        const meta = metas[cat] || 0;
+        const atual = patrimonioTotal > 0 ? (patrimonio / patrimonioTotal) * 100 : 0;
+        const aportar = atual < meta ? (meta * patrimonioTotal) / 100 - patrimonio : 0;
+
+        categoriasComValores[cat] = {
+            meta,
+            patrimonio,
+            atual,
+            aportar
+        };
     });
 
     if (Object.keys(metas).length === 0) {
@@ -288,29 +304,35 @@ async function renderRebalanceamento() {
             </tr>
         `;
     } else {
-        // Obter uma lista de categorias e ordená-las por patrimônio (do maior para o menor)
+        // Obter uma lista de categorias e ordená-las com base no estado de ordenação
         const sortedCategories = Object.keys(metas).sort((catA, catB) => {
-            const patrimonioA = categoriasComPatrimonio[catA] || 0;
-            const patrimonioB = categoriasComPatrimonio[catB] || 0;
-            return patrimonioB - patrimonioA;
+            const valA = categoriasComValores[catA][sortState.sortBy] || 0;
+            const valB = categoriasComValores[catB][sortState.sortBy] || 0;
+            if (sortState.sortDirection === 'asc') {
+                return valA - valB;
+            } else {
+                return valB - valA;
+            }
         });
 
+        // Limpar e atualizar indicadores visuais
+        document.querySelectorAll('#tabelaRebalanceamento th.sortable').forEach(th => {
+            th.classList.remove('active', 'asc', 'desc');
+        });
+        const currentSortHeader = document.querySelector(`#tabelaRebalanceamento th[data-sort="${sortState.sortBy}"]`);
+        if (currentSortHeader) {
+            currentSortHeader.classList.add('active', sortState.sortDirection);
+        }
+
         sortedCategories.forEach(cat => {
-            const meta = metas[cat] || 0;
-            const patrimonio = categoriasComPatrimonio[cat] || 0;
-            const atual = patrimonioTotal > 0 ? (patrimonio / patrimonioTotal) * 100 : 0;
-            let aportar = 0;
-            if (atual < meta) {
-                aportar = (meta * patrimonioTotal) / 100 - patrimonio;
-            }
-    
+            const vals = categoriasComValores[cat];
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><strong>${cat}</strong></td>
-                <td class="right">${toPct(meta)}</td>
-                <td class="right ${atual > meta * 1.05 ? 'red' : atual < meta * 0.95 ? 'green' : ''}">${toPct(atual)}</td>
-                <td class="right">${toBRL(patrimonio)}</td>
-                <td class="right ${aportar > 0 ? 'green' : 'muted'}">${toBRL(aportar)}</td>
+                <td class="right">${toPct(vals.meta)}</td>
+                <td class="right ${vals.atual > vals.meta * 1.05 ? 'red' : vals.atual < vals.meta * 0.95 ? 'green' : ''}">${toPct(vals.atual)}</td>
+                <td class="right">${toBRL(vals.patrimonio)}</td>
+                <td class="right ${vals.aportar > 0 ? 'green' : 'muted'}">${toBRL(vals.aportar)}</td>
                 <td class="right">
                     <button class="btn sec btn-sm" data-edit-cat="${cat}">✏️</button>
                     <button class="btn danger btn-sm" data-del-cat="${cat}">X</button>
@@ -394,6 +416,20 @@ function hookEvents(){
             button.classList.add('active');
             activeTab = button.dataset.tab;
             render();
+        });
+    });
+
+    // Nova lógica para ordenar a tabela de rebalanceamento
+    document.querySelectorAll('#tabelaRebalanceamento th.sortable').forEach(header => {
+        header.addEventListener('click', () => {
+            const newSortBy = header.dataset.sort;
+            if (sortState.sortBy === newSortBy) {
+                sortState.sortDirection = sortState.sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortState.sortBy = newSortBy;
+                sortState.sortDirection = 'desc'; // Default para descendente em nova coluna
+            }
+            renderRebalanceamento();
         });
     });
 
