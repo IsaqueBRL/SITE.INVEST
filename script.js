@@ -39,7 +39,7 @@ const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
 
 // Variáveis de estado
 let activeTab = 'all';
-let carteira = [];
+let carteira = {};
 let metas = {};
 let colVisibility = {};
 
@@ -184,6 +184,7 @@ form.addEventListener('submit', async (e) => {
 
 // Função para buscar os preços de todos os ativos da carteira
 async function buscarPrecosDaCarteira() {
+  // Converte o objeto de ativos em um array de promessas
   const promises = Object.keys(carteira).map(async key => {
     const pos = carteira[key];
     const precoAtual = await buscarPreco(pos.ticker);
@@ -525,7 +526,17 @@ onValue(carteiraRef, (snapshot) => {
 
 // Listener para as metas de categoria
 onValue(metasRef, (snapshot) => {
-    const data = snapshot.val() || {};
+    const data = snapshot.val() || {
+        'Ação': 50,
+        'FII': 30,
+        'ETF': 10,
+        'BDR': 5,
+        'Outros': 5,
+        'ETF Exterior': 0,
+        'Reits': 0,
+        'Stoks': 0,
+        'Fiagro': 0
+    };
     metas = data;
     render();
 });
@@ -541,7 +552,3 @@ onValue(colVisibilityRef, (snapshot) => {
     colVisibility = data;
     updateColVisibility();
 });
-
-// Inicializa a aplicação
-// A chamada para `render()` agora está dentro dos listeners `onValue`
-// para garantir que a renderização ocorra somente após o carregamento dos dados
