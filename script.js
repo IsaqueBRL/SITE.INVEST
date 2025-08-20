@@ -82,7 +82,10 @@ const tabelaPosicoes = document.getElementById('tabela');
 const corpoRebalanceamento = document.getElementById('corpoTabelaRebalanceamento');
 const tabelaRebalanceamento = document.getElementById('tabelaRebalanceamento');
 const tabsContainer = document.getElementById('tabs-container');
-const patrimonioTotalNacional = document.getElementById('patrimonioTotalNacional');
+
+const patrimonioTotalDashboard = document.getElementById('patrimonioTotalDashboard');
+const totalAportarDashboard = document.getElementById('totalAportarDashboard');
+const foraMetaDashboard = document.getElementById('foraMetaDashboard');
 
 const modalAddCategory = document.getElementById('modalAddCategory');
 const openAddCategoryModal = document.getElementById('openAddCategoryModal');
@@ -93,7 +96,6 @@ const colControls = document.querySelectorAll('.column-controls input[type="chec
 // Eventos
 document.getElementById('apagarTudo').addEventListener('click', () => {
     if(confirm('Tem certeza que deseja apagar toda a carteira? Esta ação é irreversível.')){
-        // Remove explicitamente os dados de 'carteira' e 'metas' no Firebase
         remove(carteiraRef);
         remove(metasRef);
     }
@@ -123,7 +125,6 @@ formAddCategory.addEventListener('submit', (e) => {
     const categoryMeta = Number(formAddCategory.categoryMeta.value);
     
     if (categoryName && !isNaN(categoryMeta)) {
-        // Usa set para adicionar ou atualizar a meta no Firebase
         set(ref(db, `metas/${categoryName}`), categoryMeta);
         modalAddCategory.close();
     }
@@ -156,11 +157,9 @@ form.addEventListener('submit', async (e) => {
     
     const precoAtual = await buscarPreco(ticker);
 
-    // Verifica se o ativo já existe na carteira
     const existenteKey = Object.keys(carteira).find(key => carteira[key].ticker === ticker && carteira[key].tipo === tipo);
 
     if (existenteKey){
-        // Se existir, atualiza a quantidade e o preço médio
         const existente = carteira[existenteKey];
         const totalQtde = existente.quantidade + quantidade;
         const totalInv = existente.investido + investido;
@@ -173,7 +172,6 @@ form.addEventListener('submit', async (e) => {
             precoMedio: novoPrecoMedio
         });
     } else {
-        // Se não existir, adiciona um novo ativo usando push() para gerar uma chave única
         push(carteiraRef, {
             ticker, tipo, quantidade,
             investido, precoMedio,
@@ -184,21 +182,17 @@ form.addEventListener('submit', async (e) => {
     modalForm.close();
 });
 
-// Função para buscar os preços de todos os ativos da carteira
 async function buscarPrecosDaCarteira() {
-    // Converte o objeto de ativos em um array de promessas
     const promises = Object.keys(carteira).map(async key => {
         const pos = carteira[key];
         const precoAtual = await buscarPreco(pos.ticker);
         pos.precoAtual = precoAtual || 0;
-        // Atualiza o valor no Firebase para persistir o preço atual
         set(ref(db, `carteira/${key}/precoAtual`), precoAtual || 0);
     });
     await Promise.all(promises);
 }
 
 // ===== Funções de renderização =====
-
 function renderTabs() {
     tabsContainer.innerHTML = '';
     const categorias = ['all', ...Object.keys(metas)];
@@ -265,16 +259,6 @@ async function renderPosicoes(){
 async function renderRebalanceamento() {
     corpoRebalanceamento.innerHTML = '';
     
-    if (Object.keys(metas).length === 0) {
-        corpoRebalanceamento.innerHTML = `
-            <tr>
-                <td colspan="6" class="muted" style="text-align:center;">Adicione uma categoria.</td>
-            </tr>
-        `;
-        patrimonioTotalNacional.textContent = toBRL(0); // Garante que o patrimônio total seja zero
-        return; // Sai da função para não renderizar a tabela vazia
-    }
-    
     const dolar = await buscarDolar();
 
     const patrimonioTotal = Object.keys(carteira).reduce((sum, key) => {
@@ -283,8 +267,6 @@ async function renderRebalanceamento() {
         const valor = (pos.precoAtual || 0) * pos.quantidade;
         return sum + (isForeign ? valor * dolar : valor);
     }, 0);
-    
-    patrimonioTotalNacional.textContent = toBRL(patrimonioTotal);
 
     const categoriasComPatrimonio = {};
     Object.keys(metas).forEach(cat => {
@@ -298,43 +280,60 @@ async function renderRebalanceamento() {
         categoriasComPatrimonio[cat] = patrimonioCategoria;
     });
 
-    Object.keys(metas).forEach(cat => {
-        const meta = metas[cat] || 0;
-        const patrimonio = categoriasComPatrimonio[cat] || 0;
-        const atual = patrimonioTotal > 0 ? (patrimonio / patrimonioTotal) * 100 : 0;
-        let aportar = 0;
-        if (atual > 0) {
-            aportar = (meta - atual) > 0 ? round2(((meta - atual) * patrimonioTotal) / atual) : 0;
-        }
+    let totalAportar = 0;
+    let foraMeta = 0;
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><strong>${cat}</strong></td>
-            <td class="right">${toPct(meta)}</td>
-            <td class="right ${atual > meta * 1.05 ? 'red' : atual < meta * 0.95 ? 'green' : ''}">${toPct(atual)}</td>
-            <td class="right">${toBRL(patrimonio)}</td>
-            <td class="right ${aportar > 0 ? 'green' : 'muted'}">${toBRL(aportar)}</td>
-            <td class="right">
-                <button class="btn sec btn-sm" data-edit-cat="${cat}">✏️</button>
-                <button class="btn danger btn-sm" data-del-cat="${cat}">X</button>
-            </td>
+    if (Object.keys(metas).length === 0) {
+        corpoRebalanceamento.innerHTML = `
+            <tr>
+                <td colspan="6" class="muted" style="text-align:center;">Adicione uma categoria.</td>
+            </tr>
         `;
-        corpoRebalanceamento.appendChild(tr);
-    });
+    } else {
+        Object.keys(metas).forEach(cat => {
+            const meta = metas[cat] || 0;
+            const patrimonio = categoriasComPatrimonio[cat] || 0;
+            const atual = patrimonioTotal > 0 ? (patrimonio / patrimonioTotal) * 100 : 0;
+            let aportar = 0;
+            if (atual < meta) {
+                aportar = (meta - atual) > 0 ? round2((meta * patrimonioTotal) / 100 - patrimonio) : 0;
+                totalAportar += aportar;
+            } else if (atual > meta) {
+                foraMeta += patrimonio - (meta * patrimonioTotal) / 100;
+            }
+    
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${cat}</strong></td>
+                <td class="right">${toPct(meta)}</td>
+                <td class="right ${atual > meta * 1.05 ? 'red' : atual < meta * 0.95 ? 'green' : ''}">${toPct(atual)}</td>
+                <td class="right">${toBRL(patrimonio)}</td>
+                <td class="right ${aportar > 0 ? 'green' : 'muted'}">${toBRL(aportar)}</td>
+                <td class="right">
+                    <button class="btn sec btn-sm" data-edit-cat="${cat}">✏️</button>
+                    <button class="btn danger btn-sm" data-del-cat="${cat}">X</button>
+                </td>
+            `;
+            corpoRebalanceamento.appendChild(tr);
+        });
+    }
+
+    // Renderizar métricas do dashboard
+    patrimonioTotalDashboard.textContent = toBRL(patrimonioTotal);
+    totalAportarDashboard.textContent = toBRL(totalAportar);
+    foraMetaDashboard.textContent = toBRL(foraMeta);
 }
 
-// Nova função para aplicar a visibilidade das colunas
+
 function updateColVisibility() {
     const tableHeaders = tabelaPosicoes.querySelectorAll('thead th');
     const tableRows = tabelaPosicoes.querySelectorAll('tbody tr');
     
-    // Atualiza o estado dos checkboxes com base no estado local
     colControls.forEach(checkbox => {
         const colIndex = checkbox.dataset.colIndex;
         checkbox.checked = colVisibility[colIndex];
     });
 
-    // Aplica a classe de ocultação nas colunas
     Object.keys(colVisibility).forEach(index => {
         const isVisible = colVisibility[index];
         const colHeader = tableHeaders[index];
@@ -350,17 +349,9 @@ function updateColVisibility() {
             }
         });
     });
-
-    // Ajusta o colspan do tfoot
-    const visibleCols = Object.keys(colVisibility).filter(key => colVisibility[key]).length + 3; // 3 colunas fixas
-    const tfootCell = tabelaPosicoes.querySelector('tfoot td');
-    if (tfootCell) {
-        tfootCell.colSpan = visibleCols;
-    }
 }
 
 function render() {
-    console.log("Rendering page...");
     renderTabs();
     renderSelectOptions();
     renderPosicoes();
@@ -371,16 +362,12 @@ function render() {
 // ===== Funções de Edição e Exclusão =====
 
 function hookEvents(){
-    console.log("Attaching event listeners...");
-    // Excluir Categoria
     document.querySelectorAll('[data-del-cat]').forEach(btn => {
         btn.addEventListener('click', () => {
             const category = btn.dataset.delCat;
             if(confirm(`Tem certeza que deseja excluir a categoria "${category}" e todos os ativos dela?`)) {
-                // Remove a meta no Firebase
                 remove(ref(db, `metas/${category}`));
                 
-                // Remove todos os ativos dessa categoria
                 Object.keys(carteira).filter(key => carteira[key].tipo === category).forEach(key => {
                     remove(ref(db, `carteira/${key}`));
                 });
@@ -388,27 +375,22 @@ function hookEvents(){
         });
     });
     
-    // Botão para editar Meta
     document.querySelectorAll('[data-edit-cat]').forEach(btn => {
         btn.addEventListener('click', () => {
-            console.log("Edit button clicked for category:", btn.dataset.editCat);
             const category = btn.dataset.editCat;
             const td = btn.closest('tr').querySelector('td:nth-child(2)');
             makeEditableMeta(td, category);
         });
     });
 
-    // Duplo clique para editar Preço Atual
     document.querySelectorAll('td.editable').forEach(td => {
         td.addEventListener('dblclick', () => makeEditable(td, 'precoAtual'));
     });
 
-    // Duplo clique para editar Quantidade
     document.querySelectorAll('td.editable-qty').forEach(td => {
         td.addEventListener('dblclick', () => makeEditable(td, 'quantidade'));
     });
 
-    // Adicionar evento de clique nos botões das abas
     document.querySelectorAll('.tab-btn').forEach(button => {
         button.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -418,12 +400,10 @@ function hookEvents(){
         });
     });
 
-    // Listener para os checkboxes de visibilidade
     colControls.forEach(checkbox => {
         checkbox.addEventListener('change', (e) => {
             const colIndex = e.target.dataset.colIndex;
             colVisibility[colIndex] = e.target.checked;
-            // Salva a visibilidade no Firebase
             set(colVisibilityRef, colVisibility);
             updateColVisibility();
         });
@@ -436,7 +416,7 @@ function makeEditable(td, key){
     if(!pos) return;
     const old = (pos[key] || 0).toString().replace('.', ',');
 
-    td.innerHTML = `<input id="_edit" type="number" step="any" style="width:110px; background:#0b1020; color:var(--text); padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,.2)" placeholder="0,00" value="${old}">`;
+    td.innerHTML = `<input id="_edit" type="number" step="any" style="width:110px; background:#141829; color:var(--text); padding:6px 8px; border-radius:8px; border:1px solid #2d3748" placeholder="0,00" value="${old}">`;
     const input = td.querySelector('#_edit');
     input.focus();
 
@@ -445,12 +425,10 @@ function makeEditable(td, key){
         if (key === 'quantidade') {
             v = Number(v);
             if (v > 0) {
-                // Atualiza a quantidade e o valor investido no Firebase
                 set(ref(db, `carteira/${id}/quantidade`), v);
                 set(ref(db, `carteira/${id}/investido`), round2(v * pos.precoMedio));
             }
         } else {
-            // Atualiza o preço atual no Firebase
             set(ref(db, `carteira/${id}/${key}`), round2(v));
         }
     }
@@ -462,20 +440,16 @@ function makeEditable(td, key){
 }
 
 function makeEditableMeta(td, category){
-    console.log("Making meta editable for:", category);
     const old = metas[category] || 0;
     
-    // Garante que o input seja criado corretamente
-    td.innerHTML = `<input id="_edit_meta" type="number" min="0" max="100" step="1" style="width:60px; background:#0b1020; color:var(--text); padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,.2)" placeholder="%" value="${old}">`;
+    td.innerHTML = `<input id="_edit_meta" type="number" min="0" max="100" step="1" style="width:60px; background:#141829; color:var(--text); padding:6px 8px; border-radius:8px; border:1px solid #2d3748" placeholder="%" value="${old}">`;
     const input = td.querySelector('#_edit_meta');
     
     if (input) {
         input.focus();
         function commit(){
             const v = Number(input.value);
-            console.log("Committing value:", v);
             if (!isNaN(v) && v >= 0 && v <= 100) {
-                // Atualiza a meta no Firebase
                 set(ref(db, `metas/${category}`), v);
             }
         }
@@ -517,7 +491,6 @@ function importCsv(text){
     const ok = req.every((h,i) => (idx[i]||'').toLowerCase() === h);
     if(!ok){ alert('Cabeçalho CSV inválido. Use o arquivo exportado pelo sistema.'); return; }
 
-    // Remove os dados antigos no Firebase antes de importar
     remove(carteiraRef).then(() => {
         const newAssets = lines.map(l => {
             const [ticker,tipo,qt,pm,inv,pa] = l.split(';');
@@ -530,7 +503,6 @@ function importCsv(text){
                 precoAtual: round2(parseFloat(pa||'0'))
             };
         });
-        // Adiciona os novos dados ao Firebase
         newAssets.forEach(asset => push(carteiraRef, asset));
     });
 }
@@ -546,21 +518,18 @@ document.getElementById('importCsv').addEventListener('change', (e) => {
 
 // ===== Inicialização e Listeners do Firebase =====
 
-// Listener para a carteira de ativos
 onValue(carteiraRef, (snapshot) => {
     const data = snapshot.val() || {};
     carteira = data;
     render();
 });
 
-// Listener para as metas de categoria
 onValue(metasRef, (snapshot) => {
-    const data = snapshot.val() || {}; // Alteração: não cria categorias padrão
+    const data = snapshot.val() || {};
     metas = data;
     render();
 });
 
-// Listener para a visibilidade das colunas
 onValue(colVisibilityRef, (snapshot) => {
     const data = snapshot.val() || {
         '2': true,
