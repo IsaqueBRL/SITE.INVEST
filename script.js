@@ -43,12 +43,6 @@ let carteira = {};
 let metas = {};
 let colVisibility = {};
 
-// Estado da ordenação
-let sortState = {
-    sortBy: 'patrimonio',
-    sortDirection: 'desc'
-};
-
 // Função para buscar preço atual da ação na API
 async function buscarPreco(ticker) {
     const url = `https://brapi.dev/api/quote/${ticker}?token=${API_KEY}`;
@@ -260,6 +254,58 @@ async function renderPosicoes(){
     updateColVisibility();
 }
 
+// Renderiza a tabela interna de ativos
+async function renderSubTable(category) {
+    const dolar = await buscarDolar();
+    const ativosDaCategoria = Object.keys(carteira)
+        .filter(key => carteira[key].tipo === category)
+        .map(key => ({ ...carteira[key], id: key }));
+
+    let subTableHtml = `
+        <div class="sub-table-container">
+            <table class="sub-table">
+                <thead>
+                    <tr>
+                        <th>Ticker</th>
+                        <th class="right">Qtde</th>
+                        <th class="right">Preço Atual</th>
+                        <th class="right">Valor USD</th>
+                        <th class="right">Valor BRL</th>
+                        <th class="right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    ativosDaCategoria.forEach(pos => {
+        const isForeign = ['Stoks', 'ETF Exterior', 'Reits'].includes(pos.tipo);
+        const valorUSD = isForeign ? round2(pos.precoAtual * pos.quantidade) : 0;
+        const valorBRL = isForeign ? round2(valorUSD * dolar) : 0;
+
+        subTableHtml += `
+            <tr>
+                <td><strong>${pos.ticker}</strong></td>
+                <td class="right editable-qty" data-id="${pos.id}">${fmtNum.format(pos.quantidade)}</td>
+                <td class="right editable" data-id="${pos.id}">${isForeign ? toUSD(pos.precoAtual) : toBRL(pos.precoAtual)}</td>
+                <td class="right">${isForeign ? toUSD(valorUSD) : '<span class="muted">—</span>'}</td>
+                <td class="right">${isForeign ? toBRL(valorBRL) : '<span class="muted">—</span>'}</td>
+                <td class="right">
+                    <button class="btn danger btn-sm" data-delete-id="${pos.id}">X</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    subTableHtml += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    return subTableHtml;
+}
+
+
 async function renderRebalanceamento() {
     corpoRebalanceamento.innerHTML = '';
     
@@ -272,7 +318,6 @@ async function renderRebalanceamento() {
         return sum + (isForeign ? valor * dolar : valor);
     }, 0);
 
-    // Renderizar métrica do dashboard
     patrimonioTotalDashboard.textContent = toBRL(patrimonioTotal);
 
     const categoriasComValores = {};
@@ -304,31 +349,19 @@ async function renderRebalanceamento() {
             </tr>
         `;
     } else {
-        // Obter uma lista de categorias e ordená-las com base no estado de ordenação
         const sortedCategories = Object.keys(metas).sort((catA, catB) => {
-            const valA = categoriasComValores[catA][sortState.sortBy] || 0;
-            const valB = categoriasComValores[catB][sortState.sortBy] || 0;
-            if (sortState.sortDirection === 'asc') {
-                return valA - valB;
-            } else {
-                return valB - valA;
-            }
+            const patrimonioA = categoriasComValores[catA]?.patrimonio || 0;
+            const patrimonioB = categoriasComValores[catB]?.patrimonio || 0;
+            return patrimonioB - patrimonioA;
         });
 
-        // Limpar e atualizar indicadores visuais
-        document.querySelectorAll('#tabelaRebalanceamento th.sortable').forEach(th => {
-            th.classList.remove('active', 'asc', 'desc');
-        });
-        const currentSortHeader = document.querySelector(`#tabelaRebalanceamento th[data-sort="${sortState.sortBy}"]`);
-        if (currentSortHeader) {
-            currentSortHeader.classList.add('active', sortState.sortDirection);
-        }
-
-        sortedCategories.forEach(cat => {
-            const vals = categoriasComValores[cat];
+        for (const cat of sortedCategories) {
+            const vals = categoriasComValores[cat] || {};
             const tr = document.createElement('tr');
+            tr.className = 'expandable-row';
+            tr.dataset.category = cat;
             tr.innerHTML = `
-                <td><strong>${cat}</strong></td>
+                <td><span class="expandable-toggle">▶</span><strong>${cat}</strong></td>
                 <td class="right">${toPct(vals.meta)}</td>
                 <td class="right ${vals.atual > vals.meta * 1.05 ? 'red' : vals.atual < vals.meta * 0.95 ? 'green' : ''}">${toPct(vals.atual)}</td>
                 <td class="right">${toBRL(vals.patrimonio)}</td>
@@ -339,7 +372,7 @@ async function renderRebalanceamento() {
                 </td>
             `;
             corpoRebalanceamento.appendChild(tr);
-        });
+        }
     }
 }
 
@@ -382,7 +415,8 @@ function render() {
 
 function hookEvents(){
     document.querySelectorAll('[data-del-cat]').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
             const category = btn.dataset.delCat;
             if(confirm(`Tem certeza que deseja excluir a categoria "${category}" e todos os ativos dela?`)) {
                 remove(ref(db, `metas/${category}`));
@@ -395,7 +429,8 @@ function hookEvents(){
     });
     
     document.querySelectorAll('[data-edit-cat]').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
             const category = btn.dataset.editCat;
             const td = btn.closest('tr').querySelector('td:nth-child(2)');
             makeEditableMeta(td, category);
@@ -403,11 +438,17 @@ function hookEvents(){
     });
 
     document.querySelectorAll('td.editable').forEach(td => {
-        td.addEventListener('dblclick', () => makeEditable(td, 'precoAtual'));
+        td.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            makeEditable(td, 'precoAtual');
+        });
     });
 
     document.querySelectorAll('td.editable-qty').forEach(td => {
-        td.addEventListener('dblclick', () => makeEditable(td, 'quantidade'));
+        td.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            makeEditable(td, 'quantidade');
+        });
     });
 
     document.querySelectorAll('.tab-btn').forEach(button => {
@@ -419,18 +460,36 @@ function hookEvents(){
         });
     });
 
-    // Nova lógica para ordenar a tabela de rebalanceamento
-    document.querySelectorAll('#tabelaRebalanceamento th.sortable').forEach(header => {
-        header.addEventListener('click', () => {
-            const newSortBy = header.dataset.sort;
-            if (sortState.sortBy === newSortBy) {
-                sortState.sortDirection = sortState.sortDirection === 'asc' ? 'desc' : 'asc';
-            } else {
-                sortState.sortBy = newSortBy;
-                sortState.sortDirection = 'desc'; // Default para descendente em nova coluna
+    document.querySelectorAll('.expandable-row').forEach(row => {
+        row.addEventListener('click', async () => {
+            const category = row.dataset.category;
+            const nextRow = row.nextElementSibling;
+            
+            // Se já está expandido, recolhe
+            if (row.classList.contains('expanded')) {
+                row.classList.remove('expanded');
+                if (nextRow && nextRow.classList.contains('sub-table-row')) {
+                    nextRow.remove();
+                }
+            } else { // Caso contrário, expande
+                row.classList.add('expanded');
+                const subTableHtml = await renderSubTable(category);
+                const subRow = document.createElement('tr');
+                subRow.className = 'sub-table-row';
+                subRow.innerHTML = `<td colspan="6">${subTableHtml}</td>`;
+                row.after(subRow);
             }
-            renderRebalanceamento();
         });
+    });
+    
+    // Adiciona listener para os botões de deletar na sub-tabela
+    document.addEventListener('click', (e) => {
+        if (e.target.matches('[data-delete-id]')) {
+            const id = e.target.dataset.deleteId;
+            if (confirm('Tem certeza que deseja apagar este ativo?')) {
+                remove(ref(db, `carteira/${id}`));
+            }
+        }
     });
 
     colControls.forEach(checkbox => {
