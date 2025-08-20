@@ -86,7 +86,7 @@ const patrimonioTotalNacional = document.getElementById('patrimonioTotalNacional
 
 const modalAddCategory = document.getElementById('modalAddCategory');
 const openAddCategoryModal = document.getElementById('openAddCategoryModal');
-const closeAddCategoryModal = document = document.getElementById('closeAddCategoryModal');
+const closeAddCategoryModal = document.getElementById('closeAddCategoryModal');
 const formAddCategory = document.getElementById('formAddCategory');
 const colControls = document.querySelectorAll('.column-controls input[type="checkbox"]');
 
