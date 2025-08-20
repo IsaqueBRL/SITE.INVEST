@@ -107,13 +107,43 @@ input, select { width: 100%; background: #141829; color: var(--text); padding: 1
 table { width:100%; border-collapse: collapse; }
 th, td { text-align:left; padding: 10px; border-bottom:1px dashed var(--border); }
 th { font-size: 12px; font-weight:600; opacity:.8; }
-th.sortable { cursor: pointer; user-select: none; }
-th.sortable:hover { background-color: rgba(255,255,255,0.05); }
-.sort-indicator { display: inline-block; margin-left: 8px; font-size: 10px; color: var(--muted-text); }
-th.sortable.asc .sort-indicator { content: "▲"; color: var(--primary-color); }
-th.sortable.desc .sort-indicator { content: "▼"; color: var(--primary-color); }
-th.sortable.active .sort-indicator { color: var(--primary-color); }
-th.sortable:not(.active) .sort-indicator::before { content: "•"; font-size: 18px; line-height: 1; vertical-align: sub; }
+
+/* Estilos da nova funcionalidade de expansão */
+.expandable-row { cursor: pointer; }
+.expandable-row:hover { background-color: rgba(255,255,255,0.05); }
+.expandable-toggle {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    line-height: 1;
+    text-align: center;
+    transition: transform 0.2s ease;
+    margin-right: 8px;
+    color: var(--muted-text);
+}
+.expandable-row.expanded .expandable-toggle {
+    transform: rotate(90deg);
+}
+
+.sub-table-row td { padding: 0 !important; border:none; }
+.sub-table-row .sub-table-container {
+    padding: 16px;
+    background-color: var(--panel);
+    border-radius: var(--radius);
+    margin: 16px 0;
+}
+.sub-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.sub-table th, .sub-table td {
+    border-bottom: 1px dashed var(--border);
+    padding: 8px;
+    font-size: 12px;
+}
+.sub-table thead th { font-weight: 500; opacity: 0.8; }
+.sub-table tbody tr:hover { background-color: rgba(255,255,255,0.05); }
+
 
 tbody tr:hover { background-color: rgba(255,255,255,0.05); }
 
