@@ -27,79 +27,69 @@
                 <span class="label">Patrimônio Total</span>
                 <span class="value" id="patrimonioTotalDashboard">R$ 0,00</span>
             </div>
-            <div class="metric-card bg-green">
-                <span class="label">Total para Aportar</span>
-                <span class="value" id="totalAportarDashboard">R$ 0,00</span>
+        </section>
+
+        <section class="card" style="margin-top:20px;">
+            <div class="hd">
+                <span>Rebalanceamento de Carteira</span>
+                <button class="btn sec" id="openAddCategoryModal">Adicionar Categoria</button>
             </div>
-            <div class="metric-card bg-red">
-                <span class="label">Fora da Meta</span>
-                <span class="value" id="foraMetaDashboard">R$ 0,00</span>
+            <div class="bd">
+                <div style="overflow:auto">
+                    <table id="tabelaRebalanceamento">
+                        <thead>
+                            <tr>
+                                <th>Categoria</th>
+                                <th class="right">Meta</th>
+                                <th class="right">Atual</th>
+                                <th class="right">Patrimônio</th>
+                                <th class="right">Aportar</th>
+                                <th class="right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabelaRebalanceamento">
+                            </tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
-        <section class="main-grid">
-            <div class="card rebalanceamento-card">
-                <div class="hd">
-                    <span>Rebalanceamento de Carteira</span>
-                    <button class="btn sec" id="openAddCategoryModal">Adicionar Categoria</button>
-                </div>
-                <div class="bd">
-                    <div style="overflow:auto">
-                        <table id="tabelaRebalanceamento">
-                            <thead>
-                                <tr>
-                                    <th>Categoria</th>
-                                    <th class="right">Meta</th>
-                                    <th class="right">Atual</th>
-                                    <th class="right">Patrimônio</th>
-                                    <th class="right">Aportar</th>
-                                    <th class="right">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="corpoTabelaRebalanceamento">
-                                </tbody>
-                        </table>
+        <section class="card" style="margin-top:20px;">
+            <div class="hd" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap">
+                <span>Minhas Posições</span>
+                <div class="tabs" id="tabs-container">
                     </div>
-                </div>
             </div>
-
-            <div class="card posicoes-card">
-                <div class="hd" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap">
-                    <span>Minhas Posições</span>
-                    <div class="tabs" id="tabs-container">
-                        </div>
+            <div class="bd">
+                <div class="actions-bar">
+                    <button class="btn sec" id="exportarCsv">Exportar CSV</button>
+                    <label class="btn warn" for="importCsv">Importar CSV</label>
+                    <input id="importCsv" type="file" accept=".csv" style="display:none" />
+                    <button class="btn danger" id="apagarTudo">Apagar tudo</button>
                 </div>
-                <div class="bd">
-                    <div class="actions-bar">
-                        <button class="btn sec" id="exportarCsv">Exportar CSV</button>
-                        <label class="btn warn" for="importCsv">Importar CSV</label>
-                        <input id="importCsv" type="file" accept=".csv" style="display:none" />
-                        <button class="btn danger" id="apagarTudo">Apagar tudo</button>
+                <div class="hint" style="margin-bottom:10px">Dê duplo clique para editar: <b>Preço Atual</b> ou <b>Quantidade</b>.</div>
+                <div style="overflow:auto">
+                    <div class="column-controls">
+                        <label><input type="checkbox" checked data-col-index="2" /> Qtde</label>
+                        <label><input type="checkbox" checked data-col-index="3" /> Preço Atual</label>
+                        <label><input type="checkbox" checked data-col-index="4" /> Valor USD</label>
+                        <label><input type="checkbox" checked data-col-index="5" /> Valor BRL</label>
                     </div>
-                    <div class="hint" style="margin-bottom:10px">Dê duplo clique para editar: <b>Preço Atual</b> ou <b>Quantidade</b>.</div>
-                    <div style="overflow:auto">
-                        <div class="column-controls">
-                            <label><input type="checkbox" checked data-col-index="2" /> Qtde</label>
-                            <label><input type="checkbox" checked data-col-index="3" /> Preço Atual</label>
-                            <label><input type="checkbox" checked data-col-index="4" /> Valor USD</label>
-                            <label><input type="checkbox" checked data-col-index="5" /> Valor BRL</label>
-                        </div>
-                        <table id="tabela">
-                            <thead>
-                                <tr>
-                                    <th>Ticker</th>
-                                    <th>Tipo</th>
-                                    <th class="right">Qtde</th>
-                                    <th class="right">Preço Atual</th>
-                                    <th class="right">Valor USD</th>
-                                    <th class="right">Valor BRL</th>
-                                    <th class="right">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="corpoTabela">
-                                </tbody>
-                        </table>
-                    </div>
+                    <table id="tabela">
+                        <thead>
+                            <tr>
+                                <th>Ticker</th>
+                                <th>Tipo</th>
+                                <th class="right">Qtde</th>
+                                <th class="right">Preço Atual</th>
+                                <th class="right">Valor USD</th>
+                                <th class="right">Valor BRL</th>
+                                <th class="right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabela">
+                            </tbody>
+                    </table>
                 </div>
             </div>
         </section>
