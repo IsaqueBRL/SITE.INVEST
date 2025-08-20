@@ -1,3 +1,27 @@
+// Importa as funções do Firebase SDK
+import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+// ===== Configuração do Firebase =====
+const firebaseConfig = {
+  apiKey: "AIzaSyBNBf_DachNBO2RmQGmfOPg3PEuig5cVRw",
+  authDomain: "banco-de-dados---site-invest.firebaseapp.com",
+  databaseURL: "https://banco-de-dados---site-invest-default-rtdb.firebaseio.com",
+  projectId: "banco-de-dados---site-invest",
+  storageBucket: "banco-de-dados---site-invest.firebasestorage.app",
+  messagingSenderId: "581873866515",
+  appId: "1:581873866515:web:f258fcecad958acf6aace6"
+};
+
+// Inicializa o Firebase e o Banco de Dados
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// Referências para os nós do banco de dados
+const carteiraRef = ref(db, 'carteira');
+const metasRef = ref(db, 'metas');
+const colVisibilityRef = ref(db, 'column_visibility');
+
 // ===== Utilidades de número e moeda (pt-BR) =====
 const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtUSD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
@@ -13,36 +37,11 @@ function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
 
 const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
 
-// Variável de estado para controlar a aba ativa e visibilidade das colunas
+// Variáveis de estado
 let activeTab = 'all';
-let colVisibility = load('column_visibility', {
-    '2': true, // Qtde
-    '3': true, // Preço Atual
-    '4': true, // Valor USD
-    '5': true, // Valor BRL
-});
-
-// Chaves para o LocalStorage
-const CARTEIRA_KEY = 'carteira_b3_v1';
-const METAS_KEY = 'carteira_b3_metas';
-
-// Categoria e Metas
-let carteira = load(CARTEIRA_KEY, []);
-let metas = load(METAS_KEY, {
-    'Ação': 50,
-    'FII': 30,
-    'ETF': 10,
-    'BDR': 5,
-    'Outros': 5,
-    'ETF Exterior': 0,
-    'Reits': 0,
-    'Stoks': 0,
-    'Fiagro': 0
-});
-
-// Funções de armazenamento e carregamento
-function save(key, data){ localStorage.setItem(key, JSON.stringify(data)); }
-function load(key, defaultValue){ try { return JSON.parse(localStorage.getItem(key)) || defaultValue; } catch(e){ return defaultValue; } }
+let carteira = [];
+let metas = {};
+let colVisibility = {};
 
 // Função para buscar preço atual da ação na API
 async function buscarPreco(ticker) {
@@ -93,7 +92,8 @@ const colControls = document.querySelectorAll('.column-controls input[type="chec
 // Eventos
 document.getElementById('apagarTudo').addEventListener('click', () => {
   if(confirm('Tem certeza que deseja apagar toda a carteira?')){
-    carteira = []; save(CARTEIRA_KEY, carteira); render();
+    // Remove todos os dados da carteira e metas no Firebase
+    remove(ref(db, '/'));
   }
 });
 
@@ -121,10 +121,9 @@ formAddCategory.addEventListener('submit', (e) => {
     const categoryMeta = Number(formAddCategory.categoryMeta.value);
     
     if (categoryName && !isNaN(categoryMeta)) {
-        metas[categoryName] = categoryMeta;
-        save(METAS_KEY, metas);
+        // Usa set para adicionar ou atualizar a meta no Firebase
+        set(ref(db, `metas/${categoryName}`), categoryMeta);
         modalAddCategory.close();
-        render();
     }
 });
 
@@ -155,34 +154,44 @@ form.addEventListener('submit', async (e) => {
   
   const precoAtual = await buscarPreco(ticker);
 
-  const existente = carteira.find(p => p.ticker === ticker && p.tipo === tipo);
-  if (existente){
+  // Verifica se o ativo já existe na carteira
+  const existenteKey = Object.keys(carteira).find(key => carteira[key].ticker === ticker && carteira[key].tipo === tipo);
+
+  if (existenteKey){
+    // Se existir, atualiza a quantidade e o preço médio
+    const existente = carteira[existenteKey];
     const totalQtde = existente.quantidade + quantidade;
     const totalInv = existente.investido + investido;
-    existente.quantidade = totalQtde;
-    existente.investido = round2(totalInv);
-    existente.precoMedio = round2(totalInv / totalQtde);
+    const novoPrecoMedio = round2(totalInv / totalQtde);
+
+    set(ref(db, `carteira/${existenteKey}`), {
+        ...existente,
+        quantidade: totalQtde,
+        investido: round2(totalInv),
+        precoMedio: novoPrecoMedio
+    });
   } else {
-    carteira.push({
-      id: crypto.randomUUID(),
+    // Se não existir, adiciona um novo ativo usando push() para gerar uma chave única
+    push(carteiraRef, {
       ticker, tipo, quantidade,
       investido, precoMedio,
       precoAtual: precoAtual || 0
     });
   }
-  save(CARTEIRA_KEY, carteira);
+  
   modalForm.close();
-  render();
 });
 
 // Função para buscar os preços de todos os ativos da carteira
 async function buscarPrecosDaCarteira() {
-  const promises = carteira.map(async pos => {
+  const promises = Object.keys(carteira).map(async key => {
+    const pos = carteira[key];
     const precoAtual = await buscarPreco(pos.ticker);
     pos.precoAtual = precoAtual || 0;
+    // Atualiza o valor no Firebase para persistir o preço atual
+    set(ref(db, `carteira/${key}/precoAtual`), precoAtual || 0);
   });
   await Promise.all(promises);
-  save(CARTEIRA_KEY, carteira);
 }
 
 // ===== Funções de renderização =====
@@ -216,8 +225,8 @@ async function renderPosicoes(){
   corpo.innerHTML = '';
 
   const filteredCarteira = activeTab === 'all'
-    ? carteira
-    : carteira.filter(pos => pos.tipo === activeTab);
+    ? Object.keys(carteira).map(key => ({ ...carteira[key], id: key }))
+    : Object.keys(carteira).filter(key => carteira[key].tipo === activeTab).map(key => ({ ...carteira[key], id: key }));
 
   filteredCarteira.forEach(pos => {
     let valorAtual = 0;
@@ -254,7 +263,8 @@ async function renderRebalanceamento() {
     corpoRebalanceamento.innerHTML = '';
     const dolar = await buscarDolar();
 
-    const patrimonioTotal = carteira.reduce((sum, pos) => {
+    const patrimonioTotal = Object.keys(carteira).reduce((sum, key) => {
+        const pos = carteira[key];
         const isForeign = ['Stoks', 'ETF Exterior', 'Reits'].includes(pos.tipo);
         const valor = (pos.precoAtual || 0) * pos.quantidade;
         return sum + (isForeign ? valor * dolar : valor);
@@ -265,8 +275,9 @@ async function renderRebalanceamento() {
     const categoriasComPatrimonio = {};
     Object.keys(metas).forEach(cat => {
         const isForeign = ['Stoks', 'ETF Exterior', 'Reits'].includes(cat);
-        const patrimonioCategoria = carteira.filter(pos => pos.tipo === cat)
-                                             .reduce((sum, pos) => {
+        const patrimonioCategoria = Object.keys(carteira).filter(key => carteira[key].tipo === cat)
+                                             .reduce((sum, key) => {
+                                                const pos = carteira[key];
                                                 const valor = (pos.precoAtual || 0) * pos.quantidade;
                                                 return sum + (isForeign ? valor * dolar : valor);
                                              }, 0);
@@ -300,7 +311,7 @@ function updateColVisibility() {
     const tableHeaders = tabelaPosicoes.querySelectorAll('thead th');
     const tableRows = tabelaPosicoes.querySelectorAll('tbody tr');
     
-    // Atualiza o estado dos checkboxes com base no localStorage
+    // Atualiza o estado dos checkboxes com base no estado local
     colControls.forEach(checkbox => {
         const colIndex = checkbox.dataset.colIndex;
         checkbox.checked = colVisibility[colIndex];
@@ -331,8 +342,7 @@ function updateColVisibility() {
     }
 }
 
-async function render() {
-    await buscarPrecosDaCarteira();
+function render() {
     renderTabs();
     renderSelectOptions();
     renderPosicoes();
@@ -348,12 +358,13 @@ function hookEvents(){
     btn.addEventListener('click', () => {
       const category = btn.dataset.delCat;
       if(confirm(`Tem certeza que deseja excluir a categoria "${category}" e todos os ativos dela?`)) {
-        delete metas[category];
-        save(METAS_KEY, metas);
-        carteira = carteira.filter(p => p.tipo !== category);
-        save(CARTEIRA_KEY, carteira);
-        activeTab = 'all';
-        render();
+        // Remove a meta no Firebase
+        remove(ref(db, `metas/${category}`));
+        
+        // Remove todos os ativos dessa categoria
+        Object.keys(carteira).filter(key => carteira[key].tipo === category).forEach(key => {
+            remove(ref(db, `carteira/${key}`));
+        });
       }
     });
   });
@@ -388,7 +399,8 @@ function hookEvents(){
     checkbox.addEventListener('change', (e) => {
         const colIndex = e.target.dataset.colIndex;
         colVisibility[colIndex] = e.target.checked;
-        save('column_visibility', colVisibility);
+        // Salva a visibilidade no Firebase
+        set(colVisibilityRef, colVisibility);
         updateColVisibility();
     });
   });
@@ -396,7 +408,7 @@ function hookEvents(){
 
 function makeEditable(td, key){
   const id = td.dataset.id;
-  const pos = carteira.find(p => p.id === id);
+  const pos = carteira[id];
   if(!pos) return;
   const old = (pos[key] || 0).toString().replace('.', ',');
 
@@ -409,14 +421,14 @@ function makeEditable(td, key){
     if (key === 'quantidade') {
         v = Number(v);
         if (v > 0) {
-            pos.quantidade = v;
-            pos.investido = round2(v * pos.precoMedio);
+            // Atualiza a quantidade e o valor investido no Firebase
+            set(ref(db, `carteira/${id}/quantidade`), v);
+            set(ref(db, `carteira/${id}/investido`), round2(v * pos.precoMedio));
         }
     } else {
-        pos[key] = round2(v);
+        // Atualiza o preço atual no Firebase
+        set(ref(db, `carteira/${id}/${key}`), round2(v));
     }
-    save(CARTEIRA_KEY, carteira);
-    render();
   }
   input.addEventListener('blur', commit);
   input.addEventListener('keydown', (ev) => {
@@ -436,10 +448,9 @@ function makeEditableMeta(td){
   function commit(){
     const v = Number(input.value);
     if (!isNaN(v) && v >= 0 && v <= 100) {
-        metas[category] = v;
-        save(METAS_KEY, metas);
+        // Atualiza a meta no Firebase
+        set(ref(db, `metas/${category}`), v);
     }
-    render();
   }
   input.addEventListener('blur', commit);
   input.addEventListener('keydown', (ev) => {
@@ -452,7 +463,10 @@ function makeEditableMeta(td){
 function toCsv(){
   const headers = ['ticker','tipo','quantidade','precoMedio','investido','precoAtual'];
   const lines = [headers.join(';')].concat(
-    carteira.map(p => [p.ticker,p.tipo,p.quantidade,p.precoMedio,p.investido,p.precoAtual].join(';'))
+    Object.keys(carteira).map(key => {
+        const p = carteira[key];
+        return [p.ticker,p.tipo,p.quantidade,p.precoMedio,p.investido,p.precoAtual].join(';');
+    })
   );
   return lines.join('\n');
 }
@@ -473,20 +487,22 @@ function importCsv(text){
   const ok = req.every((h,i) => (idx[i]||'').toLowerCase() === h);
   if(!ok){ alert('Cabeçalho CSV inválido. Use o arquivo exportado pelo sistema.'); return; }
 
-  carteira = lines.map(l => {
-    const [ticker,tipo,qt,pm,inv,pa] = l.split(';');
-    return {
-      id: crypto.randomUUID(),
-      ticker: ticker.toUpperCase(),
-      tipo,
-      quantidade: Number(qt),
-      precoMedio: round2(parseFloat(pm)),
-      investido: round2(parseFloat(inv)),
-      precoAtual: round2(parseFloat(pa||'0'))
-    };
+  // Remove os dados antigos no Firebase antes de importar
+  remove(carteiraRef).then(() => {
+    const newAssets = lines.map(l => {
+        const [ticker,tipo,qt,pm,inv,pa] = l.split(';');
+        return {
+            ticker: ticker.toUpperCase(),
+            tipo,
+            quantidade: Number(qt),
+            precoMedio: round2(parseFloat(pm)),
+            investido: round2(parseFloat(inv)),
+            precoAtual: round2(parseFloat(pa||'0'))
+        };
+    });
+    // Adiciona os novos dados ao Firebase
+    newAssets.forEach(asset => push(carteiraRef, asset));
   });
-  save(CARTEIRA_KEY, carteira);
-  render();
 }
 
 document.getElementById('exportarCsv').addEventListener('click', downloadCsv);
@@ -498,5 +514,34 @@ document.getElementById('importCsv').addEventListener('change', (e) => {
   e.target.value = '';
 });
 
-// ===== Inicialização =====
-render();
+// ===== Inicialização e Listeners do Firebase =====
+
+// Listener para a carteira de ativos
+onValue(carteiraRef, (snapshot) => {
+    const data = snapshot.val() || {};
+    carteira = data;
+    render();
+});
+
+// Listener para as metas de categoria
+onValue(metasRef, (snapshot) => {
+    const data = snapshot.val() || {};
+    metas = data;
+    render();
+});
+
+// Listener para a visibilidade das colunas
+onValue(colVisibilityRef, (snapshot) => {
+    const data = snapshot.val() || {
+        '2': true,
+        '3': true,
+        '4': true,
+        '5': true
+    };
+    colVisibility = data;
+    updateColVisibility();
+});
+
+// Inicializa a aplicação
+// A chamada para `render()` agora está dentro dos listeners `onValue`
+// para garantir que a renderização ocorra somente após o carregamento dos dados
