@@ -86,7 +86,7 @@ const patrimonioTotalNacional = document.getElementById('patrimonioTotalNacional
 
 const modalAddCategory = document.getElementById('modalAddCategory');
 const openAddCategoryModal = document.getElementById('openAddCategoryModal');
-const closeAddCategoryModal = document.getElementById('closeAddCategoryModal');
+const closeAddCategoryModal = document = document.getElementById('closeAddCategoryModal');
 const formAddCategory = document.getElementById('formAddCategory');
 const colControls = document.querySelectorAll('.column-controls input[type="checkbox"]');
 
@@ -264,6 +264,17 @@ async function renderPosicoes(){
 
 async function renderRebalanceamento() {
     corpoRebalanceamento.innerHTML = '';
+    
+    if (Object.keys(metas).length === 0) {
+        corpoRebalanceamento.innerHTML = `
+            <tr>
+                <td colspan="6" class="muted" style="text-align:center;">Adicione uma categoria.</td>
+            </tr>
+        `;
+        patrimonioTotalNacional.textContent = toBRL(0); // Garante que o patrimônio total seja zero
+        return; // Sai da função para não renderizar a tabela vazia
+    }
+    
     const dolar = await buscarDolar();
 
     const patrimonioTotal = Object.keys(carteira).reduce((sum, key) => {
@@ -544,17 +555,7 @@ onValue(carteiraRef, (snapshot) => {
 
 // Listener para as metas de categoria
 onValue(metasRef, (snapshot) => {
-    const data = snapshot.val() || {
-        'Ação': 50,
-        'FII': 30,
-        'ETF': 10,
-        'BDR': 5,
-        'Outros': 5,
-        'ETF Exterior': 0,
-        'Reits': 0,
-        'Stoks': 0,
-        'Fiagro': 0
-    };
+    const data = snapshot.val() || {}; // Alteração: não cria categorias padrão
     metas = data;
     render();
 });
