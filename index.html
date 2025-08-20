@@ -51,139 +51,137 @@
             </div>
         </section>
 
-        <div class="grid">
-            <section class="card">
-                <div class="bd" style="padding:0">
-                    <div class="row">
-                        <div class="col" style="grid-column: span 12; display:flex; align-items:end; justify-content:flex-end">
-                            <div class="actions" style="padding:18px">
-                                <button class="btn sec" id="exportarCsv">Exportar CSV</button>
-                                <label class="btn warn" for="importCsv">Importar CSV</label>
-                                <input id="importCsv" type="file" accept=".csv" style="display:none" />
-                                <button class="btn danger" id="apagarTudo">Apagar tudo</button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-
-            <section class="card" style="margin-top:18px">
-                <div class="hd" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap">
-                    <span>Posições</span>
+        <section class="card" style="margin-top:18px">
+            <div class="hd" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap">
+                <span>Posições</span>
+                <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+                    <span class="muted" style="font-size:14px;">Filtrar por:</span>
                     <div class="tabs" id="tabs-container">
                         </div>
                 </div>
-                <div class="bd">
-                    <div class="hint" style="margin-bottom:10px">Dê duplo clique na coluna <b>Preço Atual</b> ou <b>Quantidade</b> para editar e simular cenários.</div>
-                    <div style="overflow:auto">
-                        <div class="column-controls">
-                            <label><input type="checkbox" checked data-col-index="2" /> Qtde</label>
-                            <label><input type="checkbox" checked data-col-index="3" /> Preço Atual</label>
-                            <label><input type="checkbox" checked data-col-index="4" /> Valor USD</label>
-                            <label><input type="checkbox" checked data-col-index="5" /> Valor BRL</label>
+                
+            </div>
+            <div class="bd" style="padding:0">
+                <div class="row">
+                    <div class="col" style="grid-column: span 12; display:flex; align-items:end; justify-content:flex-end">
+                        <div class="actions" style="padding:18px">
+                            <button class="btn sec" id="exportarCsv">Exportar CSV</button>
+                            <label class="btn warn" for="importCsv">Importar CSV</label>
+                            <input id="importCsv" type="file" accept=".csv" style="display:none" />
+                            <button class="btn danger" id="apagarTudo">Apagar tudo</button>
                         </div>
-                        <table id="tabela">
-                            <thead>
-                                <tr>
-                                    <th>Ticker</th>
-                                    <th>Tipo</th>
-                                    <th class="right">Qtde</th>
-                                    <th class="right">Preço Atual</th>
-                                    <th class="right">Valor USD</th>
-                                    <th class="right">Valor BRL</th>
-                                    <th class="right">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="corpoTabela">
-                                </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="7" class="muted">Os dados são salvos no seu banco de dados Firebase.</td>
-                                </tr>
-                            </tfoot>
-                        </table>
                     </div>
                 </div>
-            </section>
-        </main>
-        
-        <dialog id="modalForm" class="modal">
-            <div class="modal-content">
-                <div class="hd">Adicionar ativo</div>
-                <div class="bd">
-                    <form id="formAtivo">
-                        <div class="row">
-                            <div class="col" style="grid-column: span 4;">
-                                <label for="ticker">Ticker (B3)</label>
-                                <input id="ticker" name="ticker" placeholder="ex: PETR4, VALE3, MXRF11" required />
-                            </div>
-                            <div class="col" style="grid-column: span 3;">
-                                <label for="tipo">Tipo</label>
-                                <select id="tipo" name="tipo">
-                                    </select>
-                            </div>
-                            <div class="col" style="grid-column: span 2;">
-                                <label for="quantidade">Quantidade</label>
-                                <input id="quantidade" name="quantidade" type="number" min="1" step="any" placeholder="ex: 10,5" required />
-                            </div>
-                            <div class="col" style="grid-column: span 3;">
-                                <label for="preco">Preço (R$)</label>
-                                <input id="preco" name="preco" inputmode="decimal" placeholder="ex: 28,75" required />
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col" style="grid-column: span 3;">
-                                <label for="corretagem">Taxas (R$)</label>
-                                <input id="corretagem" name="corretagem" inputmode="decimal" placeholder="0,00" />
-                            </div>
-                            <div class="col" style="grid-column: span 3;">
-                                <label for="data">Data</label>
-                                <input id="data" name="data" type="date" />
-                            </div>
-                            <div class="col" style="grid-column: span 6; display:flex; align-items:flex-end; justify-content:flex-end">
-                                <div class="actions">
-                                    <button class="btn" type="button" id="closeModalBtn">Cancelar</button>
-                                    <button class="btn primary" type="submit">Adicionar</button>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="hint" style="margin-top:10px">Dica: use vírgula como separador decimal (ex: 10,50). O preço é o valor por cota/ação.</p>
-                    </form>
+                <div style="padding: 18px; overflow:auto">
+                    <div class="hint" style="margin-bottom:10px">Dê duplo clique na coluna <b>Preço Atual</b> ou <b>Quantidade</b> para editar e simular cenários.</div>
+                    <div class="column-controls">
+                        <label><input type="checkbox" checked data-col-index="2" /> Qtde</label>
+                        <label><input type="checkbox" checked data-col-index="3" /> Preço Atual</label>
+                        <label><input type="checkbox" checked data-col-index="4" /> Valor USD</label>
+                        <label><input type="checkbox" checked data-col-index="5" /> Valor BRL</label>
+                    </div>
+                    <table id="tabela">
+                        <thead>
+                            <tr>
+                                <th>Ticker</th>
+                                <th>Tipo</th>
+                                <th class="right">Qtde</th>
+                                <th class="right">Preço Atual</th>
+                                <th class="right">Valor USD</th>
+                                <th class="right">Valor BRL</th>
+                                <th class="right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabela">
+                            </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="7" class="muted">Os dados são salvos no seu banco de dados Firebase.</td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
             </div>
-        </dialog>
-
-        <dialog id="modalAddCategory" class="modal">
-            <div class="modal-content">
-                <div class="hd">Adicionar Categoria</div>
-                <div class="bd">
-                    <form id="formAddCategory">
-                        <div class="row">
-                            <div class="col" style="grid-column: span 12;">
-                                <label for="categoryName">Nome da Categoria</label>
-                                <input id="categoryName" name="categoryName" placeholder="ex: Fiagro" required />
-                            </div>
-                            <div class="col" style="grid-column: span 12;">
-                                <label for="categoryMeta">Meta (%)</label>
-                                <input id="categoryMeta" name="categoryMeta" type="number" min="0" max="100" step="1" placeholder="ex: 10" required />
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col" style="grid-column: span 12; display:flex; justify-content:flex-end">
-                                <div class="actions">
-                                    <button class="btn" type="button" id="closeAddCategoryModal">Cancelar</button>
-                                    <button class="btn primary" type="submit">Adicionar</button>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </dialog>
+        </section>
+    </main>
         
+    <dialog id="modalForm" class="modal">
+        <div class="modal-content">
+            <div class="hd">Adicionar ativo</div>
+            <div class="bd">
+                <form id="formAtivo">
+                    <div class="row">
+                        <div class="col" style="grid-column: span 4;">
+                            <label for="ticker">Ticker (B3)</label>
+                            <input id="ticker" name="ticker" placeholder="ex: PETR4, VALE3, MXRF11" required />
+                        </div>
+                        <div class="col" style="grid-column: span 3;">
+                            <label for="tipo">Tipo</label>
+                            <select id="tipo" name="tipo">
+                                </select>
+                        </div>
+                        <div class="col" style="grid-column: span 2;">
+                            <label for="quantidade">Quantidade</label>
+                            <input id="quantidade" name="quantidade" type="number" min="1" step="any" placeholder="ex: 10,5" required />
+                        </div>
+                        <div class="col" style="grid-column: span 3;">
+                            <label for="preco">Preço (R$)</label>
+                            <input id="preco" name="preco" inputmode="decimal" placeholder="ex: 28,75" required />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col" style="grid-column: span 3;">
+                            <label for="corretagem">Taxas (R$)</label>
+                            <input id="corretagem" name="corretagem" inputmode="decimal" placeholder="0,00" />
+                        </div>
+                        <div class="col" style="grid-column: span 3;">
+                            <label for="data">Data</label>
+                            <input id="data" name="data" type="date" />
+                        </div>
+                        <div class="col" style="grid-column: span 6; display:flex; align-items:flex-end; justify-content:flex-end">
+                            <div class="actions">
+                                <button class="btn" type="button" id="closeModalBtn">Cancelar</button>
+                                <button class="btn primary" type="submit">Adicionar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="hint" style="margin-top:10px">Dica: use vírgula como separador decimal (ex: 10,50). O preço é o valor por cota/ação.</p>
+                </form>
+            </div>
+        </div>
+    </dialog>
 
-        <div class="footer">Criado por isaque Pavão.</div>
+    <dialog id="modalAddCategory" class="modal">
+        <div class="modal-content">
+            <div class="hd">Adicionar Categoria</div>
+            <div class="bd">
+                <form id="formAddCategory">
+                    <div class="row">
+                        <div class="col" style="grid-column: span 12;">
+                            <label for="categoryName">Nome da Categoria</label>
+                            <input id="categoryName" name="categoryName" placeholder="ex: Fiagro" required />
+                        </div>
+                        <div class="col" style="grid-column: span 12;">
+                            <label for="categoryMeta">Meta (%)</label>
+                            <input id="categoryMeta" name="categoryMeta" type="number" min="0" max="100" step="1" placeholder="ex: 10" required />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col" style="grid-column: span 12; display:flex; justify-content:flex-end">
+                            <div class="actions">
+                                <button class="btn" type="button" id="closeAddCategoryModal">Cancelar</button>
+                                <button class="btn primary" type="submit">Adicionar</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </dialog>
+    
 
-        <script type="module" src="script.js"></script>
-    </body>
-    </html>
+    <div class="footer">Criado por isaque Pavão.</div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
