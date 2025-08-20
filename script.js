@@ -92,9 +92,10 @@ const colControls = document.querySelectorAll('.column-controls input[type="chec
 
 // Eventos
 document.getElementById('apagarTudo').addEventListener('click', () => {
-    if(confirm('Tem certeza que deseja apagar toda a carteira?')){
-        // Remove todos os dados da carteira e metas no Firebase
-        remove(ref(db, '/'));
+    if(confirm('Tem certeza que deseja apagar toda a carteira? Esta ação é irreversível.')){
+        // Remove explicitamente os dados de 'carteira' e 'metas' no Firebase
+        remove(carteiraRef);
+        remove(metasRef);
     }
 });
 
