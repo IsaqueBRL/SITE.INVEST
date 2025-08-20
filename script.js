@@ -288,7 +288,14 @@ async function renderRebalanceamento() {
             </tr>
         `;
     } else {
-        Object.keys(metas).forEach(cat => {
+        // Obter uma lista de categorias e ordená-las por patrimônio (do maior para o menor)
+        const sortedCategories = Object.keys(metas).sort((catA, catB) => {
+            const patrimonioA = categoriasComPatrimonio[catA] || 0;
+            const patrimonioB = categoriasComPatrimonio[catB] || 0;
+            return patrimonioB - patrimonioA;
+        });
+
+        sortedCategories.forEach(cat => {
             const meta = metas[cat] || 0;
             const patrimonio = categoriasComPatrimonio[cat] || 0;
             const atual = patrimonioTotal > 0 ? (patrimonio / patrimonioTotal) * 100 : 0;
