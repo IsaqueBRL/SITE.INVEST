@@ -84,8 +84,6 @@ const tabelaRebalanceamento = document.getElementById('tabelaRebalanceamento');
 const tabsContainer = document.getElementById('tabs-container');
 
 const patrimonioTotalDashboard = document.getElementById('patrimonioTotalDashboard');
-const totalAportarDashboard = document.getElementById('totalAportarDashboard');
-const foraMetaDashboard = document.getElementById('foraMetaDashboard');
 
 const modalAddCategory = document.getElementById('modalAddCategory');
 const openAddCategoryModal = document.getElementById('openAddCategoryModal');
@@ -268,6 +266,9 @@ async function renderRebalanceamento() {
         return sum + (isForeign ? valor * dolar : valor);
     }, 0);
 
+    // Renderizar métrica do dashboard
+    patrimonioTotalDashboard.textContent = toBRL(patrimonioTotal);
+
     const categoriasComPatrimonio = {};
     Object.keys(metas).forEach(cat => {
         const isForeign = ['Stoks', 'ETF Exterior', 'Reits'].includes(cat);
@@ -279,9 +280,6 @@ async function renderRebalanceamento() {
                                                             }, 0);
         categoriasComPatrimonio[cat] = patrimonioCategoria;
     });
-
-    let totalAportar = 0;
-    let foraMeta = 0;
 
     if (Object.keys(metas).length === 0) {
         corpoRebalanceamento.innerHTML = `
@@ -296,10 +294,7 @@ async function renderRebalanceamento() {
             const atual = patrimonioTotal > 0 ? (patrimonio / patrimonioTotal) * 100 : 0;
             let aportar = 0;
             if (atual < meta) {
-                aportar = (meta - atual) > 0 ? round2((meta * patrimonioTotal) / 100 - patrimonio) : 0;
-                totalAportar += aportar;
-            } else if (atual > meta) {
-                foraMeta += patrimonio - (meta * patrimonioTotal) / 100;
+                aportar = (meta * patrimonioTotal) / 100 - patrimonio;
             }
     
             const tr = document.createElement('tr');
@@ -317,11 +312,6 @@ async function renderRebalanceamento() {
             corpoRebalanceamento.appendChild(tr);
         });
     }
-
-    // Renderizar métricas do dashboard
-    patrimonioTotalDashboard.textContent = toBRL(patrimonioTotal);
-    totalAportarDashboard.textContent = toBRL(totalAportar);
-    foraMetaDashboard.textContent = toBRL(foraMeta);
 }
 
 
