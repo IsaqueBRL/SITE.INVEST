@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Carteira B3 – Simples (HTML + LocalStorage)</title>
+    <title>Carteira B3 – Firebase</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Adiciona os SDKs do Firebase -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
 </head>
 <body>
     <header>
@@ -13,8 +16,8 @@
                 <path d="M3 3v18h18" stroke="#93c5fd" stroke-width="1.6"/>
                 <path d="M7 15l3-3 3 2 4-6" stroke="#86efac" stroke-width="1.6"/>
             </svg>
-            <h1>Carteira B3 – Estática</h1>
-            <span class="badge">HTML + JS + LocalStorage</span>
+            <h1>Carteira B3 – Firebase</h1>
+            <span class="badge">HTML + JS + Firebase</span>
         </div>
         <div class="header-actions">
             <div class="patrimonio-total">
@@ -26,6 +29,7 @@
     </header>
 
     <main class="wrap" style="padding: 18px 0 34px">
+        <!-- Rebalanceamento Table -->
         <section class="card">
             <div class="hd" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Rebalanceamento de Carteira</span>
@@ -46,7 +50,8 @@
                             </tr>
                         </thead>
                         <tbody id="corpoTabelaRebalanceamento">
-                            </tbody>
+                            <!-- Linhas geradas por JS -->
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -69,11 +74,13 @@
             </section>
         </div>
 
+        <!-- TABLE CARD -->
         <section class="card" style="margin-top:18px">
             <div class="hd" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap">
                 <span>Posições</span>
                 <div class="tabs" id="tabs-container">
-                    </div>
+                    <!-- Abas geradas via JS -->
+                </div>
             </div>
             <div class="bd">
                 <div class="hint" style="margin-bottom:10px">Dê duplo clique na coluna <b>Preço Atual</b> ou <b>Quantidade</b> para editar e simular cenários.</div>
@@ -97,10 +104,11 @@
                             </tr>
                         </thead>
                         <tbody id="corpoTabela">
-                            </tbody>
+                            <!-- linhas via JS -->
+                        </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="7" class="muted">Armazenamento local do navegador (LocalStorage). Nenhum dado sai do seu dispositivo.</td>
+                                <td colspan="7" class="muted">Os dados são salvos no seu banco de dados Firebase.</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -109,6 +117,7 @@
         </section>
     </main>
     
+    <!-- Modal Adicionar Ativo -->
     <dialog id="modalForm" class="modal">
         <div class="modal-content">
             <div class="hd">Adicionar ativo</div>
@@ -122,7 +131,8 @@
                         <div class="col" style="grid-column: span 3;">
                             <label for="tipo">Tipo</label>
                             <select id="tipo" name="tipo">
-                                </select>
+                                <!-- Opções geradas por JS -->
+                            </select>
                         </div>
                         <div class="col" style="grid-column: span 2;">
                             <label for="quantidade">Quantidade</label>
@@ -155,6 +165,7 @@
         </div>
     </dialog>
 
+    <!-- Modal Adicionar Categoria -->
     <dialog id="modalAddCategory" class="modal">
         <div class="modal-content">
             <div class="hd">Adicionar Categoria</div>
@@ -186,6 +197,6 @@
 
     <div class="footer">Criado por isaque Pavão.</div>
 
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
