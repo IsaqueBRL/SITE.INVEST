@@ -80,6 +80,7 @@ const tipoSelect = document.getElementById('tipo');
 const corpo = document.getElementById('corpoTabela');
 const tabelaPosicoes = document.getElementById('tabela');
 const corpoRebalanceamento = document.getElementById('corpoTabelaRebalanceamento');
+const tabelaRebalanceamento = document.getElementById('tabelaRebalanceamento');
 const tabsContainer = document.getElementById('tabs-container');
 const patrimonioTotalNacional = document.getElementById('patrimonioTotalNacional');
 
@@ -347,6 +348,7 @@ function updateColVisibility() {
 }
 
 function render() {
+    console.log("Rendering page...");
     renderTabs();
     renderSelectOptions();
     renderPosicoes();
@@ -357,6 +359,7 @@ function render() {
 // ===== Funções de Edição e Exclusão =====
 
 function hookEvents(){
+    console.log("Attaching event listeners...");
     // Excluir Categoria
     document.querySelectorAll('[data-del-cat]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -376,6 +379,7 @@ function hookEvents(){
     // Botão para editar Meta
     document.querySelectorAll('[data-edit-cat]').forEach(btn => {
         btn.addEventListener('click', () => {
+            console.log("Edit button clicked for category:", btn.dataset.editCat);
             const category = btn.dataset.editCat;
             const td = btn.closest('tr').querySelector('td:nth-child(2)');
             makeEditableMeta(td, category);
@@ -446,24 +450,31 @@ function makeEditable(td, key){
 }
 
 function makeEditableMeta(td, category){
+    console.log("Making meta editable for:", category);
     const old = metas[category] || 0;
-
+    
+    // Garante que o input seja criado corretamente
     td.innerHTML = `<input id="_edit_meta" type="number" min="0" max="100" step="1" style="width:60px; background:#0b1020; color:var(--text); padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,.2)" placeholder="%" value="${old}">`;
     const input = td.querySelector('#_edit_meta');
-    input.focus();
-
-    function commit(){
-        const v = Number(input.value);
-        if (!isNaN(v) && v >= 0 && v <= 100) {
-            // Atualiza a meta no Firebase
-            set(ref(db, `metas/${category}`), v);
+    
+    if (input) {
+        input.focus();
+        function commit(){
+            const v = Number(input.value);
+            console.log("Committing value:", v);
+            if (!isNaN(v) && v >= 0 && v <= 100) {
+                // Atualiza a meta no Firebase
+                set(ref(db, `metas/${category}`), v);
+            }
         }
+        input.addEventListener('blur', commit);
+        input.addEventListener('keydown', (ev) => {
+            if(ev.key === 'Enter') commit();
+            if(ev.key === 'Escape') render();
+        });
+    } else {
+        console.error("Could not find the input field to make editable.");
     }
-    input.addEventListener('blur', commit);
-    input.addEventListener('keydown', (ev) => {
-        if(ev.key === 'Enter') commit();
-        if(ev.key === 'Escape') render();
-    });
 }
 
 // ===== CSV Export / Import =====
