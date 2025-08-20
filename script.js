@@ -242,12 +242,7 @@ async function renderPosicoes(){
       <td class="right editable" data-id="${pos.id}">${isForeign ? toUSD(pos.precoAtual) : toBRL(pos.precoAtual)}</td>
       <td class="right">${isForeign ? toUSD(valorUSD) : '<span class="muted">—</span>'}</td>
       <td class="right">${isForeign ? toBRL(valorBRL) : '<span class="muted">—</span>'}</td>
-      <td class="right">
-        <div class="actions" style="justify-content:flex-end">
-          <button class="btn sec" data-edit="${pos.id}">Editar</button>
-          <button class="btn danger" data-del="${pos.id}">Excluir</button>
-        </div>
-      </td>
+      <td class="right"></td>
     `;
     corpo.appendChild(tr);
   });
@@ -360,30 +355,6 @@ function hookEvents(){
         activeTab = 'all';
         render();
       }
-    });
-  });
-
-  // Editar registro (carrega no form)
-  document.querySelectorAll('[data-edit]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const pos = carteira.find(p => p.id === btn.dataset.edit);
-      if(!pos) return;
-      form.ticker.value = pos.ticker;
-      form.tipo.value = pos.tipo;
-      form.quantidade.value = pos.quantidade;
-      form.preco.value = pos.precoMedio.toString().replace('.', ',');
-      form.corretagem.value = '0,00';
-      modalForm.showModal();
-    });
-  });
-
-  // Excluir ativo
-  document.querySelectorAll('[data-del]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if(!confirm('Excluir esta posição?')) return;
-      carteira = carteira.filter(p => p.id !== btn.dataset.del);
-      save(CARTEIRA_KEY, carteira);
-      render();
     });
   });
 
