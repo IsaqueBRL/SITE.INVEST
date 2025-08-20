@@ -429,7 +429,7 @@ function makeEditable(td, key){
   if(!pos) return;
   const old = (pos[key] || 0).toString().replace('.', ',');
 
-  td.innerHTML = `<input id="_edit" style="width:110px; background:#0b1020; color:var(--text); padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,.2)" placeholder="0,00" value="${old}">`;
+  td.innerHTML = `<input id="_edit" type="number" step="any" style="width:110px; background:#0b1020; color:var(--text); padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,.2)" placeholder="0,00" value="${old}">`;
   const input = td.querySelector('#_edit');
   input.focus();
 
