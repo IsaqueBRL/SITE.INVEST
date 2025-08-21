@@ -20,10 +20,12 @@ const db = getDatabase(app);
 // Referências para os nós do banco de dados
 const carteiraRef = ref(db, 'carteira');
 const metasRef = ref(db, 'metas');
+const setoresSegmentosRef = ref(db, 'setores_segmentos');
 
 // Variáveis de estado
 let carteira = {};
 let metas = {};
+let setoresSegmentos = {};
 
 // Variáveis de estado para a ordenação da tabela
 let currentSortKey = 'patrimonio';
@@ -40,6 +42,23 @@ function toBRL(n) { return fmtBRL.format(n || 0); }
 function toPct(n) { return (n || 0).toFixed(2) + '%'; }
 function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
 
+// Chave da API para buscar a cotação
+const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
+
+// Função para buscar preço atual da ação na API
+async function buscarPreco(ticker) {
+    const url = `https://brapi.dev/api/quote/${ticker}?token=${API_KEY}`;
+    try {
+        const resp = await fetch(url);
+        const json = await resp.json();
+        const price = json.results?.[0]?.regularMarketPrice;
+        return typeof price === 'number' ? price : null;
+    } catch (err) {
+        console.error("Erro ao buscar preço:", err);
+        return null;
+    }
+}
+
 // ===== DOM Elements =====
 const formAtivo = document.getElementById('formAtivo');
 const modalForm = document.getElementById('modalForm');
@@ -48,6 +67,8 @@ const closeModalBtn = document.getElementById('closeModalBtn');
 const tickerInput = document.getElementById('ticker');
 const precoInput = document.getElementById('preco');
 const tipoSelect = document.getElementById('tipo');
+const setorSelect = document.getElementById('setorSelect');
+const segmentoSelect = document.getElementById('segmentoSelect');
 
 const corpoTabela = document.getElementById('corpoTabelaRebalanceamento');
 const patrimonioTotalDashboard = document.getElementById('patrimonioTotalDashboard');
@@ -63,41 +84,40 @@ const closeAtivosModal = document.getElementById('closeAtivosModal');
 const ativosModalTitle = document.getElementById('ativosModalTitle');
 const tabelaAtivosModal = document.getElementById('tabelaAtivosModal');
 
-// Chave da API para buscar a cotação
-const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
-
-// Função para buscar dados do ativo na API
-async function buscarDadosAtivo(ticker) {
-    const url = `https://brapi.dev/api/quote/${ticker}?token=${API_KEY}`;
-    try {
-        const resp = await fetch(url);
-        const json = await resp.json();
-        return json.results?.[0] || null;
-    } catch (err) {
-        console.error("Erro ao buscar dados do ativo:", err);
-        return null;
-    }
-}
+const modalSetores = document.getElementById('modalSetores');
+const openSetoresModalBtn = document.getElementById('openSetoresModalBtn');
+const closeSetoresModalBtn = document.getElementById('closeSetoresModalBtn');
+const formSetores = document.getElementById('formSetores');
+const setorInput = document.getElementById('setorInput');
+const segmentoInput = document.getElementById('segmentoInput');
+const setorList = document.getElementById('setorList');
+const segmentoList = document.getElementById('segmentoList');
+const currentCategoryInput = document.getElementById('currentCategory');
 
 // ===== Eventos dos Botões e Modais =====
 openModalBtn.addEventListener('click', () => {
     modalForm.showModal();
     formAtivo.reset();
 });
-
 closeModalBtn.addEventListener('click', () => modalForm.close());
 
 openAddCategoryModal.addEventListener('click', () => {
     modalAddCategory.showModal();
     formAddCategory.reset();
 });
-
 closeAddCategoryModal.addEventListener('click', () => modalAddCategory.close());
 
 closeAtivosModal.addEventListener('click', () => modalAtivos.close());
 
+openSetoresModalBtn.addEventListener('click', () => {
+    modalSetores.showModal();
+    const currentCategory = currentCategoryInput.value;
+    renderSetoresSegmentosList(currentCategory);
+});
+closeSetoresModalBtn.addEventListener('click', () => modalSetores.close());
+
 // Fechar modais clicando fora
-[modalForm, modalAddCategory, modalAtivos].forEach(modal => {
+[modalForm, modalAddCategory, modalAtivos, modalSetores].forEach(modal => {
     modal.addEventListener('click', e => {
         const dialogDimensions = modal.getBoundingClientRect();
         if (e.clientX < dialogDimensions.left || e.clientX > dialogDimensions.right || e.clientY < dialogDimensions.top || e.clientY > dialogDimensions.bottom) {
@@ -109,22 +129,28 @@ closeAtivosModal.addEventListener('click', () => modalAtivos.close());
 // Listener para preencher o preço ao digitar no campo do Ticker
 tickerInput.addEventListener('input', async () => {
     const ticker = tickerInput.value.trim().toUpperCase();
-    if (ticker.length >= 4) { // Previne requisições desnecessárias
-        const dados = await buscarDadosAtivo(ticker);
-        if (dados?.regularMarketPrice) {
-            precoInput.value = dados.regularMarketPrice.toFixed(2).replace('.', ',');
+    if (ticker.length >= 4) {
+        const preco = await buscarPreco(ticker);
+        if (preco) {
+            precoInput.value = preco.toFixed(2).replace('.', ',');
         } else {
             precoInput.value = '';
         }
     }
 });
 
+// Listener para preencher os selects de setor/segmento ao mudar a categoria
+tipoSelect.addEventListener('change', () => {
+    renderSetorSegmentoSelects(tipoSelect.value);
+});
 
 // ===== Lógica de Formulários =====
 formAtivo.addEventListener('submit', async (e) => {
     e.preventDefault();
     const ticker = String(formAtivo.ticker.value).trim().toUpperCase();
     const tipo = formAtivo.tipo.value;
+    const setor = setorSelect.value;
+    const segmento = segmentoSelect.value;
     const quantidade = Number(formAtivo.quantidade.value);
     const preco = parseBRL(formAtivo.preco.value);
     const corretagem = parseBRL(formAtivo.corretagem.value);
@@ -134,11 +160,7 @@ formAtivo.addEventListener('submit', async (e) => {
     const investido = round2(quantidade * preco + corretagem);
     const precoMedio = round2(investido / quantidade);
 
-    const dadosAtivo = await buscarDadosAtivo(ticker);
-    const precoAtual = dadosAtivo?.regularMarketPrice || 0;
-    const setor = dadosAtivo?.sector || '';
-    const segmento = dadosAtivo?.subSector || '';
-
+    const precoAtual = await buscarPreco(ticker);
 
     const existenteKey = Object.keys(carteira).find(key => carteira[key].ticker === ticker && carteira[key].tipo === tipo);
 
@@ -153,15 +175,15 @@ formAtivo.addEventListener('submit', async (e) => {
             quantidade: totalQtde,
             investido: round2(totalInv),
             precoMedio: novoPrecoMedio,
-            precoAtual: precoAtual || existente.precoAtual, // Mantém o último preço atual se a busca falhar
-            setor: setor || existente.setor,
-            segmento: segmento || existente.segmento,
+            precoAtual: precoAtual || existente.precoAtual,
+            setor,
+            segmento
         });
     } else {
         push(carteiraRef, {
             ticker, tipo, quantidade,
             investido, precoMedio,
-            precoAtual,
+            precoAtual: precoAtual || 0,
             setor,
             segmento
         });
@@ -181,31 +203,63 @@ formAddCategory.addEventListener('submit', (e) => {
     }
 });
 
-// Função para atualizar dados de setor/segmento que estiverem faltando
-async function atualizarDadosFaltantes() {
-    const promises = Object.entries(carteira).map(async ([key, ativo]) => {
-        if (!ativo.setor || !ativo.segmento) {
-            console.log(`Buscando setor/segmento para ${ativo.ticker}...`);
-            const dados = await buscarDadosAtivo(ativo.ticker);
-            if (dados) {
-                update(ref(db, `carteira/${key}`), {
-                    setor: dados.sector,
-                    segmento: dados.subSector
-                });
-            }
-        }
-    });
-    await Promise.all(promises);
-}
+formSetores.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const category = currentCategoryInput.value;
+    const setor = setorInput.value.trim();
+    const segmento = segmentoInput.value.trim();
+    
+    if (!setor && !segmento) return;
+
+    const currentData = setoresSegmentos[category] || { setores: [], segmentos: [] };
+
+    if (setor && !currentData.setores.includes(setor)) {
+        currentData.setores.push(setor);
+    }
+    if (segmento && !currentData.segmentos.includes(segmento)) {
+        currentData.segmentos.push(segmento);
+    }
+
+    set(ref(db, `setores_segmentos/${category}`), currentData);
+    formSetores.reset();
+});
 
 // ===== Funções de Lógica e Renderização =====
 function renderSelectOptions() {
     tipoSelect.innerHTML = '';
-    Object.keys(metas).forEach(cat => {
+    const categorias = Object.keys(metas);
+    if(categorias.length === 0) {
+        tipoSelect.innerHTML = `<option value="">Adicione uma categoria</option>`;
+    } else {
+        categorias.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            tipoSelect.appendChild(option);
+        });
+        // Seleciona a primeira categoria e renderiza os selects de setor/segmento
+        tipoSelect.value = categorias[0];
+        renderSetorSegmentoSelects(categorias[0]);
+    }
+}
+
+function renderSetorSegmentoSelects(category) {
+    const data = setoresSegmentos[category] || { setores: [], segmentos: [] };
+    
+    setorSelect.innerHTML = '<option value="">Nenhum</option>';
+    data.setores.forEach(setor => {
         const option = document.createElement('option');
-        option.value = cat;
-        option.textContent = cat;
-        tipoSelect.appendChild(option);
+        option.value = setor;
+        option.textContent = setor;
+        setorSelect.appendChild(option);
+    });
+
+    segmentoSelect.innerHTML = '<option value="">Nenhum</option>';
+    data.segmentos.forEach(segmento => {
+        const option = document.createElement('option');
+        option.value = segmento;
+        option.textContent = segmento;
+        segmentoSelect.appendChild(option);
     });
 }
 
@@ -213,6 +267,7 @@ function renderAtivosModal(category) {
     const ativos = Object.entries(carteira).filter(([key, ativo]) => ativo.tipo === category);
     
     ativosModalTitle.textContent = `Ativos em ${category}`;
+    currentCategoryInput.value = category;
     
     const sortedAtivos = ativos.sort(([, a], [, b]) => {
         const valorA = (a.precoAtual || a.precoMedio) * a.quantidade;
@@ -243,6 +298,24 @@ function renderAtivosModal(category) {
 
     tabelaAtivosModal.querySelector('tbody').innerHTML = ativos.length > 0 ? ativoRows : `<tr><td colspan="7" style="text-align:center; padding: 20px;">Nenhum ativo nesta categoria.</td></tr>`;
     modalAtivos.showModal();
+}
+
+function renderSetoresSegmentosList(category) {
+    const data = setoresSegmentos[category] || { setores: [], segmentos: [] };
+    
+    setorList.innerHTML = '';
+    data.setores.forEach(setor => {
+        const li = document.createElement('li');
+        li.innerHTML = `${setor} <button data-del-setor="${setor}">X</button>`;
+        setorList.appendChild(li);
+    });
+
+    segmentoList.innerHTML = '';
+    data.segmentos.forEach(segmento => {
+        const li = document.createElement('li');
+        li.innerHTML = `${segmento} <button data-del-segmento="${segmento}">X</button>`;
+        segmentoList.appendChild(li);
+    });
 }
 
 function calcularValores() {
@@ -278,7 +351,7 @@ function calcularValores() {
             patrimonio,
             atual,
             aportar,
-            categoria: cat // Adiciona a categoria para a ordenação
+            categoria: cat
         };
     });
     return { categoriasComValores, patrimonioTotal, totalMeta, totalAtual };
@@ -309,7 +382,6 @@ function renderTabela() {
         let valA = categoriasComValores[catA]?.[currentSortKey] || 0;
         let valB = categoriasComValores[catB]?.[currentSortKey] || 0;
 
-        // Caso especial para a categoria, que é uma string
         if (currentSortKey === 'categoria') {
             valA = catA;
             valB = catB;
@@ -341,7 +413,6 @@ function renderTabela() {
         corpoTabela.appendChild(tr);
     }
     
-    // Adiciona a linha de total
     const totalRow = document.createElement('tr');
     totalRow.classList.add('total-row');
     totalRow.innerHTML = `
@@ -384,6 +455,7 @@ document.addEventListener('click', (e) => {
         const category = e.target.dataset.delCat;
         if(confirm(`Tem certeza que deseja excluir a categoria "${category}" e todos os ativos dela?`)) {
             remove(ref(db, `metas/${category}`));
+            remove(ref(db, `setores_segmentos/${category}`));
             Object.keys(carteira).filter(key => carteira[key].tipo === category).forEach(key => {
                 remove(ref(db, `carteira/${key}`));
             });
@@ -403,6 +475,24 @@ document.addEventListener('click', (e) => {
         if (confirm("Tem certeza que deseja excluir este ativo?")) {
             remove(ref(db, `carteira/${ativoKey}`));
         }
+    }
+
+    // Lógica para deletar setor
+    if (e.target.matches('[data-del-setor]')) {
+        const setor = e.target.dataset.delSetor;
+        const category = currentCategoryInput.value;
+        const currentData = setoresSegmentos[category] || { setores: [], segmentos: [] };
+        const newSetores = currentData.setores.filter(s => s !== setor);
+        set(ref(db, `setores_segmentos/${category}/setores`), newSetores);
+    }
+    
+    // Lógica para deletar segmento
+    if (e.target.matches('[data-del-segmento]')) {
+        const segmento = e.target.dataset.delSegmento;
+        const category = currentCategoryInput.value;
+        const currentData = setoresSegmentos[category] || { setores: [], segmentos: [] };
+        const newSegmentos = currentData.segmentos.filter(s => s !== segmento);
+        set(ref(db, `setores_segmentos/${category}/segmentos`), newSegmentos);
     }
 });
 
@@ -431,7 +521,6 @@ sortableHeaders.forEach(header => {
 onValue(carteiraRef, (snapshot) => {
     const data = snapshot.val() || {};
     carteira = data;
-    atualizarDadosFaltantes(); // Busca os dados que estiverem faltando
     renderTabela();
 });
 
@@ -440,4 +529,17 @@ onValue(metasRef, (snapshot) => {
     metas = data;
     renderTabela();
     renderSelectOptions();
+});
+
+onValue(setoresSegmentosRef, (snapshot) => {
+    const data = snapshot.val() || {};
+    setoresSegmentos = data;
+    const currentCategory = currentCategoryInput.value;
+    if (currentCategory) {
+        renderSetoresSegmentosList(currentCategory);
+    }
+    // Garante que o select de setores/segmentos seja atualizado ao adicionar um novo
+    if (tipoSelect.value) {
+        renderSetorSegmentoSelects(tipoSelect.value);
+    }
 });
