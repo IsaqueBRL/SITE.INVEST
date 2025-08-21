@@ -46,6 +46,9 @@ function toPct(n) { return (n || 0).toFixed(2) + '%'; }
 function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
 
 // Chave da API para buscar a cotação
+// IMPORTANTE: A chave genérica abaixo pode não funcionar.
+// Você precisará obter uma chave da API válida no site brapi.dev
+// e substituí-la aqui.
 const API_KEY = "jaAoNZhBBLxF7FAUh6QDVp";
 
 // Função para buscar preço atual da ação na API
@@ -54,10 +57,12 @@ async function buscarPreco(ticker) {
     try {
         const resp = await fetch(url);
         const json = await resp.json();
+        // Loga a resposta da API para depuração
+        console.log("Resposta da API para o ticker:", ticker, json);
         const price = json.results?.[0]?.regularMarketPrice;
         return typeof price === 'number' ? price : null;
     } catch (err) {
-        console.error("Erro ao buscar preço:", err);
+        console.error("Erro ao buscar preço para o ticker:", ticker, err);
         return null;
     }
 }
