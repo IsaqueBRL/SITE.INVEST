@@ -4,7 +4,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 
 // ===== Configuração do Firebase =====
 const firebaseConfig = {
-    apiKey: "AIzaSyBNBf_DachNBO2RmQGmfOPg3PEuig5cVRw",
+    apiKey: "AIzaSyBNBf_DachNBO2RmGmfOPg3PEuig5cVRw",
     authDomain: "banco-de-dados---site-invest.firebaseapp.com",
     databaseURL: "https://banco-de-dados---site-invest-default-rtdb.firebaseio.com",
     projectId: "banco-de-dados---site-invest",
@@ -89,8 +89,6 @@ const totalInvestidoModal = document.getElementById('totalInvestidoModal');
 const patrimonioTitleModal = document.getElementById('patrimonioTitleModal');
 const tabelaAtivosModal = document.getElementById('tabelaAtivosModal');
 const openSetoresModalBtn = document.getElementById('openSetoresModalBtn');
-const toggleAtivosColumnsBtn = document.getElementById('toggleAtivosColumnsBtn');
-const ativosColumnsDropdown = document.getElementById('ativosColumnsDropdown');
 
 const modalSetores = document.getElementById('modalSetores');
 const closeSetoresModalBtn = document.getElementById('closeSetoresModalBtn');
@@ -107,90 +105,6 @@ const totalInvestidoFilteredModal = document.getElementById('totalInvestidoFilte
 const patrimonioTitleFilteredModal = document.getElementById('patrimonioTitleFilteredModal');
 const closeFilteredModalBtn = document.getElementById('closeFilteredModalBtn');
 const tabelaFilteredAssetsModal = document.getElementById('tabelaFilteredAssetsModal');
-const toggleFilteredColumnsBtn = document.getElementById('toggleFilteredColumnsBtn');
-const filteredColumnsDropdown = document.getElementById('filteredColumnsDropdown');
-
-// Variáveis para as colunas visíveis
-const COLUMNS_KEY_ATIVOS = 'visibleColumnsAtivos';
-const COLUMNS_KEY_FILTERED = 'visibleColumnsFiltered';
-
-function getVisibleColumns(key) {
-    const stored = localStorage.getItem(key);
-    if (stored) {
-        return JSON.parse(stored);
-    }
-    // Retorna um objeto padrão com todas as colunas visíveis por padrão
-    if (key === COLUMNS_KEY_ATIVOS) {
-        return {
-            'ticker': true,
-            'quantidade': true,
-            'precoAtual': true,
-            'setor': true,
-            'segmento': true,
-            'totalInvestido': true
-        };
-    } else if (key === COLUMNS_KEY_FILTERED) {
-        return {
-            'ticker': true,
-            'quantidade': true,
-            'categoria': true,
-            'precoAtual': true,
-            'setor': true,
-            'segmento': true,
-            'totalInvestido': true
-        };
-    }
-}
-
-function setVisibleColumns(key, columns) {
-    localStorage.setItem(key, JSON.stringify(columns));
-}
-
-// Função para aplicar a visibilidade das colunas
-function applyColumnVisibility(tableId, dropdownId, columnsKey) {
-    const table = document.getElementById(tableId);
-    if (!table) return;
-
-    const visibleColumns = getVisibleColumns(columnsKey);
-    const dropdown = document.getElementById(dropdownId);
-    
-    // Atualiza os checkboxes do dropdown
-    if (dropdown) {
-        Object.keys(visibleColumns).forEach(columnId => {
-            const checkbox = dropdown.querySelector(`input[data-column-id="${columnId}"]`);
-            if (checkbox) {
-                checkbox.checked = visibleColumns[columnId];
-            }
-        });
-    }
-
-    // Aplica a visibilidade à tabela
-    const ths = table.querySelectorAll('th');
-    const tds = table.querySelectorAll('td');
-
-    ths.forEach(th => {
-        const columnId = th.dataset.columnId;
-        if (columnId) {
-            if (visibleColumns[columnId]) {
-                th.classList.remove('hidden-column');
-            } else {
-                th.classList.add('hidden-column');
-            }
-        }
-    });
-
-    // Aplica visibilidade às células de dados
-    tds.forEach(td => {
-        const columnId = td.dataset.columnId;
-        if (columnId) {
-            if (visibleColumns[columnId]) {
-                td.classList.remove('hidden-column');
-            } else {
-                td.classList.add('hidden-column');
-            }
-        }
-    });
-}
 
 // ===== Eventos dos Botões e Modais =====
 openModalBtn.addEventListener('click', () => {
@@ -235,48 +149,6 @@ tickerInput.addEventListener('input', async () => {
 // Listener para preencher os selects de setor/segmento ao mudar a categoria
 tipoSelect.addEventListener('change', () => {
     renderSetorSegmentoSelects(tipoSelect.value);
-});
-
-// Lógica para toggle de colunas
-toggleAtivosColumnsBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    ativosColumnsDropdown.classList.toggle('show');
-});
-
-toggleFilteredColumnsBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    filteredColumnsDropdown.classList.toggle('show');
-});
-
-// Oculta os dropdowns quando clica fora
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.dropdown-wrapper')) {
-        ativosColumnsDropdown.classList.remove('show');
-        filteredColumnsDropdown.classList.remove('show');
-    }
-});
-
-// Lógica de manipulação dos checkboxes
-ativosColumnsDropdown.addEventListener('change', (e) => {
-    const checkbox = e.target;
-    if (checkbox.type === 'checkbox') {
-        const columnId = checkbox.dataset.columnId;
-        const visibleColumns = getVisibleColumns(COLUMNS_KEY_ATIVOS);
-        visibleColumns[columnId] = checkbox.checked;
-        setVisibleColumns(COLUMNS_KEY_ATIVOS, visibleColumns);
-        applyColumnVisibility('tabelaAtivosModal', 'ativosColumnsDropdown', COLUMNS_KEY_ATIVOS);
-    }
-});
-
-filteredColumnsDropdown.addEventListener('change', (e) => {
-    const checkbox = e.target;
-    if (checkbox.type === 'checkbox') {
-        const columnId = checkbox.dataset.columnId;
-        const visibleColumns = getVisibleColumns(COLUMNS_KEY_FILTERED);
-        visibleColumns[columnId] = checkbox.checked;
-        setVisibleColumns(COLUMNS_KEY_FILTERED, visibleColumns);
-        applyColumnVisibility('tabelaFilteredAssetsModal', 'filteredColumnsDropdown', COLUMNS_KEY_FILTERED);
-    }
 });
 
 // ===== Lógica de Formulários =====
@@ -378,20 +250,19 @@ function renderFilteredAssetsModal(filterType, filterValue) {
         
         return `
             <tr>
-                <td data-column-id="ticker">${ativo.ticker}</td>
-                <td data-column-id="quantidade">${fmtNum.format(ativo.quantidade)}</td>
-                <td data-column-id="categoria">${ativo.tipo}</td>
-                <td data-column-id="precoAtual">${toBRL(ativo.precoAtual || ativo.precoMedio)}</td>
-                <td data-column-id="setor"><span class="clickable-tag" data-filter-setor="${ativo.setor}">${ativo.setor || '-'}</span></td>
-                <td data-column-id="segmento"><span class="clickable-tag" data-filter-segmento="${ativo.segmento}">${ativo.segmento || '-'}</span></td>
-                <td data-column-id="totalInvestido">${toBRL(valorAtual)}</td>
+                <td>${ativo.ticker}</td>
+                <td>${fmtNum.format(ativo.quantidade)}</td>
+                <td>${ativo.tipo}</td>
+                <td>${toBRL(ativo.precoAtual || ativo.precoMedio)}</td>
+                <td><span class="clickable-tag" data-filter-setor="${ativo.setor}">${ativo.setor || '-'}</span></td>
+                <td><span class="clickable-tag" data-filter-segmento="${ativo.segmento}">${ativo.segmento || '-'}</span></td>
+                <td>${toBRL(valorAtual)}</td>
             </tr>
         `;
     }).join('');
 
     tabelaFilteredAssetsModal.querySelector('tbody').innerHTML = ativosFiltrados.length > 0 ? ativoRows : `<tr><td colspan="7" style="text-align:center; padding: 20px;">Nenhum ativo encontrado com este filtro.</td></tr>`;
     modalFilteredAssets.showModal();
-    applyColumnVisibility('tabelaFilteredAssetsModal', 'filteredColumnsDropdown', COLUMNS_KEY_FILTERED);
 }
 
 // ===== Funções de Lógica e Renderização =====
@@ -412,7 +283,7 @@ function renderSelectOptions() {
     }
 }
 
-// Lógica para renderizar os selects de acordo com a categoria
+// Lógica para renderizar os selects de setor/segmento ao mudar a categoria
 function renderSetorSegmentoSelects(category) {
     setorSelect.innerHTML = '<option value="">Nenhum</option>';
     segmentoSelect.innerHTML = '<option value="">Nenhum</option>';
@@ -456,13 +327,13 @@ function renderAtivosModal(category) {
         
         return `
             <tr>
-                <td data-column-id="ticker">${ativo.ticker}</td>
-                <td data-column-id="quantidade">${fmtNum.format(ativo.quantidade)}</td>
-                <td data-column-id="precoAtual">${toBRL(ativo.precoAtual || ativo.precoMedio)}</td>
-                <td data-column-id="setor" data-edit-setor="${key}"><span class="editable-field">${ativo.setor || '-'}</span></td>
-                <td data-column-id="segmento" data-edit-segmento="${key}"><span class="editable-field">${ativo.segmento || '-'}</span></td>
-                <td data-column-id="totalInvestido">${toBRL(valorAtual)}</td>
-                <td data-column-id="acoes" class="right">
+                <td>${ativo.ticker}</td>
+                <td>${fmtNum.format(ativo.quantidade)}</td>
+                <td>${toBRL(ativo.precoAtual || ativo.precoMedio)}</td>
+                <td data-edit-setor="${key}"><span class="editable-field">${ativo.setor || '-'}</span></td>
+                <td data-edit-segmento="${key}"><span class="editable-field">${ativo.segmento || '-'}</span></td>
+                <td>${toBRL(valorAtual)}</td>
+                <td class="right">
                     <button class="btn danger btn-sm" data-del-ativo="${key}">X</button>
                 </td>
             </tr>
@@ -471,7 +342,6 @@ function renderAtivosModal(category) {
 
     tabelaAtivosModal.querySelector('tbody').innerHTML = ativos.length > 0 ? ativoRows : `<tr><td colspan="7" style="text-align:center; padding: 20px;">Nenhum ativo nesta categoria.</td></tr>`;
     modalAtivos.showModal();
-    applyColumnVisibility('tabelaAtivosModal', 'ativosColumnsDropdown', COLUMNS_KEY_ATIVOS);
 }
 
 // Lógica para renderizar a lista de setores/segmentos da categoria
