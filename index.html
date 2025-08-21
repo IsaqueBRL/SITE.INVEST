@@ -147,7 +147,10 @@
         <div class="modal-content">
             <div class="hd" style="display: flex; justify-content: space-between; align-items: center;">
                 <span id="ativosModalTitle">Ativos</span>
-                <span id="totalInvestidoModal"></span>
+                <div class="modal-title-group">
+                    <span id="patrimonioTitleModal" class="modal-total-title"></span>
+                    <span id="totalInvestidoModal" class="modal-total-value"></span>
+                </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <button class="btn sec btn-sm" id="openSetoresModalBtn">Gerenciar</button>
                     <button class="btn danger btn-sm" id="closeAtivosModal">Fechar</button>
@@ -216,7 +219,10 @@
         <div class="modal-content">
             <div class="hd" style="display: flex; justify-content: space-between; align-items: center;">
                 <span id="filteredModalTitle"></span>
-                <span id="totalInvestidoFilteredModal"></span>
+                <div class="modal-title-group">
+                    <span id="patrimonioTitleFilteredModal" class="modal-total-title"></span>
+                    <span id="totalInvestidoFilteredModal" class="modal-total-value"></span>
+                </div>
                 <button class="btn danger btn-sm" id="closeFilteredModalBtn">Fechar</button>
             </div>
             <div class="bd">
