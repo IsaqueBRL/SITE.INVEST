@@ -28,6 +28,7 @@ let metas = {};
 // Variáveis de estado para a ordenação da tabela
 let currentSortKey = 'patrimonio';
 let currentSortDirection = 'desc';
+let expandedCategory = null;
 
 // ===== Utilitários de Formatação =====
 const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -178,6 +179,64 @@ function renderSelectOptions() {
     });
 }
 
+function renderAtivos(category) {
+    const ativos = Object.entries(carteira).filter(([key, ativo]) => ativo.tipo === category);
+    
+    const subTableBody = document.createElement('tbody');
+    subTableBody.classList.add('ativos-row');
+    subTableBody.dataset.category = category;
+    
+    if (ativos.length === 0) {
+        subTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">Nenhum ativo nesta categoria.</td></tr>`;
+    } else {
+        const sortedAtivos = ativos.sort(([, a], [, b]) => {
+            const valorA = (a.precoAtual || a.precoMedio) * a.quantidade;
+            const valorB = (b.precoAtual || b.precoMedio) * b.quantidade;
+            return valorB - valorA;
+        });
+
+        const ativoRows = sortedAtivos.map(([key, ativo]) => {
+            const valorAtual = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
+            const retorno = valorAtual - ativo.investido;
+            const retornoPct = (retorno / ativo.investido) * 100;
+            const retornoClass = retorno >= 0 ? 'green' : 'red';
+            
+            return `
+                <tr>
+                    <td>${ativo.ticker}</td>
+                    <td>${fmtNum.format(ativo.quantidade)}</td>
+                    <td>${toBRL(ativo.precoAtual || ativo.precoMedio)}</td>
+                    <td class="${retornoClass}">${toBRL(retorno)} (${toPct(retornoPct)})</td>
+                    <td class="right">
+                        <button class="btn danger btn-sm" data-del-ativo="${key}">X</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        subTableBody.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    <table class="ativos-table">
+                        <thead>
+                            <tr>
+                                <th>TICKER</th>
+                                <th>QUANTIDADE</th>
+                                <th>PREÇO ATUAL</th>
+                                <th style="min-width:140px;">RETORNO</th>
+                                <th>AÇÕES</th>
+                            </tr>
+                        </thead>
+                        <tbody>${ativoRows}</tbody>
+                    </table>
+                </td>
+            </tr>
+        `;
+    }
+    
+    return subTableBody;
+}
+
 function calcularValores() {
     const patrimonioTotal = Object.keys(carteira).reduce((sum, key) => {
         const pos = carteira[key];
@@ -204,7 +263,8 @@ function calcularValores() {
             meta,
             patrimonio,
             atual,
-            aportar
+            aportar,
+            categoria: cat // Adiciona a categoria para a ordenação
         };
     });
     return { categoriasComValores, patrimonioTotal };
@@ -213,6 +273,14 @@ function calcularValores() {
 function renderTabela() {
     const { categoriasComValores } = calcularValores();
     corpoTabela.innerHTML = '';
+    
+    // Atualiza as classes de ordenação dos cabeçalhos
+    sortableHeaders.forEach(header => {
+        header.classList.remove('asc', 'desc');
+        if (header.dataset.sortKey === currentSortKey) {
+            header.classList.add(currentSortDirection);
+        }
+    });
 
     if (Object.keys(metas).length === 0) {
         corpoTabela.innerHTML = `
@@ -245,8 +313,12 @@ function renderTabela() {
     for (const cat of sortedCategories) {
         const vals = categoriasComValores[cat] || {};
         const tr = document.createElement('tr');
+        tr.classList.add('expandable');
+        if (expandedCategory === cat) tr.classList.add('expanded');
+        tr.dataset.category = cat;
+
         tr.innerHTML = `
-            <td><strong>${cat}</strong></td>
+            <td><span class="arrow">▶</span><strong>${cat}</strong></td>
             <td class="right" data-edit-meta="${cat}">${toPct(vals.meta)}</td>
             <td class="right ${vals.atual > vals.meta * 1.05 ? 'red' : vals.atual < vals.meta * 0.95 ? 'green' : ''}">${toPct(vals.atual)}</td>
             <td class="right">${toBRL(vals.patrimonio)}</td>
@@ -257,6 +329,12 @@ function renderTabela() {
             </td>
         `;
         corpoTabela.appendChild(tr);
+
+        // Adiciona a sub-tabela de ativos se a categoria estiver expandida
+        if (expandedCategory === cat) {
+            const ativosRow = renderAtivos(cat);
+            corpoTabela.appendChild(ativosRow);
+        }
     }
 }
 
@@ -284,6 +362,7 @@ function makeEditableMeta(td, category){
 
 // ===== Delegação de Eventos =====
 document.addEventListener('click', (e) => {
+    // Lógica para deletar categoria e ativos
     if (e.target.matches('[data-del-cat]')) {
         const category = e.target.dataset.delCat;
         if(confirm(`Tem certeza que deseja excluir a categoria "${category}" e todos os ativos dela?`)) {
@@ -291,6 +370,26 @@ document.addEventListener('click', (e) => {
             Object.keys(carteira).filter(key => carteira[key].tipo === category).forEach(key => {
                 remove(ref(db, `carteira/${key}`));
             });
+        }
+    }
+    
+    // Lógica para expandir/colapsar o "slot"
+    const clickedRow = e.target.closest('tr.expandable');
+    if (clickedRow) {
+        const category = clickedRow.dataset.category;
+        if (expandedCategory === category) {
+            expandedCategory = null; // Colapsa
+        } else {
+            expandedCategory = category; // Expande
+        }
+        renderTabela();
+    }
+    
+    // Lógica para deletar ativo individual
+    if (e.target.matches('[data-del-ativo]')) {
+        const ativoKey = e.target.dataset.delAtivo;
+        if (confirm("Tem certeza que deseja excluir este ativo?")) {
+            remove(ref(db, `carteira/${ativoKey}`));
         }
     }
 });
