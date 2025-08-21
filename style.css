@@ -130,7 +130,10 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
     max-width: 600px;
 }
 /* AUMENTO DA LARGURA DO POP-UP DAS CATEGORIAS */
-.modal.large { max-width: 1200px; } 
+.modal.large {
+    width: 90%;
+    max-width: 1600px;
+}
 
 .modal::backdrop {
     background: rgba(0, 0, 0, 0.75);
