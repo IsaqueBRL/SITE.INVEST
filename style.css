@@ -129,7 +129,9 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
     z-index: 1000;
     max-width: 600px;
 }
-.modal.large { max-width: 900px; }
+/* AUMENTO DA LARGURA DO POP-UP DAS CATEGORIAS */
+.modal.large { max-width: 1200px; } 
+
 .modal::backdrop {
     background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(4px);
@@ -184,6 +186,9 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
     cursor: pointer;
     text-decoration: underline;
     font-weight: bold;
+}
+.editable-field {
+    cursor: pointer;
 }
 
 /* Estilo para a linha de total */
