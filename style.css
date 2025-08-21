@@ -232,3 +232,58 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
     cursor: pointer;
     color: var(--primary-color);
 }
+
+/* ===== MEDIA QUERIES PARA RESPONSIVIDADE ===== */
+@media (max-width: 768px) {
+    /* Ajustes no Cabeçalho */
+    header {
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+    }
+    .wrap {
+        padding: 0 10px;
+    }
+    .header-actions {
+        width: 100%;
+        display: block;
+    }
+    .btn.primary {
+        width: 100%;
+        text-align: center;
+    }
+    .title {
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+    }
+    .title h1 {
+        font-size: 20px;
+    }
+
+    /* Ajustes no Formulário (Adicionar Ativo) */
+    .row {
+        display: block;
+        gap: 0;
+    }
+    .col {
+        grid-column: span 12 !important; /* Força que as colunas ocupem a largura total */
+        margin-bottom: 12px;
+    }
+    .col:last-child {
+        margin-bottom: 0;
+    }
+    .actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+
+    /* Ajustes para o pop-up (Modal) */
+    .modal {
+        max-width: 90%;
+    }
+    .modal.large {
+        max-width: 95%;
+    }
+}
