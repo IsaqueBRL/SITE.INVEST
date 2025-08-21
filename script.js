@@ -1,5 +1,5 @@
 // Importa as funções do Firebase SDK
-import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, push, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 // ===== Configuração do Firebase =====
@@ -66,16 +66,15 @@ const tabelaAtivosModal = document.getElementById('tabelaAtivosModal');
 // Chave da API para buscar a cotação
 const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
 
-// Função para buscar preço atual da ação na API
-async function buscarPreco(ticker) {
+// Função para buscar dados do ativo na API
+async function buscarDadosAtivo(ticker) {
     const url = `https://brapi.dev/api/quote/${ticker}?token=${API_KEY}`;
     try {
         const resp = await fetch(url);
         const json = await resp.json();
-        const price = json.results?.[0]?.regularMarketPrice;
-        return typeof price === 'number' ? price : null;
+        return json.results?.[0] || null;
     } catch (err) {
-        console.error("Erro ao buscar preço:", err);
+        console.error("Erro ao buscar dados do ativo:", err);
         return null;
     }
 }
@@ -111,9 +110,9 @@ closeAtivosModal.addEventListener('click', () => modalAtivos.close());
 tickerInput.addEventListener('input', async () => {
     const ticker = tickerInput.value.trim().toUpperCase();
     if (ticker.length >= 4) { // Previne requisições desnecessárias
-        const preco = await buscarPreco(ticker);
-        if (preco) {
-            precoInput.value = preco.toFixed(2).replace('.', ',');
+        const dados = await buscarDadosAtivo(ticker);
+        if (dados?.regularMarketPrice) {
+            precoInput.value = dados.regularMarketPrice.toFixed(2).replace('.', ',');
         } else {
             precoInput.value = '';
         }
@@ -135,7 +134,11 @@ formAtivo.addEventListener('submit', async (e) => {
     const investido = round2(quantidade * preco + corretagem);
     const precoMedio = round2(investido / quantidade);
 
-    const precoAtual = await buscarPreco(ticker);
+    const dadosAtivo = await buscarDadosAtivo(ticker);
+    const precoAtual = dadosAtivo?.regularMarketPrice || 0;
+    const setor = dadosAtivo?.sector || '';
+    const segmento = dadosAtivo?.subSector || '';
+
 
     const existenteKey = Object.keys(carteira).find(key => carteira[key].ticker === ticker && carteira[key].tipo === tipo);
 
@@ -150,13 +153,17 @@ formAtivo.addEventListener('submit', async (e) => {
             quantidade: totalQtde,
             investido: round2(totalInv),
             precoMedio: novoPrecoMedio,
-            precoAtual: precoAtual || existente.precoAtual // Mantém o último preço atual se a busca falhar
+            precoAtual: precoAtual || existente.precoAtual, // Mantém o último preço atual se a busca falhar
+            setor: setor || existente.setor,
+            segmento: segmento || existente.segmento,
         });
     } else {
         push(carteiraRef, {
             ticker, tipo, quantidade,
             investido, precoMedio,
-            precoAtual: precoAtual || 0
+            precoAtual,
+            setor,
+            segmento
         });
     }
     
@@ -174,6 +181,23 @@ formAddCategory.addEventListener('submit', (e) => {
     }
 });
 
+// Função para atualizar dados de setor/segmento que estiverem faltando
+async function atualizarDadosFaltantes() {
+    const promises = Object.entries(carteira).map(async ([key, ativo]) => {
+        if (!ativo.setor || !ativo.segmento) {
+            console.log(`Buscando setor/segmento para ${ativo.ticker}...`);
+            const dados = await buscarDadosAtivo(ativo.ticker);
+            if (dados) {
+                update(ref(db, `carteira/${key}`), {
+                    setor: dados.sector,
+                    segmento: dados.subSector
+                });
+            }
+        }
+    });
+    await Promise.all(promises);
+}
+
 // ===== Funções de Lógica e Renderização =====
 function renderSelectOptions() {
     tipoSelect.innerHTML = '';
@@ -190,50 +214,34 @@ function renderAtivosModal(category) {
     
     ativosModalTitle.textContent = `Ativos em ${category}`;
     
-    let tableHtml = `
-        <thead>
+    const sortedAtivos = ativos.sort(([, a], [, b]) => {
+        const valorA = (a.precoAtual || a.precoMedio) * a.quantidade;
+        const valorB = (b.precoAtual || b.precoMedio) * b.quantidade;
+        return valorB - valorA;
+    });
+
+    const ativoRows = sortedAtivos.map(([key, ativo]) => {
+        const valorAtual = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
+        const retorno = valorAtual - ativo.investido;
+        const retornoPct = (retorno / ativo.investido) * 100;
+        const retornoClass = retorno >= 0 ? 'green' : 'red';
+        
+        return `
             <tr>
-                <th>TICKER</th>
-                <th>QUANTIDADE</th>
-                <th>PREÇO ATUAL</th>
-                <th style="min-width:140px;">RETORNO</th>
-                <th>AÇÕES</th>
+                <td>${ativo.ticker}</td>
+                <td>${fmtNum.format(ativo.quantidade)}</td>
+                <td>${toBRL(ativo.precoAtual || ativo.precoMedio)}</td>
+                <td>${ativo.setor || '-'}</td>
+                <td>${ativo.segmento || '-'}</td>
+                <td class="${retornoClass}">${toBRL(retorno)} (${toPct(retornoPct)})</td>
+                <td class="right">
+                    <button class="btn danger btn-sm" data-del-ativo="${key}">X</button>
+                </td>
             </tr>
-        </thead>
-        <tbody>
-    `;
+        `;
+    }).join('');
 
-    if (ativos.length === 0) {
-        tableHtml += `<tr><td colspan="5" style="text-align:center; padding: 20px;">Nenhum ativo nesta categoria.</td></tr>`;
-    } else {
-        const sortedAtivos = ativos.sort(([, a], [, b]) => {
-            const valorA = (a.precoAtual || a.precoMedio) * a.quantidade;
-            const valorB = (b.precoAtual || b.precoMedio) * b.quantidade;
-            return valorB - valorA;
-        });
-
-        tableHtml += sortedAtivos.map(([key, ativo]) => {
-            const valorAtual = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
-            const retorno = valorAtual - ativo.investido;
-            const retornoPct = (retorno / ativo.investido) * 100;
-            const retornoClass = retorno >= 0 ? 'green' : 'red';
-            
-            return `
-                <tr>
-                    <td>${ativo.ticker}</td>
-                    <td>${fmtNum.format(ativo.quantidade)}</td>
-                    <td>${toBRL(ativo.precoAtual || ativo.precoMedio)}</td>
-                    <td class="${retornoClass}">${toBRL(retorno)} (${toPct(retornoPct)})</td>
-                    <td class="right">
-                        <button class="btn danger btn-sm" data-del-ativo="${key}">X</button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-    }
-
-    tableHtml += `</tbody>`;
-    tabelaAtivosModal.innerHTML = tableHtml;
+    tabelaAtivosModal.querySelector('tbody').innerHTML = ativos.length > 0 ? ativoRows : `<tr><td colspan="7" style="text-align:center; padding: 20px;">Nenhum ativo nesta categoria.</td></tr>`;
     modalAtivos.showModal();
 }
 
@@ -423,6 +431,7 @@ sortableHeaders.forEach(header => {
 onValue(carteiraRef, (snapshot) => {
     const data = snapshot.val() || {};
     carteira = data;
+    atualizarDadosFaltantes(); // Busca os dados que estiverem faltando
     renderTabela();
 });
 
