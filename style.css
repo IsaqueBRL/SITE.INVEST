@@ -178,29 +178,27 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
 .expandable {
     position: relative;
     cursor: pointer;
-    padding-left: 20px;
 }
 
 .expandable .arrow {
     position: absolute;
     left: 0;
     top: 50%;
-    transform: translateY(-50%) rotate(-90deg); /* Seta inicial */
+    transform: translateY(-50%) rotate(-90deg);
     transition: transform 0.2s ease-in-out;
 }
 
 .expandable.expanded .arrow {
-    transform: translateY(-50%) rotate(0deg); /* Seta expandida */
+    transform: translateY(-50%) rotate(0deg);
 }
 
-/* Estilo para a linha de ativos */
 .ativos-row {
     display: none;
     background-color: rgba(255, 255, 255, 0.05);
 }
 
 .ativos-row.expanded {
-    display: table-row-group;
+    display: table-row;
 }
 
 .ativos-row td {
