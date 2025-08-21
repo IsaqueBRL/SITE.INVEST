@@ -117,6 +117,12 @@ closeAtivosModal.addEventListener('click', () => modalAtivos.close());
 closeSetoresModalBtn.addEventListener('click', () => modalSetores.close());
 closeFilteredModalBtn.addEventListener('click', () => modalFilteredAssets.close());
 
+// Listener para o botão "Gerenciar" que está dentro do modal de ativos
+openSetoresModalBtn.addEventListener('click', () => {
+    modalSetores.showModal();
+    renderSetoresSegmentosList();
+});
+
 // Fechar modais clicando fora
 [modalForm, modalAddCategory, modalAtivos, modalSetores, modalFilteredAssets].forEach(modal => {
     modal.addEventListener('click', e => {
@@ -154,7 +160,7 @@ formAtivo.addEventListener('submit', async (e) => {
     const segmento = segmentoSelect.value;
     const quantidade = Number(formAtivo.quantidade.value);
     const preco = parseBRL(formAtivo.preco.value);
-    const corretagem = parseBRL(formAtão.corretagem.value);
+    const corretagem = parseBRL(formAtivo.corretagem.value);
 
     if(!ticker || !quantidade || !preco) return;
 
@@ -518,21 +524,17 @@ document.addEventListener('click', (e) => {
     }
 
     // Lógica para abrir modal de ativos filtrados a partir da tabela de ativos
-    if (e.target.closest('[data-filter-setor]')) {
-        const setor = e.target.closest('[data-filter-setor]').dataset.filterSetor;
+    if (e.target.matches('[data-filter-setor]')) {
+        const setor = e.target.dataset.filterSetor;
         renderFilteredAssetsModal('setor', setor);
     }
     
-    if (e.target.closest('[data-filter-segmento]')) {
-        const segmento = e.target.closest('[data-filter-segmento]').dataset.filterSegmento;
+    if (e.target.matches('[data-filter-segmento]')) {
+        const segmento = e.target.dataset.filterSegmento;
         renderFilteredAssetsModal('segmento', segmento);
     }
 });
 
-openSetoresModalBtn.addEventListener('click', () => {
-    modalSetores.showModal();
-    renderSetoresSegmentosList();
-});
 
 document.addEventListener('dblclick', (e) => {
     if (e.target.matches('[data-edit-meta]')) {
