@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Carteira B3 – Firebase</title>
+    <title>Rebalanceamento de Carteira</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -39,12 +39,12 @@
                     <table id="tabelaRebalanceamento">
                         <thead>
                             <tr>
-                                <th>Categoria</th>
-                                <th class="right">Meta</th>
-                                <th class="right">Atual</th>
-                                <th class="right">Patrimônio</th>
-                                <th class="right">Aportar</th>
-                                <th class="right">Ações</th>
+                                <th>CATEGORIA</th>
+                                <th class="right">META</th>
+                                <th class="right">ATUAL</th>
+                                <th class="right">PATRIMÔNIO</th>
+                                <th class="right">APORTAR</th>
+                                <th class="right">AÇÕES</th>
                             </tr>
                         </thead>
                         <tbody id="corpoTabelaRebalanceamento">
@@ -54,52 +54,6 @@
             </div>
         </section>
     </main>
-        
-    <dialog id="modalForm" class="modal">
-        <div class="modal-content">
-            <div class="hd">Adicionar ativo</div>
-            <div class="bd">
-                <form id="formAtivo">
-                    <div class="row">
-                        <div class="col" style="grid-column: span 4;">
-                            <label for="ticker">Ticker (B3)</label>
-                            <input id="ticker" name="ticker" placeholder="ex: PETR4, VALE3, MXRF11" required />
-                        </div>
-                        <div class="col" style="grid-column: span 3;">
-                            <label for="tipo">Tipo</label>
-                            <select id="tipo" name="tipo">
-                                </select>
-                        </div>
-                        <div class="col" style="grid-column: span 2;">
-                            <label for="quantidade">Quantidade</label>
-                            <input id="quantidade" name="quantidade" type="number" min="1" step="any" placeholder="ex: 10,5" required />
-                        </div>
-                        <div class="col" style="grid-column: span 3;">
-                            <label for="preco">Preço (R$)</label>
-                            <input id="preco" name="preco" inputmode="decimal" placeholder="ex: 28,75" required />
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col" style="grid-column: span 3;">
-                            <label for="corretagem">Taxas (R$)</label>
-                            <input id="corretagem" name="corretagem" inputmode="decimal" placeholder="0,00" />
-                        </div>
-                        <div class="col" style="grid-column: span 3;">
-                            <label for="data">Data</label>
-                            <input id="data" name="data" type="date" />
-                        </div>
-                        <div class="col" style="grid-column: span 6; display:flex; align-items:flex-end; justify-content:flex-end">
-                            <div class="actions">
-                                <button class="btn" type="button" id="closeModalBtn">Cancelar</button>
-                                <button class="btn primary" type="submit">Adicionar</button>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="hint" style="margin-top:10px">Dica: use vírgula como separador decimal (ex: 10,50). O preço é o valor por cota/ação.</p>
-                </form>
-            </div>
-        </div>
-    </dialog>
 
     <dialog id="modalAddCategory" class="modal">
         <div class="modal-content">
