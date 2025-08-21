@@ -176,20 +176,18 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
 
 /* Estilo para o slot de ativos */
 .expandable {
-    position: relative;
     cursor: pointer;
 }
 
 .expandable .arrow {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%) rotate(-90deg);
+    display: inline-block;
+    margin-right: 5px;
+    transform: rotate(90deg);
     transition: transform 0.2s ease-in-out;
 }
 
-.expandable.expanded .arrow {
-    transform: translateY(-50%) rotate(0deg);
+.expandable .arrow.expanded {
+    transform: rotate(180deg);
 }
 
 .ativos-row {
