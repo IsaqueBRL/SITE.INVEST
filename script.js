@@ -46,7 +46,7 @@ function toPct(n) { return (n || 0).toFixed(2) + '%'; }
 function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
 
 // Chave da API para buscar a cotação
-const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
+const API_KEY = "jaAoNZhBBLxF7FAUh6QDVp";
 
 // Função para buscar preço atual da ação na API
 async function buscarPreco(ticker) {
@@ -86,6 +86,7 @@ const modalAtivos = document.getElementById('modalAtivos');
 const closeAtivosModal = document.getElementById('closeAtivosModal');
 const ativosModalTitle = document.getElementById('ativosModalTitle');
 const totalInvestidoModal = document.getElementById('totalInvestidoModal');
+const patrimonioTitleModal = document.getElementById('patrimonioTitleModal');
 const tabelaAtivosModal = document.getElementById('tabelaAtivosModal');
 const openSetoresModalBtn = document.getElementById('openSetoresModalBtn');
 
@@ -101,6 +102,7 @@ const gerenciarModalTitle = document.getElementById('gerenciarModalTitle');
 const modalFilteredAssets = document.getElementById('modalFilteredAssets');
 const filteredModalTitle = document.getElementById('filteredModalTitle');
 const totalInvestidoFilteredModal = document.getElementById('totalInvestidoFilteredModal');
+const patrimonioTitleFilteredModal = document.getElementById('patrimonioTitleFilteredModal');
 const closeFilteredModalBtn = document.getElementById('closeFilteredModalBtn');
 const tabelaFilteredAssetsModal = document.getElementById('tabelaFilteredAssetsModal');
 
@@ -241,6 +243,7 @@ function renderFilteredAssetsModal(filterType, filterValue) {
     totalInvestidoFilteredModal.textContent = toBRL(totalInvestido);
     
     filteredModalTitle.textContent = `Ativos com ${filterType}: "${filterValue}"`;
+    patrimonioTitleFilteredModal.textContent = 'Patrimônio Total Filtrado';
     
     const ativoRows = ativosFiltrados.map(ativo => {
         const valorAtual = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
@@ -309,6 +312,7 @@ function renderAtivosModal(category) {
     // Cálculo da soma do Total Investido
     const totalInvestido = ativos.reduce((sum, [, ativo]) => sum + ((ativo.precoAtual || ativo.precoMedio) * ativo.quantidade), 0);
     totalInvestidoModal.textContent = toBRL(totalInvestido);
+    patrimonioTitleModal.textContent = `Patrimônio em ${category}`;
     
     ativosModalTitle.textContent = `Ativos em ${category}`;
     
