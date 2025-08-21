@@ -38,12 +38,12 @@
                 <div style="overflow:auto">
                     <table id="tabelaRebalanceamento">
                         <thead>
-                            <tr>
-                                <th>CATEGORIA</th>
-                                <th class="right">META</th>
-                                <th class="right">ATUAL</th>
-                                <th class="right">PATRIMÔNIO</th>
-                                <th class="right">APORTAR</th>
+                            <tr id="sortable-header-row">
+                                <th class="sortable" data-sort-key="categoria">CATEGORIA</th>
+                                <th class="sortable right" data-sort-key="meta">META</th>
+                                <th class="sortable right" data-sort-key="atual">ATUAL</th>
+                                <th class="sortable right" data-sort-key="patrimonio">PATRIMÔNIO</th>
+                                <th class="sortable right" data-sort-key="aportar">APORTAR</th>
                                 <th class="right">AÇÕES</th>
                             </tr>
                         </thead>
@@ -54,7 +54,7 @@
             </div>
         </section>
     </main>
-        
+
     <dialog id="modalForm" class="modal">
         <div class="modal-content">
             <div class="hd">Adicionar ativo</div>
