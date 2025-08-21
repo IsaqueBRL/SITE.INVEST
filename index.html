@@ -65,16 +65,30 @@
                             <label for="ticker">Ticker (B3)</label>
                             <input id="ticker" name="ticker" placeholder="ex: PETR4, VALE3, MXRF11" required />
                         </div>
-                        <div class="col" style="grid-column: span 3;">
+                        <div class="col" style="grid-column: span 4;">
                             <label for="tipo">Tipo</label>
                             <select id="tipo" name="tipo">
                                 </select>
                         </div>
-                        <div class="col" style="grid-column: span 2;">
+                        <div class="col" style="grid-column: span 4;">
+                            <label for="setorSelect">Setor</label>
+                            <select id="setorSelect" name="setorSelect">
+                                <option value="">Nenhum</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col" style="grid-column: span 4;">
+                            <label for="segmentoSelect">Segmento</label>
+                            <select id="segmentoSelect" name="segmentoSelect">
+                                <option value="">Nenhum</option>
+                            </select>
+                        </div>
+                        <div class="col" style="grid-column: span 4;">
                             <label for="quantidade">Quantidade</label>
                             <input id="quantidade" name="quantidade" type="number" min="1" step="any" placeholder="ex: 10,5" required />
                         </div>
-                        <div class="col" style="grid-column: span 3;">
+                        <div class="col" style="grid-column: span 4;">
                             <label for="preco">Preço (R$)</label>
                             <input id="preco" name="preco" inputmode="decimal" placeholder="ex: 28,75" required />
                         </div>
@@ -133,7 +147,10 @@
         <div class="modal-content">
             <div class="hd" style="display: flex; justify-content: space-between; align-items: center;">
                 <span id="ativosModalTitle">Ativos</span>
-                <button class="btn danger btn-sm" id="closeAtivosModal">Fechar</button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button class="btn sec btn-sm" id="openSetoresModalBtn">Gerenciar</button>
+                    <button class="btn danger btn-sm" id="closeAtivosModal">Fechar</button>
+                </div>
             </div>
             <div class="bd">
                 <table id="tabelaAtivosModal">
@@ -154,7 +171,47 @@
             </div>
         </div>
     </dialog>
-    
+
+    <dialog id="modalSetores" class="modal">
+        <div class="modal-content">
+            <div class="hd">
+                <span>Gerenciar Setores/Segmentos</span>
+                <button class="btn danger btn-sm" id="closeSetoresModalBtn">Fechar</button>
+            </div>
+            <div class="bd">
+                <form id="formSetores">
+                    <input type="hidden" id="currentCategory" />
+                    <div class="row">
+                        <div class="col" style="grid-column: span 6;">
+                            <label for="setorInput">Adicionar Setor</label>
+                            <div style="display:flex; gap:8px;">
+                                <input id="setorInput" placeholder="ex: Financeiro" />
+                                <button class="btn primary btn-sm" type="submit">Adicionar</button>
+                            </div>
+                        </div>
+                        <div class="col" style="grid-column: span 6;">
+                            <label for="segmentoInput">Adicionar Segmento</label>
+                            <div style="display:flex; gap:8px;">
+                                <input id="segmentoInput" placeholder="ex: Bancos" />
+                                <button class="btn primary btn-sm" type="submit">Adicionar</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="row" style="margin-top: 20px;">
+                    <div class="col" style="grid-column: span 6;">
+                        <span class="muted" style="display: block; margin-bottom: 8px;">Setores da categoria:</span>
+                        <ul id="setorList" class="tags-list"></ul>
+                    </div>
+                    <div class="col" style="grid-column: span 6;">
+                        <span class="muted" style="display: block; margin-bottom: 8px;">Segmentos da categoria:</span>
+                        <ul id="segmentoList" class="tags-list"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </dialog>
 
     <div class="footer">Criado por isaque Pavão.</div>
 
