@@ -317,8 +317,8 @@ function renderAtivosModal(category) {
                 <td>${ativo.ticker}</td>
                 <td>${fmtNum.format(ativo.quantidade)}</td>
                 <td>${toBRL(ativo.precoAtual || ativo.precoMedio)}</td>
-                <td><span class="clickable-tag" data-filter-setor="${ativo.setor}">${ativo.setor || '-'}</span></td>
-                <td><span class="clickable-tag" data-filter-segmento="${ativo.segmento}">${ativo.segmento || '-'}</span></td>
+                <td data-edit-setor="${key}"><span class="editable-field">${ativo.setor || '-'}</span></td>
+                <td data-edit-segmento="${key}"><span class="editable-field">${ativo.segmento || '-'}</span></td>
                 <td class="${retornoClass}">${toBRL(retorno)} (${toPct(retornoPct)})</td>
                 <td class="right">
                     <button class="btn danger btn-sm" data-del-ativo="${key}">X</button>
@@ -477,6 +477,35 @@ function makeEditableMeta(td, category){
     }
 }
 
+function makeEditableDropdown(td, ativoKey, type) {
+    const currentVal = carteira[ativoKey]?.[type] || '';
+    const options = Object.values(type === 'setor' ? setores : segmentos);
+
+    const select = document.createElement('select');
+    select.style.cssText = 'width: 100%; padding: 6px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px;';
+    
+    let optionsHtml = `<option value="">Nenhum</option>`;
+    options.forEach(optionVal => {
+        optionsHtml += `<option value="${optionVal}" ${currentVal === optionVal ? 'selected' : ''}>${optionVal}</option>`;
+    });
+    select.innerHTML = optionsHtml;
+    
+    td.innerHTML = '';
+    td.appendChild(select);
+    select.focus();
+
+    function updateAndRevert() {
+        const newValue = select.value;
+        if (newValue !== currentVal) {
+            update(ref(db, `carteira/${ativoKey}`), { [type]: newValue });
+        }
+        // A tabela será re-renderizada automaticamente pelo listener do Firebase
+    }
+
+    select.addEventListener('change', updateAndRevert);
+    select.addEventListener('blur', updateAndRevert);
+}
+
 // ===== Delegação de Eventos =====
 document.addEventListener('click', (e) => {
     // Lógica para deletar categoria e ativos
@@ -540,6 +569,18 @@ document.addEventListener('dblclick', (e) => {
     if (e.target.matches('[data-edit-meta]')) {
         const category = e.target.dataset.editMeta;
         makeEditableMeta(e.target, category);
+    }
+
+    if (e.target.closest('[data-edit-setor]')) {
+        const td = e.target.closest('[data-edit-setor]');
+        const ativoKey = td.dataset.editSetor;
+        makeEditableDropdown(td, ativoKey, 'setor');
+    }
+    
+    if (e.target.closest('[data-edit-segmento]')) {
+        const td = e.target.closest('[data-edit-segmento]');
+        const ativoKey = td.dataset.editSegmento;
+        makeEditableDropdown(td, ativoKey, 'segmento');
     }
 });
 
