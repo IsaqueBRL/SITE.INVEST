@@ -99,6 +99,8 @@ input, select { width: 100%; background: #141829; color: var(--text); padding: 1
 .btn.warn:hover { background-color: var(--secondary-color); color: white; }
 .btn.danger { background-color: var(--danger-bg); border-color: var(--danger-color); color: var(--danger-color); }
 .btn.danger:hover { background-color: var(--danger-color); color: white; }
+.btn.btn-sm { padding: 8px 10px; font-size: 12px; }
+
 
 table { width:100%; border-collapse: collapse; }
 th, td { text-align:left; padding: 10px; border-bottom:1px dashed var(--border); }
@@ -146,7 +148,9 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
     margin-bottom: 12px;
 }
 #modalAtivos th,
-#modalAtivos td {
+#modalAtivos td,
+#modalFilteredAssets th,
+#modalFilteredAssets td {
     color: var(--text);
 }
 
@@ -217,4 +221,9 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
 }
 .tags-list li button:hover {
     color: var(--danger-bg);
+}
+.clickable-tag {
+    text-decoration: underline;
+    cursor: pointer;
+    color: var(--primary-color);
 }
