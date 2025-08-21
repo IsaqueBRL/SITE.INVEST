@@ -246,6 +246,9 @@ function calcularValores() {
     
     patrimonioTotalDashboard.textContent = toBRL(patrimonioTotal);
 
+    let totalMeta = 0;
+    let totalAtual = 0;
+    
     const categoriasComValores = {};
     Object.keys(metas).forEach(cat => {
         const patrimonio = Object.keys(carteira).filter(key => carteira[key].tipo === cat)
@@ -259,6 +262,9 @@ function calcularValores() {
         const atual = patrimonioTotal > 0 ? (patrimonio / patrimonioTotal) * 100 : 0;
         const aportar = atual < meta ? (meta * patrimonioTotal) / 100 - patrimonio : 0;
 
+        totalMeta += meta;
+        totalAtual += atual;
+
         categoriasComValores[cat] = {
             meta,
             patrimonio,
@@ -267,11 +273,11 @@ function calcularValores() {
             categoria: cat // Adiciona a categoria para a ordenação
         };
     });
-    return { categoriasComValores, patrimonioTotal };
+    return { categoriasComValores, patrimonioTotal, totalMeta, totalAtual };
 }
 
 function renderTabela() {
-    const { categoriasComValores } = calcularValores();
+    const { categoriasComValores, patrimonioTotal, totalMeta, totalAtual } = calcularValores();
     corpoTabela.innerHTML = '';
     
     // Atualiza as classes de ordenação dos cabeçalhos
@@ -326,6 +332,19 @@ function renderTabela() {
         `;
         corpoTabela.appendChild(tr);
     }
+    
+    // Adiciona a linha de total
+    const totalRow = document.createElement('tr');
+    totalRow.classList.add('total-row');
+    totalRow.innerHTML = `
+        <td>Total</td>
+        <td class="right">${toPct(totalMeta)}</td>
+        <td class="right">${toPct(totalAtual)}</td>
+        <td class="right">${toBRL(patrimonioTotal)}</td>
+        <td class="right"></td>
+        <td class="right"></td>
+    `;
+    corpoTabela.appendChild(totalRow);
 }
 
 function makeEditableMeta(td, category){
