@@ -20,12 +20,14 @@ const db = getDatabase(app);
 // Referências para os nós do banco de dados
 const carteiraRef = ref(db, 'carteira');
 const metasRef = ref(db, 'metas');
-const setoresSegmentosRef = ref(db, 'setores_segmentos');
+const setoresRef = ref(db, 'setores');
+const segmentosRef = ref(db, 'segmentos');
 
 // Variáveis de estado
 let carteira = {};
 let metas = {};
-let setoresSegmentos = {};
+let setores = {};
+let segmentos = {};
 
 // Variáveis de estado para a ordenação da tabela
 let currentSortKey = 'patrimonio';
@@ -92,7 +94,11 @@ const setorInput = document.getElementById('setorInput');
 const segmentoInput = document.getElementById('segmentoInput');
 const setorList = document.getElementById('setorList');
 const segmentoList = document.getElementById('segmentoList');
-const currentCategoryInput = document.getElementById('currentCategory');
+
+const modalFilteredAssets = document.getElementById('modalFilteredAssets');
+const filteredModalTitle = document.getElementById('filteredModalTitle');
+const closeFilteredModalBtn = document.getElementById('closeFilteredModalBtn');
+const tabelaFilteredAssetsModal = document.getElementById('tabelaFilteredAssetsModal');
 
 // ===== Eventos dos Botões e Modais =====
 openModalBtn.addEventListener('click', () => {
@@ -108,16 +114,11 @@ openAddCategoryModal.addEventListener('click', () => {
 closeAddCategoryModal.addEventListener('click', () => modalAddCategory.close());
 
 closeAtivosModal.addEventListener('click', () => modalAtivos.close());
-
-openSetoresModalBtn.addEventListener('click', () => {
-    modalSetores.showModal();
-    const currentCategory = currentCategoryInput.value;
-    renderSetoresSegmentosList(currentCategory);
-});
 closeSetoresModalBtn.addEventListener('click', () => modalSetores.close());
+closeFilteredModalBtn.addEventListener('click', () => modalFilteredAssets.close());
 
 // Fechar modais clicando fora
-[modalForm, modalAddCategory, modalAtivos, modalSetores].forEach(modal => {
+[modalForm, modalAddCategory, modalAtivos, modalSetores, modalFilteredAssets].forEach(modal => {
     modal.addEventListener('click', e => {
         const dialogDimensions = modal.getBoundingClientRect();
         if (e.clientX < dialogDimensions.left || e.clientX > dialogDimensions.right || e.clientY < dialogDimensions.top || e.clientY > dialogDimensions.bottom) {
@@ -141,7 +142,7 @@ tickerInput.addEventListener('input', async () => {
 
 // Listener para preencher os selects de setor/segmento ao mudar a categoria
 tipoSelect.addEventListener('change', () => {
-    renderSetorSegmentoSelects(tipoSelect.value);
+    renderSetorSegmentoSelects();
 });
 
 // ===== Lógica de Formulários =====
@@ -153,7 +154,7 @@ formAtivo.addEventListener('submit', async (e) => {
     const segmento = segmentoSelect.value;
     const quantidade = Number(formAtivo.quantidade.value);
     const preco = parseBRL(formAtivo.preco.value);
-    const corretagem = parseBRL(formAtivo.corretagem.value);
+    const corretagem = parseBRL(formAtão.corretagem.value);
 
     if(!ticker || !quantidade || !preco) return;
 
@@ -205,24 +206,48 @@ formAddCategory.addEventListener('submit', (e) => {
 
 formSetores.addEventListener('submit', (e) => {
     e.preventDefault();
-    const category = currentCategoryInput.value;
     const setor = setorInput.value.trim();
     const segmento = segmentoInput.value.trim();
     
     if (!setor && !segmento) return;
 
-    const currentData = setoresSegmentos[category] || { setores: [], segmentos: [] };
-
-    if (setor && !currentData.setores.includes(setor)) {
-        currentData.setores.push(setor);
+    if (setor && !Object.values(setores).includes(setor)) {
+        push(setoresRef, setor);
     }
-    if (segmento && !currentData.segmentos.includes(segmento)) {
-        currentData.segmentos.push(segmento);
+    if (segmento && !Object.values(segmentos).includes(segmento)) {
+        push(segmentosRef, segmento);
     }
-
-    set(ref(db, `setores_segmentos/${category}`), currentData);
     formSetores.reset();
 });
+
+// Função para exibir ativos filtrados
+function renderFilteredAssetsModal(filterType, filterValue) {
+    const ativosFiltrados = Object.values(carteira).filter(ativo => ativo[filterType] === filterValue);
+
+    filteredModalTitle.textContent = `Ativos com ${filterType}: "${filterValue}"`;
+    
+    const ativoRows = ativosFiltrados.map(ativo => {
+        const valorAtual = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
+        const retorno = valorAtual - ativo.investido;
+        const retornoPct = (retorno / ativo.investido) * 100;
+        const retornoClass = retorno >= 0 ? 'green' : 'red';
+        
+        return `
+            <tr>
+                <td>${ativo.ticker}</td>
+                <td>${fmtNum.format(ativo.quantidade)}</td>
+                <td>${ativo.tipo}</td>
+                <td>${toBRL(ativo.precoAtual || ativo.precoMedio)}</td>
+                <td><span class="clickable-tag" data-filter-setor="${ativo.setor}">${ativo.setor || '-'}</span></td>
+                <td><span class="clickable-tag" data-filter-segmento="${ativo.segmento}">${ativo.segmento || '-'}</span></td>
+                <td class="${retornoClass}">${toBRL(retorno)} (${toPct(retornoPct)})</td>
+            </tr>
+        `;
+    }).join('');
+
+    tabelaFilteredAssetsModal.querySelector('tbody').innerHTML = ativosFiltrados.length > 0 ? ativoRows : `<tr><td colspan="7" style="text-align:center; padding: 20px;">Nenhum ativo encontrado com este filtro.</td></tr>`;
+    modalFilteredAssets.showModal();
+}
 
 // ===== Funções de Lógica e Renderização =====
 function renderSelectOptions() {
@@ -237,25 +262,26 @@ function renderSelectOptions() {
             option.textContent = cat;
             tipoSelect.appendChild(option);
         });
-        // Seleciona a primeira categoria e renderiza os selects de setor/segmento
         tipoSelect.value = categorias[0];
-        renderSetorSegmentoSelects(categorias[0]);
+        renderSetorSegmentoSelects();
     }
 }
 
-function renderSetorSegmentoSelects(category) {
-    const data = setoresSegmentos[category] || { setores: [], segmentos: [] };
-    
+function renderSetorSegmentoSelects() {
     setorSelect.innerHTML = '<option value="">Nenhum</option>';
-    data.setores.forEach(setor => {
+    segmentoSelect.innerHTML = '<option value="">Nenhum</option>';
+
+    const allSetores = Object.values(setores);
+    const allSegmentos = Object.values(segmentos);
+
+    allSetores.forEach(setor => {
         const option = document.createElement('option');
         option.value = setor;
         option.textContent = setor;
         setorSelect.appendChild(option);
     });
 
-    segmentoSelect.innerHTML = '<option value="">Nenhum</option>';
-    data.segmentos.forEach(segmento => {
+    allSegmentos.forEach(segmento => {
         const option = document.createElement('option');
         option.value = segmento;
         option.textContent = segmento;
@@ -267,7 +293,6 @@ function renderAtivosModal(category) {
     const ativos = Object.entries(carteira).filter(([key, ativo]) => ativo.tipo === category);
     
     ativosModalTitle.textContent = `Ativos em ${category}`;
-    currentCategoryInput.value = category;
     
     const sortedAtivos = ativos.sort(([, a], [, b]) => {
         const valorA = (a.precoAtual || a.precoMedio) * a.quantidade;
@@ -286,8 +311,8 @@ function renderAtivosModal(category) {
                 <td>${ativo.ticker}</td>
                 <td>${fmtNum.format(ativo.quantidade)}</td>
                 <td>${toBRL(ativo.precoAtual || ativo.precoMedio)}</td>
-                <td>${ativo.setor || '-'}</td>
-                <td>${ativo.segmento || '-'}</td>
+                <td><span class="clickable-tag" data-filter-setor="${ativo.setor}">${ativo.setor || '-'}</span></td>
+                <td><span class="clickable-tag" data-filter-segmento="${ativo.segmento}">${ativo.segmento || '-'}</span></td>
                 <td class="${retornoClass}">${toBRL(retorno)} (${toPct(retornoPct)})</td>
                 <td class="right">
                     <button class="btn danger btn-sm" data-del-ativo="${key}">X</button>
@@ -300,18 +325,16 @@ function renderAtivosModal(category) {
     modalAtivos.showModal();
 }
 
-function renderSetoresSegmentosList(category) {
-    const data = setoresSegmentos[category] || { setores: [], segmentos: [] };
-    
+function renderSetoresSegmentosList() {
     setorList.innerHTML = '';
-    data.setores.forEach(setor => {
+    Object.values(setores).forEach(setor => {
         const li = document.createElement('li');
         li.innerHTML = `${setor} <button data-del-setor="${setor}">X</button>`;
         setorList.appendChild(li);
     });
 
     segmentoList.innerHTML = '';
-    data.segmentos.forEach(segmento => {
+    Object.values(segmentos).forEach(segmento => {
         const li = document.createElement('li');
         li.innerHTML = `${segmento} <button data-del-segmento="${segmento}">X</button>`;
         segmentoList.appendChild(li);
@@ -455,7 +478,6 @@ document.addEventListener('click', (e) => {
         const category = e.target.dataset.delCat;
         if(confirm(`Tem certeza que deseja excluir a categoria "${category}" e todos os ativos dela?`)) {
             remove(ref(db, `metas/${category}`));
-            remove(ref(db, `setores_segmentos/${category}`));
             Object.keys(carteira).filter(key => carteira[key].tipo === category).forEach(key => {
                 remove(ref(db, `carteira/${key}`));
             });
@@ -480,20 +502,36 @@ document.addEventListener('click', (e) => {
     // Lógica para deletar setor
     if (e.target.matches('[data-del-setor]')) {
         const setor = e.target.dataset.delSetor;
-        const category = currentCategoryInput.value;
-        const currentData = setoresSegmentos[category] || { setores: [], segmentos: [] };
-        const newSetores = currentData.setores.filter(s => s !== setor);
-        set(ref(db, `setores_segmentos/${category}/setores`), newSetores);
+        const setorKey = Object.keys(setores).find(key => setores[key] === setor);
+        if (setorKey) {
+            remove(ref(db, `setores/${setorKey}`));
+        }
     }
     
     // Lógica para deletar segmento
     if (e.target.matches('[data-del-segmento]')) {
         const segmento = e.target.dataset.delSegmento;
-        const category = currentCategoryInput.value;
-        const currentData = setoresSegmentos[category] || { setores: [], segmentos: [] };
-        const newSegmentos = currentData.segmentos.filter(s => s !== segmento);
-        set(ref(db, `setores_segmentos/${category}/segmentos`), newSegmentos);
+        const segmentoKey = Object.keys(segmentos).find(key => segmentos[key] === segmento);
+        if (segmentoKey) {
+            remove(ref(db, `segmentos/${segmentoKey}`));
+        }
     }
+
+    // Lógica para abrir modal de ativos filtrados a partir da tabela de ativos
+    if (e.target.closest('[data-filter-setor]')) {
+        const setor = e.target.closest('[data-filter-setor]').dataset.filterSetor;
+        renderFilteredAssetsModal('setor', setor);
+    }
+    
+    if (e.target.closest('[data-filter-segmento]')) {
+        const segmento = e.target.closest('[data-filter-segmento]').dataset.filterSegmento;
+        renderFilteredAssetsModal('segmento', segmento);
+    }
+});
+
+openSetoresModalBtn.addEventListener('click', () => {
+    modalSetores.showModal();
+    renderSetoresSegmentosList();
 });
 
 document.addEventListener('dblclick', (e) => {
@@ -531,15 +569,18 @@ onValue(metasRef, (snapshot) => {
     renderSelectOptions();
 });
 
-onValue(setoresSegmentosRef, (snapshot) => {
-    const data = snapshot.val() || {};
-    setoresSegmentos = data;
-    const currentCategory = currentCategoryInput.value;
-    if (currentCategory) {
-        renderSetoresSegmentosList(currentCategory);
+onValue(setoresRef, (snapshot) => {
+    setores = snapshot.val() || {};
+    renderSetorSegmentoSelects();
+    if(modalSetores.open) {
+        renderSetoresSegmentosList();
     }
-    // Garante que o select de setores/segmentos seja atualizado ao adicionar um novo
-    if (tipoSelect.value) {
-        renderSetorSegmentoSelects(tipoSelect.value);
+});
+
+onValue(segmentosRef, (snapshot) => {
+    segmentos = snapshot.val() || {};
+    renderSetorSegmentoSelects();
+    if(modalSetores.open) {
+        renderSetoresSegmentosList();
     }
 });
