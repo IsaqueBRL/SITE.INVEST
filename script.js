@@ -28,6 +28,7 @@ let carteira = {};
 let metas = {};
 let setores = {};
 let segmentos = {};
+let currentCategoryForGerenciar = '';
 
 // Variáveis de estado para a ordenação da tabela
 let currentSortKey = 'patrimonio';
@@ -85,15 +86,16 @@ const modalAtivos = document.getElementById('modalAtivos');
 const closeAtivosModal = document.getElementById('closeAtivosModal');
 const ativosModalTitle = document.getElementById('ativosModalTitle');
 const tabelaAtivosModal = document.getElementById('tabelaAtivosModal');
+const openSetoresModalBtn = document.getElementById('openSetoresModalBtn');
 
 const modalSetores = document.getElementById('modalSetores');
-const openSetoresModalBtn = document.getElementById('openSetoresModalBtn');
 const closeSetoresModalBtn = document.getElementById('closeSetoresModalBtn');
 const formSetores = document.getElementById('formSetores');
 const setorInput = document.getElementById('setorInput');
 const segmentoInput = document.getElementById('segmentoInput');
 const setorList = document.getElementById('setorList');
 const segmentoList = document.getElementById('segmentoList');
+const gerenciarModalTitle = document.getElementById('gerenciarModalTitle');
 
 const modalFilteredAssets = document.getElementById('modalFilteredAssets');
 const filteredModalTitle = document.getElementById('filteredModalTitle');
@@ -116,12 +118,6 @@ closeAddCategoryModal.addEventListener('click', () => modalAddCategory.close());
 closeAtivosModal.addEventListener('click', () => modalAtivos.close());
 closeSetoresModalBtn.addEventListener('click', () => modalSetores.close());
 closeFilteredModalBtn.addEventListener('click', () => modalFilteredAssets.close());
-
-// Listener para o botão "Gerenciar" que está dentro do modal de ativos
-openSetoresModalBtn.addEventListener('click', () => {
-    modalSetores.showModal();
-    renderSetoresSegmentosList();
-});
 
 // Fechar modais clicando fora
 [modalForm, modalAddCategory, modalAtivos, modalSetores, modalFilteredAssets].forEach(modal => {
@@ -148,7 +144,7 @@ tickerInput.addEventListener('input', async () => {
 
 // Listener para preencher os selects de setor/segmento ao mudar a categoria
 tipoSelect.addEventListener('change', () => {
-    renderSetorSegmentoSelects();
+    renderSetorSegmentoSelects(tipoSelect.value);
 });
 
 // ===== Lógica de Formulários =====
@@ -210,18 +206,26 @@ formAddCategory.addEventListener('submit', (e) => {
     }
 });
 
+// Lógica atualizada para salvar setor/segmento na categoria correta
 formSetores.addEventListener('submit', (e) => {
     e.preventDefault();
     const setor = setorInput.value.trim();
     const segmento = segmentoInput.value.trim();
     
     if (!setor && !segmento) return;
-
-    if (setor && !Object.values(setores).includes(setor)) {
-        push(setoresRef, setor);
+    if (!currentCategoryForGerenciar) {
+        alert("Erro: Categoria não selecionada para gerenciar.");
+        return;
     }
-    if (segmento && !Object.values(segmentos).includes(segmento)) {
-        push(segmentosRef, segmento);
+
+    const setoresDaCategoria = Object.values(setores[currentCategoryForGerenciar] || {});
+    const segmentosDaCategoria = Object.values(segmentos[currentCategoryForGerenciar] || {});
+
+    if (setor && !setoresDaCategoria.includes(setor)) {
+        push(ref(db, `setores/${currentCategoryForGerenciar}`), setor);
+    }
+    if (segmento && !segmentosDaCategoria.includes(segmento)) {
+        push(ref(db, `segmentos/${currentCategoryForGerenciar}`), segmento);
     }
     formSetores.reset();
 });
@@ -266,16 +270,17 @@ function renderSelectOptions() {
             tipoSelect.appendChild(option);
         });
         tipoSelect.value = categorias[0];
-        renderSetorSegmentoSelects();
+        renderSetorSegmentoSelects(categorias[0]);
     }
 }
 
-function renderSetorSegmentoSelects() {
+// Lógica para renderizar os selects de acordo com a categoria
+function renderSetorSegmentoSelects(category) {
     setorSelect.innerHTML = '<option value="">Nenhum</option>';
     segmentoSelect.innerHTML = '<option value="">Nenhum</option>';
 
-    const allSetores = Object.values(setores);
-    const allSegmentos = Object.values(segmentos);
+    const allSetores = Object.values(setores[category] || {});
+    const allSegmentos = Object.values(segmentos[category] || {});
 
     allSetores.forEach(setor => {
         const option = document.createElement('option');
@@ -325,18 +330,23 @@ function renderAtivosModal(category) {
     modalAtivos.showModal();
 }
 
-function renderSetoresSegmentosList() {
+// Lógica para renderizar a lista de setores/segmentos da categoria
+function renderSetoresSegmentosList(category) {
+    gerenciarModalTitle.textContent = `Gerenciar Setores/Segmentos para ${category}`;
+
     setorList.innerHTML = '';
-    Object.values(setores).forEach(setor => {
+    const setoresDaCategoria = setores[category] || {};
+    Object.entries(setoresDaCategoria).forEach(([key, setor]) => {
         const li = document.createElement('li');
-        li.innerHTML = `${setor} <button data-del-setor="${setor}">X</button>`;
+        li.innerHTML = `${setor} <button data-del-setor="${key}" data-cat="${category}">X</button>`;
         setorList.appendChild(li);
     });
 
     segmentoList.innerHTML = '';
-    Object.values(segmentos).forEach(segmento => {
+    const segmentosDaCategoria = segmentos[category] || {};
+    Object.entries(segmentosDaCategoria).forEach(([key, segmento]) => {
         const li = document.createElement('li');
-        li.innerHTML = `${segmento} <button data-del-segmento="${segmento}">X</button>`;
+        li.innerHTML = `${segmento} <button data-del-segmento="${key}" data-cat="${category}">X</button>`;
         segmentoList.appendChild(li);
     });
 }
@@ -471,9 +481,11 @@ function makeEditableMeta(td, category){
     }
 }
 
+// Lógica atualizada para edição de setor/segmento do ativo
 function makeEditableDropdown(td, ativoKey, type) {
     const currentVal = carteira[ativoKey]?.[type] || '';
-    const options = Object.values(type === 'setor' ? setores : segmentos);
+    const category = carteira[ativoKey]?.tipo;
+    const options = Object.values(type === 'setor' ? (setores[category] || {}) : (segmentos[category] || {}));
 
     const select = document.createElement('select');
     select.style.cssText = 'width: 100%; padding: 6px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px;';
@@ -507,6 +519,8 @@ document.addEventListener('click', (e) => {
         const category = e.target.dataset.delCat;
         if(confirm(`Tem certeza que deseja excluir a categoria "${category}" e todos os ativos dela?`)) {
             remove(ref(db, `metas/${category}`));
+            remove(ref(db, `setores/${category}`));
+            remove(ref(db, `segmentos/${category}`));
             Object.keys(carteira).filter(key => carteira[key].tipo === category).forEach(key => {
                 remove(ref(db, `carteira/${key}`));
             });
@@ -527,23 +541,27 @@ document.addEventListener('click', (e) => {
             remove(ref(db, `carteira/${ativoKey}`));
         }
     }
+    
+    // Lógica para abrir o modal de gerenciar
+    if (e.target.matches('#openSetoresModalBtn')) {
+        const category = ativosModalTitle.textContent.replace('Ativos em ', '').trim();
+        currentCategoryForGerenciar = category;
+        renderSetoresSegmentosList(category);
+        modalSetores.showModal();
+    }
 
     // Lógica para deletar setor
     if (e.target.matches('[data-del-setor]')) {
-        const setor = e.target.dataset.delSetor;
-        const setorKey = Object.keys(setores).find(key => setores[key] === setor);
-        if (setorKey) {
-            remove(ref(db, `setores/${setorKey}`));
-        }
+        const setorKey = e.target.dataset.delSetor;
+        const category = e.target.dataset.cat;
+        remove(ref(db, `setores/${category}/${setorKey}`));
     }
     
     // Lógica para deletar segmento
     if (e.target.matches('[data-del-segmento]')) {
-        const segmento = e.target.dataset.delSegmento;
-        const segmentoKey = Object.keys(segmentos).find(key => segmentos[key] === segmento);
-        if (segmentoKey) {
-            remove(ref(db, `segmentos/${segmentoKey}`));
-        }
+        const segmentoKey = e.target.dataset.delSegmento;
+        const category = e.target.dataset.cat;
+        remove(ref(db, `segmentos/${category}/${segmentoKey}`));
     }
 
     // Lógica para abrir modal de ativos filtrados a partir da tabela de ativos
@@ -606,18 +624,19 @@ onValue(metasRef, (snapshot) => {
     renderSelectOptions();
 });
 
+// Listener global para todos os setores e segmentos
 onValue(setoresRef, (snapshot) => {
     setores = snapshot.val() || {};
-    renderSetorSegmentoSelects();
+    renderSetorSegmentoSelects(tipoSelect.value);
     if(modalSetores.open) {
-        renderSetoresSegmentosList();
+        renderSetoresSegmentosList(currentCategoryForGerenciar);
     }
 });
 
 onValue(segmentosRef, (snapshot) => {
     segmentos = snapshot.val() || {};
-    renderSetorSegmentoSelects();
+    renderSetorSegmentoSelects(tipoSelect.value);
     if(modalSetores.open) {
-        renderSetoresSegmentosList();
+        renderSetoresSegmentosList(currentCategoryForGerenciar);
     }
 });
