@@ -25,6 +25,10 @@ const metasRef = ref(db, 'metas');
 let carteira = {};
 let metas = {};
 
+// Variáveis de estado para a ordenação da tabela
+let currentSortKey = 'patrimonio';
+let currentSortDirection = 'desc';
+
 // ===== Utilitários de Formatação =====
 const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtNum = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
@@ -47,13 +51,14 @@ const tipoSelect = document.getElementById('tipo');
 
 const corpoTabela = document.getElementById('corpoTabelaRebalanceamento');
 const patrimonioTotalDashboard = document.getElementById('patrimonioTotalDashboard');
+const sortableHeaders = document.querySelectorAll('#sortable-header-row .sortable');
 
 const modalAddCategory = document.getElementById('modalAddCategory');
 const openAddCategoryModal = document.getElementById('openAddCategoryModal');
 const closeAddCategoryModal = document.getElementById('closeAddCategoryModal');
 const formAddCategory = document.getElementById('formAddCategory');
 
-// Chave da API para buscar a cotação (ajustada conforme sua solicitação)
+// Chave da API para buscar a cotação
 const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
 
 // Função para buscar preço atual da ação na API
@@ -62,9 +67,10 @@ async function buscarPreco(ticker) {
     try {
         const resp = await fetch(url);
         const json = await resp.json();
-        return json.results?.[0]?.regularMarketPrice || null;
+        const price = json.results?.[0]?.regularMarketPrice;
+        return typeof price === 'number' ? price : null;
     } catch (err) {
-        console.error(err);
+        console.error("Erro ao buscar preço:", err);
         return null;
     }
 }
@@ -94,10 +100,10 @@ closeAddCategoryModal.addEventListener('click', () => modalAddCategory.close());
     });
 });
 
-// Listener para preencher o preço ao digitar o Ticker
-tickerInput.addEventListener('change', async () => {
+// Listener para preencher o preço ao digitar no campo do Ticker
+tickerInput.addEventListener('input', async () => {
     const ticker = tickerInput.value.trim().toUpperCase();
-    if (ticker) {
+    if (ticker.length >= 4) { // Previne requisições desnecessárias
         const preco = await buscarPreco(ticker);
         if (preco) {
             precoInput.value = preco.toFixed(2).replace('.', ',');
@@ -218,9 +224,22 @@ function renderTabela() {
     }
 
     const sortedCategories = Object.keys(metas).sort((catA, catB) => {
-        const patrimonioA = categoriasComValores[catA]?.patrimonio || 0;
-        const patrimonioB = categoriasComValores[catB]?.patrimonio || 0;
-        return patrimonioB - patrimonioA;
+        let valA = categoriasComValores[catA]?.[currentSortKey] || 0;
+        let valB = categoriasComValores[catB]?.[currentSortKey] || 0;
+
+        // Caso especial para a categoria, que é uma string
+        if (currentSortKey === 'categoria') {
+            valA = catA;
+            valB = catB;
+        }
+
+        const order = currentSortDirection === 'asc' ? 1 : -1;
+
+        if (typeof valA === 'string' && typeof valB === 'string') {
+            return order * valA.localeCompare(valB);
+        } else {
+            return order * (valA - valB);
+        }
     });
 
     for (const cat of sortedCategories) {
@@ -281,6 +300,20 @@ document.addEventListener('dblclick', (e) => {
         const category = e.target.dataset.editMeta;
         makeEditableMeta(e.target, category);
     }
+});
+
+// Adiciona o listener para os cabeçalhos de coluna
+sortableHeaders.forEach(header => {
+    header.addEventListener('click', () => {
+        const sortKey = header.dataset.sortKey;
+        if (sortKey === currentSortKey) {
+            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortKey = sortKey;
+            currentSortDirection = 'asc';
+        }
+        renderTabela();
+    });
 });
 
 // ===== Inicialização e Listeners do Firebase =====
