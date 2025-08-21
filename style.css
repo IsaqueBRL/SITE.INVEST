@@ -144,3 +144,33 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
     font-weight: 600;
     margin-bottom: 12px;
 }
+
+/* ===== NOVAS REGRAS PARA ORDENAÇÃO DE TABELA ===== */
+
+.sortable {
+    cursor: pointer;
+    position: relative; /* Necessário para posicionar o ícone */
+}
+
+.sortable::after {
+    content: '';
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    opacity: 0.3; /* Seta sutil, não selecionada */
+}
+
+.sortable.asc::after {
+    content: '';
+    border-bottom: 5px solid var(--text); /* Seta para cima */
+    opacity: 1;
+}
+
+.sortable.desc::after {
+    content: '';
+    border-top: 5px solid var(--text); /* Seta para baixo */
+    opacity: 1;
+}
