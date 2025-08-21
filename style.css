@@ -151,13 +151,11 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
 }
 
 /* ===== REGRAS PARA ORDENAÇÃO DE TABELA ===== */
-
 .sortable {
     cursor: pointer;
     position: relative;
     padding-right: 20px;
 }
-
 .sortable::after {
     content: '';
     position: absolute;
@@ -168,12 +166,10 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
     border-right: 5px solid transparent;
     opacity: 0.3;
 }
-
 .sortable.asc::after {
     border-bottom: 5px solid var(--text);
     opacity: 1;
 }
-
 .sortable.desc::after {
     border-top: 5px solid var(--text);
     opacity: 1;
@@ -190,4 +186,35 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
 .total-row {
     font-weight: bold;
     border-top: 2px solid var(--border);
+}
+
+/* Novo estilo para listas de tags (setores/segmentos) */
+.tags-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.tags-list li {
+    background-color: var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    gap: 6px;
+}
+.tags-list li button {
+    background: transparent;
+    border: none;
+    color: var(--danger-color);
+    cursor: pointer;
+    font-weight: bold;
+    padding: 0;
+}
+.tags-list li button:hover {
+    color: var(--danger-bg);
 }
