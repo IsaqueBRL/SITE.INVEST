@@ -127,6 +127,7 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
     z-index: 1000;
     max-width: 600px;
 }
+.modal.large { max-width: 900px; }
 .modal::backdrop {
     background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(4px);
@@ -145,7 +146,7 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
     margin-bottom: 12px;
 }
 
-/* ===== REGRAS PARA ORDENAÇÃO E EXPANSÃO DE TABELA ===== */
+/* ===== REGRAS PARA ORDENAÇÃO DE TABELA ===== */
 
 .sortable {
     cursor: pointer;
@@ -174,47 +175,9 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
     opacity: 1;
 }
 
-/* Estilo para o slot de ativos */
-.expandable {
+/* Novo estilo para o link de categoria */
+.category-link {
     cursor: pointer;
-}
-
-.expandable .arrow {
-    display: inline-block;
-    margin-right: 5px;
-    transform: rotate(90deg);
-    transition: transform 0.2s ease-in-out;
-}
-
-.expandable .arrow.expanded {
-    transform: rotate(180deg);
-}
-
-.ativos-row {
-    display: none;
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-.ativos-row.expanded {
-    display: table-row;
-}
-
-.ativos-row td {
-    padding: 0;
-}
-
-.ativos-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.ativos-table th, .ativos-table td {
-    padding: 10px 10px 10px 40px; /* Recuo para sub-tabela */
-    border-bottom: 1px dashed var(--border);
-}
-
-.ativos-table th {
-    font-size: 11px;
-    font-weight: 500;
-    opacity: 0.7;
+    text-decoration: underline;
+    font-weight: bold;
 }
