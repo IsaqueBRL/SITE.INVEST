@@ -152,17 +152,30 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
     font-weight: 600;
     margin-bottom: 12px;
 }
+/* Estilo para o grupo de título e valor total */
+.modal-title-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+/* Estilo para o título (ex: "Patrimônio em...") */
+.modal-total-title {
+    font-size: 0.9em;
+    font-weight: normal;
+    color: white; /* Cor branca para o título */
+}
+/* Estilo para a soma total */
+.modal-total-value {
+    font-weight: bold;
+    font-size: 1.2em;
+    color: white; /* Cor branca para a soma */
+}
+
 #modalAtivos th,
 #modalAtivos td,
 #modalFilteredAssets th,
 #modalFilteredAssets td {
     color: var(--text);
-}
-/* Novo estilo para a soma */
-#totalInvestidoModal,
-#totalInvestidoFilteredModal {
-    font-weight: bold;
-    font-size: 1.2em;
 }
 
 /* ===== REGRAS PARA ORDENAÇÃO DE TABELA ===== */
@@ -268,6 +281,9 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
     }
     .title h1 {
         font-size: 20px;
+    }
+    .modal-title-group {
+        align-items: center;
     }
 
     /* Ajustes no Formulário (Adicionar Ativo) */
