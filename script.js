@@ -53,6 +53,22 @@ const openAddCategoryModal = document.getElementById('openAddCategoryModal');
 const closeAddCategoryModal = document.getElementById('closeAddCategoryModal');
 const formAddCategory = document.getElementById('formAddCategory');
 
+// Chave da API para buscar a cotação (ajustada conforme sua solicitação)
+const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
+
+// Função para buscar preço atual da ação na API
+async function buscarPreco(ticker) {
+    const url = `https://brapi.dev/api/quote/${ticker}?token=${API_KEY}`;
+    try {
+        const resp = await fetch(url);
+        const json = await resp.json();
+        return json.results?.[0]?.regularMarketPrice || null;
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
+}
+
 // ===== Eventos dos Botões e Modais =====
 openModalBtn.addEventListener('click', () => {
     modalForm.showModal();
@@ -78,6 +94,20 @@ closeAddCategoryModal.addEventListener('click', () => modalAddCategory.close());
     });
 });
 
+// Listener para preencher o preço ao digitar o Ticker
+tickerInput.addEventListener('change', async () => {
+    const ticker = tickerInput.value.trim().toUpperCase();
+    if (ticker) {
+        const preco = await buscarPreco(ticker);
+        if (preco) {
+            precoInput.value = preco.toFixed(2).replace('.', ',');
+        } else {
+            precoInput.value = '';
+        }
+    }
+});
+
+
 // ===== Lógica de Formulários =====
 formAtivo.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -92,6 +122,8 @@ formAtivo.addEventListener('submit', async (e) => {
     const investido = round2(quantidade * preco + corretagem);
     const precoMedio = round2(investido / quantidade);
 
+    const precoAtual = await buscarPreco(ticker);
+
     const existenteKey = Object.keys(carteira).find(key => carteira[key].ticker === ticker && carteira[key].tipo === tipo);
 
     if (existenteKey){
@@ -104,12 +136,14 @@ formAtivo.addEventListener('submit', async (e) => {
             ...existente,
             quantidade: totalQtde,
             investido: round2(totalInv),
-            precoMedio: novoPrecoMedio
+            precoMedio: novoPrecoMedio,
+            precoAtual: precoAtual || existente.precoAtual // Mantém o último preço atual se a busca falhar
         });
     } else {
         push(carteiraRef, {
             ticker, tipo, quantidade,
-            investido, precoMedio
+            investido, precoMedio,
+            precoAtual: precoAtual || 0
         });
     }
     
