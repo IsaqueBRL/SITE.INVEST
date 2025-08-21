@@ -28,7 +28,6 @@ let metas = {};
 // Variáveis de estado para a ordenação da tabela
 let currentSortKey = 'patrimonio';
 let currentSortDirection = 'desc';
-let expandedCategory = null;
 
 // ===== Utilitários de Formatação =====
 const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -58,6 +57,11 @@ const modalAddCategory = document.getElementById('modalAddCategory');
 const openAddCategoryModal = document.getElementById('openAddCategoryModal');
 const closeAddCategoryModal = document.getElementById('closeAddCategoryModal');
 const formAddCategory = document.getElementById('formAddCategory');
+
+const modalAtivos = document.getElementById('modalAtivos');
+const closeAtivosModal = document.getElementById('closeAtivosModal');
+const ativosModalTitle = document.getElementById('ativosModalTitle');
+const tabelaAtivosModal = document.getElementById('tabelaAtivosModal');
 
 // Chave da API para buscar a cotação
 const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
@@ -91,8 +95,10 @@ openAddCategoryModal.addEventListener('click', () => {
 
 closeAddCategoryModal.addEventListener('click', () => modalAddCategory.close());
 
+closeAtivosModal.addEventListener('click', () => modalAtivos.close());
+
 // Fechar modais clicando fora
-[modalForm, modalAddCategory].forEach(modal => {
+[modalForm, modalAddCategory, modalAtivos].forEach(modal => {
     modal.addEventListener('click', e => {
         const dialogDimensions = modal.getBoundingClientRect();
         if (e.clientX < dialogDimensions.left || e.clientX > dialogDimensions.right || e.clientY < dialogDimensions.top || e.clientY > dialogDimensions.bottom) {
@@ -179,15 +185,26 @@ function renderSelectOptions() {
     });
 }
 
-function renderAtivos(category) {
+function renderAtivosModal(category) {
     const ativos = Object.entries(carteira).filter(([key, ativo]) => ativo.tipo === category);
     
-    const row = document.createElement('tr');
-    row.classList.add('ativos-row');
-    row.dataset.category = category;
+    ativosModalTitle.textContent = `Ativos em ${category}`;
+    
+    let tableHtml = `
+        <thead>
+            <tr>
+                <th>TICKER</th>
+                <th>QUANTIDADE</th>
+                <th>PREÇO ATUAL</th>
+                <th style="min-width:140px;">RETORNO</th>
+                <th>AÇÕES</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
 
     if (ativos.length === 0) {
-        row.innerHTML = `<td colspan="6" style="text-align:center; padding: 20px;">Nenhum ativo nesta categoria.</td>`;
+        tableHtml += `<tr><td colspan="5" style="text-align:center; padding: 20px;">Nenhum ativo nesta categoria.</td></tr>`;
     } else {
         const sortedAtivos = ativos.sort(([, a], [, b]) => {
             const valorA = (a.precoAtual || a.precoMedio) * a.quantidade;
@@ -195,7 +212,7 @@ function renderAtivos(category) {
             return valorB - valorA;
         });
 
-        const ativoRows = sortedAtivos.map(([key, ativo]) => {
+        tableHtml += sortedAtivos.map(([key, ativo]) => {
             const valorAtual = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
             const retorno = valorAtual - ativo.investido;
             const retornoPct = (retorno / ativo.investido) * 100;
@@ -213,26 +230,11 @@ function renderAtivos(category) {
                 </tr>
             `;
         }).join('');
-
-        row.innerHTML = `
-            <td colspan="6">
-                <table class="ativos-table">
-                    <thead>
-                        <tr>
-                            <th>TICKER</th>
-                            <th>QUANTIDADE</th>
-                            <th>PREÇO ATUAL</th>
-                            <th style="min-width:140px;">RETORNO</th>
-                            <th>AÇÕES</th>
-                        </tr>
-                    </thead>
-                    <tbody>${ativoRows}</tbody>
-                </table>
-            </td>
-        `;
     }
-    
-    return row;
+
+    tableHtml += `</tbody>`;
+    tabelaAtivosModal.innerHTML = tableHtml;
+    modalAtivos.showModal();
 }
 
 function calcularValores() {
@@ -269,7 +271,6 @@ function calcularValores() {
 }
 
 function renderTabela() {
-    console.log("Renderizando tabela. Categoria expandida:", expandedCategory);
     const { categoriasComValores } = calcularValores();
     corpoTabela.innerHTML = '';
     
@@ -312,16 +313,8 @@ function renderTabela() {
     for (const cat of sortedCategories) {
         const vals = categoriasComValores[cat] || {};
         const tr = document.createElement('tr');
-        tr.dataset.category = cat;
-
-        let icon = '<span class="arrow">▶</span>';
-        if (expandedCategory === cat) {
-            tr.classList.add('expanded');
-            icon = '<span class="arrow expanded">▶</span>';
-        }
-
         tr.innerHTML = `
-            <td class="expandable">${icon}<strong>${cat}</strong></td>
+            <td><a href="#" class="category-link" data-cat="${cat}">${cat}</a></td>
             <td class="right" data-edit-meta="${cat}">${toPct(vals.meta)}</td>
             <td class="right ${vals.atual > vals.meta * 1.05 ? 'red' : vals.atual < vals.meta * 0.95 ? 'green' : ''}">${toPct(vals.atual)}</td>
             <td class="right">${toBRL(vals.patrimonio)}</td>
@@ -332,12 +325,6 @@ function renderTabela() {
             </td>
         `;
         corpoTabela.appendChild(tr);
-
-        // Adiciona a sub-tabela de ativos se a categoria estiver expandida
-        if (expandedCategory === cat) {
-            const ativosRow = renderAtivos(cat);
-            corpoTabela.appendChild(ativosRow);
-        }
     }
 }
 
@@ -376,20 +363,11 @@ document.addEventListener('click', (e) => {
         }
     }
     
-    // Lógica para expandir/colapsar o "slot"
-    const clickedElement = e.target.closest('.expandable');
-    if (clickedElement) {
-        const row = clickedElement.closest('tr');
-        const category = row.dataset.category;
-        console.log("Clique na categoria:", category);
-        if (expandedCategory === category) {
-            expandedCategory = null; // Colapsa
-            console.log("Colapsando slot.");
-        } else {
-            expandedCategory = category; // Expande
-            console.log("Expandindo slot.");
-        }
-        renderTabela();
+    // Lógica para abrir o modal de ativos
+    if (e.target.matches('.category-link')) {
+        e.preventDefault();
+        const category = e.target.dataset.cat;
+        renderAtivosModal(category);
     }
     
     // Lógica para deletar ativo individual
