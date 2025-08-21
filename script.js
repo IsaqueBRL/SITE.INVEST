@@ -85,6 +85,7 @@ const formAddCategory = document.getElementById('formAddCategory');
 const modalAtivos = document.getElementById('modalAtivos');
 const closeAtivosModal = document.getElementById('closeAtivosModal');
 const ativosModalTitle = document.getElementById('ativosModalTitle');
+const totalInvestidoModal = document.getElementById('totalInvestidoModal');
 const tabelaAtivosModal = document.getElementById('tabelaAtivosModal');
 const openSetoresModalBtn = document.getElementById('openSetoresModalBtn');
 
@@ -99,6 +100,7 @@ const gerenciarModalTitle = document.getElementById('gerenciarModalTitle');
 
 const modalFilteredAssets = document.getElementById('modalFilteredAssets');
 const filteredModalTitle = document.getElementById('filteredModalTitle');
+const totalInvestidoFilteredModal = document.getElementById('totalInvestidoFilteredModal');
 const closeFilteredModalBtn = document.getElementById('closeFilteredModalBtn');
 const tabelaFilteredAssetsModal = document.getElementById('tabelaFilteredAssetsModal');
 
@@ -234,6 +236,10 @@ formSetores.addEventListener('submit', (e) => {
 function renderFilteredAssetsModal(filterType, filterValue) {
     const ativosFiltrados = Object.values(carteira).filter(ativo => ativo[filterType] === filterValue);
     
+    // Cálculo da soma do Total Investido
+    const totalInvestido = ativosFiltrados.reduce((sum, ativo) => sum + ((ativo.precoAtual || ativo.precoMedio) * ativo.quantidade), 0);
+    totalInvestidoFilteredModal.textContent = toBRL(totalInvestido);
+    
     filteredModalTitle.textContent = `Ativos com ${filterType}: "${filterValue}"`;
     
     const ativoRows = ativosFiltrados.map(ativo => {
@@ -299,6 +305,10 @@ function renderSetorSegmentoSelects(category) {
 
 function renderAtivosModal(category) {
     const ativos = Object.entries(carteira).filter(([key, ativo]) => ativo.tipo === category);
+    
+    // Cálculo da soma do Total Investido
+    const totalInvestido = ativos.reduce((sum, [, ativo]) => sum + ((ativo.precoAtual || ativo.precoMedio) * ativo.quantidade), 0);
+    totalInvestidoModal.textContent = toBRL(totalInvestido);
     
     ativosModalTitle.textContent = `Ativos em ${category}`;
     
