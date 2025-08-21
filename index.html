@@ -151,7 +151,18 @@
                     <span id="patrimonioTitleModal" class="modal-total-title"></span>
                     <span id="totalInvestidoModal" class="modal-total-value"></span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="modal-actions-group">
+                    <div class="dropdown-wrapper">
+                        <button class="btn sec btn-sm" id="toggleAtivosColumnsBtn">Colunas</button>
+                        <div class="dropdown-menu" id="ativosColumnsDropdown">
+                            <label><input type="checkbox" data-column-id="ticker" checked> Ticker</label>
+                            <label><input type="checkbox" data-column-id="quantidade" checked> Quantidade</label>
+                            <label><input type="checkbox" data-column-id="precoAtual" checked> Preço Atual</label>
+                            <label><input type="checkbox" data-column-id="setor" checked> Setor</label>
+                            <label><input type="checkbox" data-column-id="segmento" checked> Segmento</label>
+                            <label><input type="checkbox" data-column-id="totalInvestido" checked> Total Investido</label>
+                        </div>
+                    </div>
                     <button class="btn sec btn-sm" id="openSetoresModalBtn">Gerenciar</button>
                     <button class="btn danger btn-sm" id="closeAtivosModal">Fechar</button>
                 </div>
@@ -160,12 +171,12 @@
                 <table id="tabelaAtivosModal">
                     <thead>
                         <tr>
-                            <th>TICKER</th>
-                            <th>QUANTIDADE</th>
-                            <th>PREÇO ATUAL</th>
-                            <th>SETOR</th>
-                            <th>SEGMENTO</th>
-                            <th>TOTAL INVESTIDO</th>
+                            <th data-column-id="ticker">TICKER</th>
+                            <th data-column-id="quantidade">QUANTIDADE</th>
+                            <th data-column-id="precoAtual">PREÇO ATUAL</th>
+                            <th data-column-id="setor">SETOR</th>
+                            <th data-column-id="segmento">SEGMENTO</th>
+                            <th data-column-id="totalInvestido">TOTAL INVESTIDO</th>
                             <th>AÇÕES</th>
                         </tr>
                     </thead>
@@ -223,19 +234,33 @@
                     <span id="patrimonioTitleFilteredModal" class="modal-total-title"></span>
                     <span id="totalInvestidoFilteredModal" class="modal-total-value"></span>
                 </div>
-                <button class="btn danger btn-sm" id="closeFilteredModalBtn">Fechar</button>
+                <div class="modal-actions-group">
+                    <div class="dropdown-wrapper">
+                        <button class="btn sec btn-sm" id="toggleFilteredColumnsBtn">Colunas</button>
+                        <div class="dropdown-menu" id="filteredColumnsDropdown">
+                            <label><input type="checkbox" data-column-id="ticker" checked> Ticker</label>
+                            <label><input type="checkbox" data-column-id="quantidade" checked> Quantidade</label>
+                            <label><input type="checkbox" data-column-id="categoria" checked> Categoria</label>
+                            <label><input type="checkbox" data-column-id="precoAtual" checked> Preço Atual</label>
+                            <label><input type="checkbox" data-column-id="setor" checked> Setor</label>
+                            <label><input type="checkbox" data-column-id="segmento" checked> Segmento</label>
+                            <label><input type="checkbox" data-column-id="totalInvestido" checked> Total Investido</label>
+                        </div>
+                    </div>
+                    <button class="btn danger btn-sm" id="closeFilteredModalBtn">Fechar</button>
+                </div>
             </div>
             <div class="bd">
                 <table id="tabelaFilteredAssetsModal">
                     <thead>
                         <tr>
-                            <th>TICKER</th>
-                            <th>QUANTIDADE</th>
-                            <th>CATEGORIA</th>
-                            <th>PREÇO ATUAL</th>
-                            <th>SETOR</th>
-                            <th>SEGMENTO</th>
-                            <th>TOTAL INVESTIDO</th>
+                            <th data-column-id="ticker">TICKER</th>
+                            <th data-column-id="quantidade">QUANTIDADE</th>
+                            <th data-column-id="categoria">CATEGORIA</th>
+                            <th data-column-id="precoAtual">PREÇO ATUAL</th>
+                            <th data-column-id="setor">SETOR</th>
+                            <th data-column-id="segmento">SEGMENTO</th>
+                            <th data-column-id="totalInvestido">TOTAL INVESTIDO</th>
                         </tr>
                     </thead>
                     <tbody>
