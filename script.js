@@ -229,14 +229,11 @@ formSetores.addEventListener('submit', (e) => {
 // Função para exibir ativos filtrados
 function renderFilteredAssetsModal(filterType, filterValue) {
     const ativosFiltrados = Object.values(carteira).filter(ativo => ativo[filterType] === filterValue);
-
+    
     filteredModalTitle.textContent = `Ativos com ${filterType}: "${filterValue}"`;
     
     const ativoRows = ativosFiltrados.map(ativo => {
         const valorAtual = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
-        const retorno = valorAtual - ativo.investido;
-        const retornoPct = (retorno / ativo.investido) * 100;
-        const retornoClass = retorno >= 0 ? 'green' : 'red';
         
         return `
             <tr>
@@ -246,7 +243,7 @@ function renderFilteredAssetsModal(filterType, filterValue) {
                 <td>${toBRL(ativo.precoAtual || ativo.precoMedio)}</td>
                 <td><span class="clickable-tag" data-filter-setor="${ativo.setor}">${ativo.setor || '-'}</span></td>
                 <td><span class="clickable-tag" data-filter-segmento="${ativo.segmento}">${ativo.segmento || '-'}</span></td>
-                <td class="${retornoClass}">${toBRL(retorno)} (${toPct(retornoPct)})</td>
+                <td>${toBRL(valorAtual)}</td>
             </tr>
         `;
     }).join('');
@@ -308,9 +305,6 @@ function renderAtivosModal(category) {
 
     const ativoRows = sortedAtivos.map(([key, ativo]) => {
         const valorAtual = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
-        const retorno = valorAtual - ativo.investido;
-        const retornoPct = (retorno / ativo.investido) * 100;
-        const retornoClass = retorno >= 0 ? 'green' : 'red';
         
         return `
             <tr>
@@ -319,7 +313,7 @@ function renderAtivosModal(category) {
                 <td>${toBRL(ativo.precoAtual || ativo.precoMedio)}</td>
                 <td data-edit-setor="${key}"><span class="editable-field">${ativo.setor || '-'}</span></td>
                 <td data-edit-segmento="${key}"><span class="editable-field">${ativo.segmento || '-'}</span></td>
-                <td class="${retornoClass}">${toBRL(retorno)} (${toPct(retornoPct)})</td>
+                <td>${toBRL(valorAtual)}</td>
                 <td class="right">
                     <button class="btn danger btn-sm" data-del-ativo="${key}">X</button>
                 </td>
