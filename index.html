@@ -53,46 +53,6 @@
                 </div>
             </div>
         </section>
-
-        <section class="card" style="margin-top:20px;">
-            <div class="hd" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap">
-                <span>Minhas Posições</span>
-                <div class="tabs" id="tabs-container">
-                    </div>
-            </div>
-            <div class="bd">
-                <div class="actions-bar">
-                    <button class="btn sec" id="exportarCsv">Exportar CSV</button>
-                    <label class="btn warn" for="importCsv">Importar CSV</label>
-                    <input id="importCsv" type="file" accept=".csv" style="display:none" />
-                    <button class="btn danger" id="apagarTudo">Apagar tudo</button>
-                </div>
-                <div class="hint" style="margin-bottom:10px">Dê duplo clique para editar: <b>Preço Atual</b> ou <b>Quantidade</b>.</div>
-                <div style="overflow:auto">
-                    <div class="column-controls">
-                        <label><input type="checkbox" checked data-col-index="2" /> Qtde</label>
-                        <label><input type="checkbox" checked data-col-index="3" /> Preço Atual</label>
-                        <label><input type="checkbox" checked data-col-index="4" /> Valor USD</label>
-                        <label><input type="checkbox" checked data-col-index="5" /> Valor BRL</label>
-                    </div>
-                    <table id="tabela">
-                        <thead>
-                            <tr>
-                                <th>Ticker</th>
-                                <th>Tipo</th>
-                                <th class="right">Qtde</th>
-                                <th class="right">Preço Atual</th>
-                                <th class="right">Valor USD</th>
-                                <th class="right">Valor BRL</th>
-                                <th class="right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="corpoTabela">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
     </main>
         
     <dialog id="modalForm" class="modal">
