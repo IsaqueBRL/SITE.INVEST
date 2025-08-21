@@ -269,6 +269,7 @@ function calcularValores() {
 }
 
 function renderTabela() {
+    console.log("Renderizando tabela. Categoria expandida:", expandedCategory);
     const { categoriasComValores } = calcularValores();
     corpoTabela.innerHTML = '';
     
@@ -311,12 +312,16 @@ function renderTabela() {
     for (const cat of sortedCategories) {
         const vals = categoriasComValores[cat] || {};
         const tr = document.createElement('tr');
-        tr.classList.add('expandable');
-        if (expandedCategory === cat) tr.classList.add('expanded');
         tr.dataset.category = cat;
 
+        let icon = '<span class="arrow">▶</span>';
+        if (expandedCategory === cat) {
+            tr.classList.add('expanded');
+            icon = '<span class="arrow expanded">▶</span>';
+        }
+
         tr.innerHTML = `
-            <td><span class="arrow">▶</span><strong>${cat}</strong></td>
+            <td class="expandable">${icon}<strong>${cat}</strong></td>
             <td class="right" data-edit-meta="${cat}">${toPct(vals.meta)}</td>
             <td class="right ${vals.atual > vals.meta * 1.05 ? 'red' : vals.atual < vals.meta * 0.95 ? 'green' : ''}">${toPct(vals.atual)}</td>
             <td class="right">${toBRL(vals.patrimonio)}</td>
@@ -372,13 +377,17 @@ document.addEventListener('click', (e) => {
     }
     
     // Lógica para expandir/colapsar o "slot"
-    const clickedRow = e.target.closest('tr.expandable');
-    if (clickedRow) {
-        const category = clickedRow.dataset.category;
+    const clickedElement = e.target.closest('.expandable');
+    if (clickedElement) {
+        const row = clickedElement.closest('tr');
+        const category = row.dataset.category;
+        console.log("Clique na categoria:", category);
         if (expandedCategory === category) {
             expandedCategory = null; // Colapsa
+            console.log("Colapsando slot.");
         } else {
             expandedCategory = category; // Expande
+            console.log("Expandindo slot.");
         }
         renderTabela();
     }
