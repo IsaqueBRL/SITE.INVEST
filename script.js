@@ -1,5 +1,5 @@
 // Importa as funções do Firebase SDK
-import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 // ===== Configuração do Firebase =====
@@ -17,50 +17,145 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Referência para as categorias no banco de dados
+// Referências para os nós do banco de dados
+const carteiraRef = ref(db, 'carteira');
 const metasRef = ref(db, 'metas');
 
-// Variável de estado para armazenar as categorias
+// Variáveis de estado
+let carteira = {};
 let metas = {};
 
 // ===== Utilitários de Formatação =====
 const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtNum = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
+function parseBRL(str) {
+    if (str == null || str === '') return 0;
+    return Number(String(str).replace(/\./g,'').replace(',', '.')) || 0;
+}
 function toBRL(n) { return fmtBRL.format(n || 0); }
 function toPct(n) { return (n || 0).toFixed(2) + '%'; }
 function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
 
 // ===== DOM Elements =====
+const formAtivo = document.getElementById('formAtivo');
+const modalForm = document.getElementById('modalForm');
+const openModalBtn = document.getElementById('openModalBtn');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const tickerInput = document.getElementById('ticker');
+const precoInput = document.getElementById('preco');
+const tipoSelect = document.getElementById('tipo');
+
 const corpoTabela = document.getElementById('corpoTabelaRebalanceamento');
 const patrimonioTotalDashboard = document.getElementById('patrimonioTotalDashboard');
+
 const modalAddCategory = document.getElementById('modalAddCategory');
 const openAddCategoryModal = document.getElementById('openAddCategoryModal');
 const closeAddCategoryModal = document.getElementById('closeAddCategoryModal');
 const formAddCategory = document.getElementById('formAddCategory');
 
-// ===== Dados de Ativos (MOCK) para simular o cálculo =====
-// Estes dados são apenas para demonstração. O ideal seria ter uma segunda tabela no Firebase para os ativos.
-const carteiraMock = {
-    'Ação': [ { valor: 5000 }, { valor: 2500 }],
-    'FII': [ { valor: 3000 }],
-    'ETF': [ { valor: 1000 }],
-    'BDR': [ { valor: 500 }],
-    'Outros': [ { valor: 500 }],
-    'ETF Exterior': [ { valor: 0 }],
-    'Reits': [ { valor: 0 }],
-    'Stoks': [ { valor: 0 }],
-    'Fiagro': [ { valor: 0 }],
-};
+// ===== Eventos dos Botões e Modais =====
+openModalBtn.addEventListener('click', () => {
+    modalForm.showModal();
+    formAtivo.reset();
+});
+
+closeModalBtn.addEventListener('click', () => modalForm.close());
+
+openAddCategoryModal.addEventListener('click', () => {
+    modalAddCategory.showModal();
+    formAddCategory.reset();
+});
+
+closeAddCategoryModal.addEventListener('click', () => modalAddCategory.close());
+
+// Fechar modais clicando fora
+[modalForm, modalAddCategory].forEach(modal => {
+    modal.addEventListener('click', e => {
+        const dialogDimensions = modal.getBoundingClientRect();
+        if (e.clientX < dialogDimensions.left || e.clientX > dialogDimensions.right || e.clientY < dialogDimensions.top || e.clientY > dialogDimensions.bottom) {
+            modal.close();
+        }
+    });
+});
+
+// ===== Lógica de Formulários =====
+formAtivo.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const ticker = String(formAtivo.ticker.value).trim().toUpperCase();
+    const tipo = formAtivo.tipo.value;
+    const quantidade = Number(formAtivo.quantidade.value);
+    const preco = parseBRL(formAtivo.preco.value);
+    const corretagem = parseBRL(formAtivo.corretagem.value);
+
+    if(!ticker || !quantidade || !preco) return;
+
+    const investido = round2(quantidade * preco + corretagem);
+    const precoMedio = round2(investido / quantidade);
+
+    const existenteKey = Object.keys(carteira).find(key => carteira[key].ticker === ticker && carteira[key].tipo === tipo);
+
+    if (existenteKey){
+        const existente = carteira[existenteKey];
+        const totalQtde = existente.quantidade + quantidade;
+        const totalInv = existente.investido + investido;
+        const novoPrecoMedio = round2(totalInv / totalQtde);
+
+        set(ref(db, `carteira/${existenteKey}`), {
+            ...existente,
+            quantidade: totalQtde,
+            investido: round2(totalInv),
+            precoMedio: novoPrecoMedio
+        });
+    } else {
+        push(carteiraRef, {
+            ticker, tipo, quantidade,
+            investido, precoMedio
+        });
+    }
+    
+    modalForm.close();
+});
+
+formAddCategory.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const categoryName = formAddCategory.categoryName.value.trim();
+    const categoryMeta = Number(formAddCategory.categoryMeta.value);
+    
+    if (categoryName && !isNaN(categoryMeta)) {
+        set(ref(db, `metas/${categoryName}`), categoryMeta);
+        modalAddCategory.close();
+    }
+});
 
 // ===== Funções de Lógica e Renderização =====
+function renderSelectOptions() {
+    tipoSelect.innerHTML = '';
+    Object.keys(metas).forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        tipoSelect.appendChild(option);
+    });
+}
+
 function calcularValores() {
-    const patrimonioTotal = Object.values(carteiraMock).flat().reduce((sum, ativo) => sum + ativo.valor, 0);
+    const patrimonioTotal = Object.keys(carteira).reduce((sum, key) => {
+        const pos = carteira[key];
+        const valor = (pos.precoAtual || pos.precoMedio) * pos.quantidade;
+        return sum + valor;
+    }, 0);
     
     patrimonioTotalDashboard.textContent = toBRL(patrimonioTotal);
 
     const categoriasComValores = {};
     Object.keys(metas).forEach(cat => {
-        const patrimonio = (carteiraMock[cat] || []).reduce((sum, ativo) => sum + ativo.valor, 0);
+        const patrimonio = Object.keys(carteira).filter(key => carteira[key].tipo === cat)
+            .reduce((sum, key) => {
+                const pos = carteira[key];
+                const valor = (pos.precoAtual || pos.precoMedio) * pos.quantidade;
+                return sum + valor;
+            }, 0);
+        
         const meta = metas[cat] || 0;
         const atual = patrimonioTotal > 0 ? (patrimonio / patrimonioTotal) * 100 : 0;
         const aportar = atual < meta ? (meta * patrimonioTotal) / 100 - patrimonio : 0;
@@ -131,53 +226,39 @@ function makeEditableMeta(td, category){
             if(ev.key === 'Enter') commit();
             if(ev.key === 'Escape') renderTabela();
         });
-    } else {
-        console.error("Could not find the input field to make editable.");
     }
 }
 
-// ===== Eventos =====
-openAddCategoryModal.addEventListener('click', () => { modalAddCategory.showModal(); formAddCategory.reset(); });
-closeAddCategoryModal.addEventListener('click', () => modalAddCategory.close());
-modalAddCategory.addEventListener('click', e => {
-    const dialogDimensions = modalAddCategory.getBoundingClientRect()
-    if (e.clientX < dialogDimensions.left || e.clientX > dialogDimensions.right || e.clientY < dialogDimensions.top || e.clientY > dialogDimensions.bottom) {
-        modalAddCategory.close();
-    }
-});
-
-formAddCategory.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const categoryName = formAddCategory.categoryName.value.trim();
-    const categoryMeta = Number(formAddCategory.categoryMeta.value);
-    
-    if (categoryName && !isNaN(categoryMeta)) {
-        set(ref(db, `metas/${categoryName}`), categoryMeta);
-        modalAddCategory.close();
-    }
-});
-
-// Delegação de eventos para os botões e células editáveis
-corpoTabela.addEventListener('click', (e) => {
+// ===== Delegação de Eventos =====
+document.addEventListener('click', (e) => {
     if (e.target.matches('[data-del-cat]')) {
         const category = e.target.dataset.delCat;
-        if(confirm(`Tem certeza que deseja excluir a categoria "${category}"? Esta ação é irreversível.`)) {
+        if(confirm(`Tem certeza que deseja excluir a categoria "${category}" e todos os ativos dela?`)) {
             remove(ref(db, `metas/${category}`));
+            Object.keys(carteira).filter(key => carteira[key].tipo === category).forEach(key => {
+                remove(ref(db, `carteira/${key}`));
+            });
         }
     }
 });
 
-corpoTabela.addEventListener('dblclick', (e) => {
+document.addEventListener('dblclick', (e) => {
     if (e.target.matches('[data-edit-meta]')) {
         const category = e.target.dataset.editMeta;
         makeEditableMeta(e.target, category);
     }
 });
 
-
 // ===== Inicialização e Listeners do Firebase =====
+onValue(carteiraRef, (snapshot) => {
+    const data = snapshot.val() || {};
+    carteira = data;
+    renderTabela();
+});
+
 onValue(metasRef, (snapshot) => {
     const data = snapshot.val() || {};
     metas = data;
     renderTabela();
+    renderSelectOptions();
 });
