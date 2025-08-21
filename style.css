@@ -107,11 +107,6 @@ th, td { text-align:left; padding: 10px; border-bottom:1px dashed var(--border);
 th { font-size: 12px; font-weight:600; opacity:.8; }
 tbody tr:hover { background-color: rgba(255,255,255,0.05); }
 
-/* Oculta as colunas da tabela */
-.hidden-column {
-    display: none;
-}
-
 /* Estilos de cor para a tabela */
 .right { text-align:right; }
 .muted { opacity:.7; color: var(--muted-text); }
@@ -174,42 +169,6 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
     font-weight: bold;
     font-size: 1.2em;
     color: white; /* Cor branca para a soma */
-}
-/* Estilos para o novo menu de dropdown */
-.modal-actions-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    position: relative; /* Para posicionar o dropdown */
-}
-.dropdown-wrapper {
-    position: relative;
-    display: inline-block;
-}
-.dropdown-menu {
-    display: none;
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 8px;
-    background-color: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px;
-    z-index: 10;
-}
-.dropdown-menu.show {
-    display: block;
-}
-.dropdown-menu label {
-    display: block;
-    white-space: nowrap;
-    cursor: pointer;
-    font-size: 14px;
-    padding: 4px;
-}
-.dropdown-menu label:hover {
-    background-color: rgba(255, 255, 255, 0.05);
 }
 
 #modalAtivos th,
@@ -326,13 +285,7 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
     .modal-title-group {
         align-items: center;
     }
-    .modal-actions-group {
-        flex-direction: column-reverse; /* Inverte a ordem para ficar mais organizado */
-        align-items: stretch;
-    }
-    .modal-actions-group .btn {
-        width: 100%;
-    }
+
     /* Ajustes no Formulário (Adicionar Ativo) */
     .row {
         display: block;
