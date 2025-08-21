@@ -20,11 +20,10 @@ const db = getDatabase(app);
 // Referências para os nós do banco de dados
 const carteiraRef = ref(db, 'carteira');
 const metasRef = ref(db, 'metas');
-const colVisibilityRef = ref(db, 'column_visibility');
 
 // ===== Utilidades de número e moeda (pt-BR) =====
 const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-const fmtUSD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+const fmtUSD = new Intl.Number.Format('en-US', { style: 'currency', currency: 'USD' });
 const fmtNum = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
 function parseBRL(str) {
     if (str == null || str === '') return 0;
@@ -38,10 +37,8 @@ function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
 const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
 
 // Variáveis de estado
-let activeTab = 'all';
 let carteira = {};
 let metas = {};
-let colVisibility = {};
 
 // Função para buscar preço atual da ação na API
 async function buscarPreco(ticker) {
@@ -77,11 +74,8 @@ const closeModalBtn = document.getElementById('closeModalBtn');
 const tickerInput = document.getElementById('ticker');
 const precoInput = document.getElementById('preco');
 const tipoSelect = document.getElementById('tipo');
-const corpo = document.getElementById('corpoTabela');
-const tabelaPosicoes = document.getElementById('tabela');
 const corpoRebalanceamento = document.getElementById('corpoTabelaRebalanceamento');
 const tabelaRebalanceamento = document.getElementById('tabelaRebalanceamento');
-const tabsContainer = document.getElementById('tabs-container');
 
 const patrimonioTotalDashboard = document.getElementById('patrimonioTotalDashboard');
 
@@ -89,7 +83,6 @@ const modalAddCategory = document.getElementById('modalAddCategory');
 const openAddCategoryModal = document.getElementById('openAddCategoryModal');
 const closeAddCategoryModal = document.getElementById('closeAddCategoryModal');
 const formAddCategory = document.getElementById('formAddCategory');
-const colControls = document.querySelectorAll('.column-controls input[type="checkbox"]');
 
 // Eventos
 document.getElementById('apagarTudo').addEventListener('click', () => {
@@ -188,70 +181,6 @@ async function buscarPrecosDaCarteira() {
         set(ref(db, `carteira/${key}/precoAtual`), precoAtual || 0);
     });
     await Promise.all(promises);
-}
-
-// ===== Funções de renderização =====
-function renderTabs() {
-    tabsContainer.innerHTML = '';
-    const categorias = ['all', ...Object.keys(metas)];
-    categorias.forEach(cat => {
-        const button = document.createElement('button');
-        button.className = `btn sec tab-btn${activeTab === cat ? ' active' : ''}`;
-        button.dataset.tab = cat;
-        button.textContent = cat === 'all' ? 'Todos' : cat;
-        tabsContainer.appendChild(button);
-    });
-}
-
-function renderSelectOptions() {
-    tipoSelect.innerHTML = '';
-    Object.keys(metas).forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat;
-        option.textContent = cat;
-        tipoSelect.appendChild(option);
-    });
-}
-
-async function renderPosicoes(){
-    await buscarPrecosDaCarteira();
-    const dolar = await buscarDolar();
-    
-    corpo.innerHTML = '';
-
-    const filteredCarteira = activeTab === 'all'
-        ? Object.keys(carteira).map(key => ({ ...carteira[key], id: key }))
-        : Object.keys(carteira).filter(key => carteira[key].tipo === activeTab).map(key => ({ ...carteira[key], id: key }));
-
-    filteredCarteira.forEach(pos => {
-        let valorAtual = 0;
-        let valorUSD = 0;
-        let valorBRL = 0;
-
-        const isForeign = ['Stoks', 'ETF Exterior', 'Reits'].includes(pos.tipo);
-
-        if (isForeign) {
-            valorUSD = round2(pos.precoAtual * pos.quantidade);
-            valorBRL = round2(valorUSD * dolar);
-            valorAtual = valorBRL;
-        } else {
-            valorAtual = round2(pos.precoAtual * pos.quantidade);
-        }
-        
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="nowrap"><strong>${pos.ticker}</strong></td>
-            <td><span class="pill">${pos.tipo}</span></td>
-            <td class="right editable-qty" data-id="${pos.id}">${fmtNum.format(pos.quantidade)}</td>
-            <td class="right editable" data-id="${pos.id}">${isForeign ? toUSD(pos.precoAtual) : toBRL(pos.precoAtual)}</td>
-            <td class="right">${isForeign ? toUSD(valorUSD) : '<span class="muted">—</span>'}</td>
-            <td class="right">${isForeign ? toBRL(valorBRL) : '<span class="muted">—</span>'}</td>
-            <td class="right"></td>
-        `;
-        corpo.appendChild(tr);
-    });
-
-    updateColVisibility();
 }
 
 // Renderiza a tabela interna de ativos
@@ -377,36 +306,8 @@ async function renderRebalanceamento() {
 }
 
 
-function updateColVisibility() {
-    const tableHeaders = tabelaPosicoes.querySelectorAll('thead th');
-    const tableRows = tabelaPosicoes.querySelectorAll('tbody tr');
-    
-    colControls.forEach(checkbox => {
-        const colIndex = checkbox.dataset.colIndex;
-        checkbox.checked = colVisibility[colIndex];
-    });
-
-    Object.keys(colVisibility).forEach(index => {
-        const isVisible = colVisibility[index];
-        const colHeader = tableHeaders[index];
-
-        if (colHeader) {
-            colHeader.classList.toggle('hidden-column', !isVisible);
-        }
-
-        tableRows.forEach(row => {
-            const cell = row.cells[index];
-            if (cell) {
-                cell.classList.toggle('hidden-column', !isVisible);
-            }
-        });
-    });
-}
-
 function render() {
-    renderTabs();
     renderSelectOptions();
-    renderPosicoes();
     renderRebalanceamento();
     hookEvents();
 }
@@ -437,41 +338,17 @@ function hookEvents(){
         });
     });
 
-    document.querySelectorAll('td.editable').forEach(td => {
-        td.addEventListener('dblclick', (e) => {
-            e.stopPropagation();
-            makeEditable(td, 'precoAtual');
-        });
-    });
-
-    document.querySelectorAll('td.editable-qty').forEach(td => {
-        td.addEventListener('dblclick', (e) => {
-            e.stopPropagation();
-            makeEditable(td, 'quantidade');
-        });
-    });
-
-    document.querySelectorAll('.tab-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            activeTab = button.dataset.tab;
-            render();
-        });
-    });
-
     document.querySelectorAll('.expandable-row').forEach(row => {
         row.addEventListener('click', async () => {
             const category = row.dataset.category;
             const nextRow = row.nextElementSibling;
             
-            // Se já está expandido, recolhe
             if (row.classList.contains('expanded')) {
                 row.classList.remove('expanded');
                 if (nextRow && nextRow.classList.contains('sub-table-row')) {
                     nextRow.remove();
                 }
-            } else { // Caso contrário, expande
+            } else {
                 row.classList.add('expanded');
                 const subTableHtml = await renderSubTable(category);
                 const subRow = document.createElement('tr');
@@ -490,15 +367,12 @@ function hookEvents(){
                 remove(ref(db, `carteira/${id}`));
             }
         }
-    });
 
-    colControls.forEach(checkbox => {
-        checkbox.addEventListener('change', (e) => {
-            const colIndex = e.target.dataset.colIndex;
-            colVisibility[colIndex] = e.target.checked;
-            set(colVisibilityRef, colVisibility);
-            updateColVisibility();
-        });
+        if (e.target.matches('td.editable') || e.target.matches('td.editable-qty')) {
+            const td = e.target;
+            const isQty = td.matches('td.editable-qty');
+            makeEditable(td, isQty ? 'quantidade' : 'precoAtual');
+        }
     });
 }
 
@@ -555,61 +429,7 @@ function makeEditableMeta(td, category){
     }
 }
 
-// ===== CSV Export / Import =====
-function toCsv(){
-    const headers = ['ticker','tipo','quantidade','precoMedio','investido','precoAtual'];
-    const lines = [headers.join(';')].concat(
-        Object.keys(carteira).map(key => {
-            const p = carteira[key];
-            return [p.ticker,p.tipo,p.quantidade,p.precoMedio,p.investido,p.precoAtual].join(';');
-        })
-    );
-    return lines.join('\n');
-}
-
-function downloadCsv(){
-    const blob = new Blob(["\uFEFF" + toCsv()], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'carteira_b3.csv'; a.click();
-    URL.revokeObjectURL(url);
-}
-
-function importCsv(text){
-    const lines = text.trim().split(/\r?\n/);
-    const header = lines.shift();
-    const idx = header.split(';');
-    const req = ['ticker','tipo','quantidade','precoMedio','investido','precoAtual'];
-    const ok = req.every((h,i) => (idx[i]||'').toLowerCase() === h);
-    if(!ok){ alert('Cabeçalho CSV inválido. Use o arquivo exportado pelo sistema.'); return; }
-
-    remove(carteiraRef).then(() => {
-        const newAssets = lines.map(l => {
-            const [ticker,tipo,qt,pm,inv,pa] = l.split(';');
-            return {
-                ticker: ticker.toUpperCase(),
-                tipo,
-                quantidade: Number(qt),
-                precoMedio: round2(parseFloat(pm)),
-                investido: round2(parseFloat(inv)),
-                precoAtual: round2(parseFloat(pa||'0'))
-            };
-        });
-        newAssets.forEach(asset => push(carteiraRef, asset));
-    });
-}
-
-document.getElementById('exportarCsv').addEventListener('click', downloadCsv);
-document.getElementById('importCsv').addEventListener('change', (e) => {
-    const f = e.target.files[0]; if(!f) return;
-    const reader = new FileReader();
-    reader.onload = () => importCsv(reader.result);
-    reader.readAsText(f, 'utf-8');
-    e.target.value = '';
-});
-
 // ===== Inicialização e Listeners do Firebase =====
-
 onValue(carteiraRef, (snapshot) => {
     const data = snapshot.val() || {};
     carteira = data;
@@ -620,15 +440,4 @@ onValue(metasRef, (snapshot) => {
     const data = snapshot.val() || {};
     metas = data;
     render();
-});
-
-onValue(colVisibilityRef, (snapshot) => {
-    const data = snapshot.val() || {
-        '2': true,
-        '3': true,
-        '4': true,
-        '5': true
-    };
-    colVisibility = data;
-    updateColVisibility();
 });
