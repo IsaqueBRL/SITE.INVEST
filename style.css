@@ -1,9 +1,9 @@
 :root {
-    --bg: #141829; /* Fundo principal */
-    --panel: #1b2135; /* Fundo dos cards */
-    --text: #e2e8f0; /* Cor do texto */
-    --muted-text: #64748b; /* Texto secundário */
-    --border: #2d3748; /* Borda sutil */
+    --bg: #141829;
+    --panel: #1b2135;
+    --text: #e2e8f0;
+    --muted-text: #64748b;
+    --border: #2d3748;
     --shadow: rgba(0, 0, 0, 0.3);
 
     --primary-color: #3b82f6;
@@ -21,12 +21,17 @@
 
 * { box-sizing: border-box; }
 body {
-    margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     background-color: var(--bg);
     color: var(--text);
 }
 header {
-    padding: 20px 20px; position: sticky; top: 0; z-index: 5; backdrop-filter: blur(8px);
+    padding: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    backdrop-filter: blur(8px);
     background: rgba(20, 24, 41, 0.85);
     border-bottom: 1px solid var(--border);
     display: flex;
@@ -76,15 +81,6 @@ header {
 label { font-size: 12px; opacity:.85; display:block; margin-bottom: 6px; }
 input, select { width: 100%; background: #141829; color: var(--text); padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--border); outline:none; }
 
-.actions-bar {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    flex-wrap: wrap;
-    padding-bottom: 12px;
-    margin-bottom: 12px;
-    border-bottom: 1px dashed var(--border);
-}
 .btn {
     border: 1px solid var(--border);
     background-color: var(--panel);
@@ -107,48 +103,9 @@ input, select { width: 100%; background: #141829; color: var(--text); padding: 1
 table { width:100%; border-collapse: collapse; }
 th, td { text-align:left; padding: 10px; border-bottom:1px dashed var(--border); }
 th { font-size: 12px; font-weight:600; opacity:.8; }
-
-/* Estilos da nova funcionalidade de expansão */
-.expandable-row { cursor: pointer; }
-.expandable-row:hover { background-color: rgba(255,255,255,0.05); }
-.expandable-toggle {
-    display: inline-block;
-    width: 1em;
-    height: 1em;
-    line-height: 1;
-    text-align: center;
-    transition: transform 0.2s ease;
-    margin-right: 8px;
-    color: var(--muted-text);
-}
-.expandable-row.expanded .expandable-toggle {
-    transform: rotate(90deg);
-}
-
-.sub-table-row td { padding: 0 !important; border:none; }
-.sub-table-row .sub-table-container {
-    padding: 16px;
-    background-color: var(--panel);
-    border-radius: var(--radius);
-    margin: 16px 0;
-}
-.sub-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-.sub-table th, .sub-table td {
-    border-bottom: 1px dashed var(--border);
-    padding: 8px;
-    font-size: 12px;
-}
-.sub-table thead th { font-weight: 500; opacity: 0.8; }
-.sub-table tbody tr:hover { background-color: rgba(255,255,255,0.05); }
-
-
 tbody tr:hover { background-color: rgba(255,255,255,0.05); }
 
-.pill { padding: 4px 8px; border-radius:999px; font-size: 11px; border:1px solid var(--border); opacity:.9; background-color: #2a3145; }
-
+/* Estilos de cor para a tabela */
 .right { text-align:right; }
 .muted { opacity:.7; color: var(--muted-text); }
 .green { color: var(--success-color); }
@@ -158,14 +115,6 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
 .hint { font-size:12px; opacity:.75; color: var(--muted-text); }
 
 .footer { text-align:center; opacity:.6; font-size:11px; padding: 20px; color: var(--muted-text); }
-
-.tabs { display:flex; gap:8px; }
-.tab-btn { background-color: transparent!important; border:1px solid var(--border)!important; color: var(--muted-text); }
-.tab-btn.active {
-    background-color: var(--primary-bg)!important;
-    border-color: var(--primary-color)!important;
-    color: var(--primary-color);
-}
 
 /* Modal */
 .modal {
@@ -195,29 +144,3 @@ tbody tr:hover { background-color: rgba(255,255,255,0.05); }
     font-weight: 600;
     margin-bottom: 12px;
 }
-
-.column-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 12px;
-    padding-top: 5px;
-    font-size: 12px;
-    color: var(--muted-text);
-}
-.column-controls label {
-    cursor: pointer;
-    opacity: 0.8;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--text);
-}
-.column-controls input {
-    width: auto;
-    margin-bottom: 0;
-    accent-color: var(--primary-color);
-    border: 1px solid var(--border);
-}
-
-.hidden-column { display: none !important; }
