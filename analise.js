@@ -21,11 +21,13 @@ const db = getDatabase(app);
 const carteiraRef = ref(db, 'carteira');
 const setoresRef = ref(db, 'setores');
 const segmentosRef = ref(db, 'segmentos');
+const metasDeAporteRef = ref(db, 'metasDeAporte'); // NOVO: Referência para as metas de aporte
 
 // Variáveis de estado
 let carteira = {};
 let setores = {};
 let segmentos = {};
+let metasDeAporte = {}; // NOVO: Objeto para armazenar as metas
 let currentCategoryForGerenciar = '';
 
 // Variáveis para as instâncias dos gráficos
@@ -45,6 +47,11 @@ const segmentoInput = document.getElementById('segmentoInput');
 const setorList = document.getElementById('setorList');
 const segmentoList = document.getElementById('segmentoList');
 const gerenciarModalTitle = document.getElementById('gerenciarModalTitle');
+
+// NOVO: Elementos da nova tabela
+const planoAporteHeader = document.getElementById('planoAporteHeader');
+const planoAporteContent = document.getElementById('planoAporteContent');
+const tabelaPlanoAporteBody = document.getElementById('tabelaPlanoAporteBody');
 
 // ===== Utilitários de Formatação =====
 const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -83,8 +90,16 @@ const category = urlParams.get('categoria');
 // Preencher o título da página
 if (category) {
     categoryTitle.textContent = category;
+    gerenciarModalTitle.textContent = `Gerenciar Setores/Segmentos para ${category}`;
+    planoAporteHeader.textContent = `Plano de Aporte em ${category}`;
     currentCategoryForGerenciar = category;
 }
+
+// NOVO: Lógica de show/hide para o Plano de Aporte
+planoAporteHeader.addEventListener('click', () => {
+    planoAporteContent.classList.toggle('show');
+    planoAporteHeader.classList.toggle('active');
+});
 
 // Lógica para fechar o modal
 closeSetoresModalBtn.addEventListener('click', () => modalSetores.close());
@@ -95,7 +110,7 @@ modalSetores.addEventListener('click', e => {
     }
 });
 
-// Lógica atualizada para salvar setor/segmento na categoria correta
+// Lógica para salvar setor/segmento na categoria correta
 formSetores.addEventListener('submit', (e) => {
     e.preventDefault();
     const setor = setorInput.value.trim();
@@ -180,6 +195,48 @@ function makeEditableDropdown(td, ativoKey, type) {
     select.addEventListener('blur', updateAndRevert);
 }
 
+// NOVO: Função para tornar a célula de "Meta" editável
+function makeEditableMetaCell(td, segmento) {
+    const currentMeta = metasDeAporte[category]?.[segmento] || 0;
+    
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.value = currentMeta;
+    input.placeholder = '0';
+    input.min = '0';
+    input.max = '100';
+    
+    td.innerHTML = '';
+    td.appendChild(input);
+    input.focus();
+    
+    function saveMeta() {
+        const newMeta = parseFloat(input.value) || 0;
+        if (newMeta !== currentMeta) {
+            const updates = {};
+            updates[`${category}/${segmento}`] = newMeta;
+            update(metasDeAporteRef, updates);
+        }
+    }
+
+    input.addEventListener('blur', saveMeta);
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            saveMeta();
+            input.blur(); // Perde o foco
+        }
+    });
+}
+
+// NOVO: Lógica de duplo clique para a nova tabela
+document.addEventListener('dblclick', (e) => {
+    if (e.target.closest('#tabelaPlanoAporteBody') && e.target.matches('td:nth-child(2)')) {
+        const row = e.target.closest('tr');
+        const segmento = row.dataset.segmento;
+        makeEditableMetaCell(e.target, segmento);
+    }
+});
+
 document.addEventListener('dblclick', (e) => {
     if (e.target.matches('[data-type="setor"]')) {
         const ativoKey = e.target.dataset.ativoKey;
@@ -240,6 +297,47 @@ function renderTabelaAtivos(ativos) {
             </td>
         `;
         tabelaAtivosCategoria.appendChild(row);
+    });
+}
+
+// NOVO: Função para renderizar a tabela de Plano de Aporte
+function renderPlanoDeAporte(ativos) {
+    tabelaPlanoAporteBody.innerHTML = '';
+    
+    const patrimonioTotal = ativos.reduce((sum, ativo) => {
+        const valorAtual = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
+        return sum + valorAtual;
+    }, 0);
+    
+    const patrimonioPorSegmento = ativos.reduce((acc, ativo) => {
+        const segmento = ativo.segmento || '-';
+        const valor = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
+        acc[segmento] = (acc[segmento] || 0) + valor;
+        return acc;
+    }, {});
+
+    const metas = metasDeAporte[category] || {};
+    
+    const segmentosUnicos = Object.keys(patrimonioPorSegmento);
+
+    segmentosUnicos.forEach(segmento => {
+        const patrimonioAtualSegmento = patrimonioPorSegmento[segmento];
+        const carteiraAtualPercent = patrimonioTotal > 0 ? (patrimonioAtualSegmento / patrimonioTotal) * 100 : 0;
+        const meta = metas[segmento] || 0;
+        
+        const patrimonioAportar = (patrimonioTotal * (meta / 100)) - patrimonioAtualSegmento;
+        const aportarTexto = patrimonioAportar > 0 ? toBRL(patrimonioAportar) : '---';
+
+        const row = document.createElement('tr');
+        row.dataset.segmento = segmento;
+        row.innerHTML = `
+            <td>${segmento}</td>
+            <td data-editable="meta">${meta}%</td>
+            <td>${carteiraAtualPercent.toFixed(2)}%</td>
+            <td>${toBRL(patrimonioAtualSegmento)}</td>
+            <td class="${patrimonioAportar > 0 ? 'aportar-ativo' : ''}">${aportarTexto}</td>
+        `;
+        tabelaPlanoAporteBody.appendChild(row);
     });
 }
 
@@ -375,11 +473,10 @@ const sortable = new Sortable(tableHeader.querySelector('tr'), {
     },
 });
 
-// NOVO: Função para atualizar os preços de todos os ativos
+// Função para atualizar os preços de todos os ativos
 async function atualizarPrecos() {
     console.log("Iniciando atualização de preços dos ativos...");
 
-    // Obtém um "snapshot" (cópia) da carteira para iterar
     const snapshot = await get(carteiraRef);
     if (snapshot.exists()) {
         const ativos = snapshot.val();
@@ -387,7 +484,6 @@ async function atualizarPrecos() {
             const ativo = ativos[key];
             if (ativo.ticker) {
                 const novoPreco = await buscarPreco(ativo.ticker);
-                // Atualiza o valor apenas se houver uma mudança
                 if (novoPreco !== null && novoPreco !== ativo.precoAtual) {
                     await update(ref(db, `carteira/${key}`), {
                         precoAtual: novoPreco
@@ -408,6 +504,7 @@ onValue(carteiraRef, (snapshot) => {
         .map(key => ({ key, ...carteira[key] }));
         
     renderTabelaAtivos(ativosDaCategoria);
+    renderPlanoDeAporte(ativosDaCategoria); // NOVO: Chama a renderização do plano de aporte
     renderCharts(ativosDaCategoria);
 });
 
@@ -423,6 +520,16 @@ onValue(segmentosRef, (snapshot) => {
     if(modalSetores.open) {
         renderSetoresSegmentosList(currentCategoryForGerenciar);
     }
+});
+
+// NOVO: Listener para as metas de aporte
+onValue(metasDeAporteRef, (snapshot) => {
+    metasDeAporte = snapshot.val() || {};
+    // Re-renderiza a tabela de plano de aporte para refletir as novas metas
+    const ativosDaCategoria = Object.keys(carteira)
+        .filter(key => carteira[key].tipo === category)
+        .map(key => ({ key, ...carteira[key] }));
+    renderPlanoDeAporte(ativosDaCategoria);
 });
 
 // Chama a função de atualização de preços a cada 5 minutos (300.000 milissegundos)
