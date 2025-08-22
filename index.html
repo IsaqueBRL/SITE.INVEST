@@ -1,252 +1,159 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>PLANO DE APORTES</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Carteira</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <div class="wrap title">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 3v18h18" stroke="currentColor" stroke-width="1.6"/>
-                <path d="M7 15l3-3 3 2 4-6" stroke="currentColor" stroke-width="1.6"/>
-            </svg>
-            <h1>Carteira B3 – Firebase</h1>
-            <span class="badge">Dashboard</span>
-        </div>
-        <div class="header-actions">
-            <button class="btn primary" id="openModalBtn">Adicionar ativo</button>
-        </div>
+    <header class="header">
+        <h1>Minha Carteira</h1>
     </header>
 
-    <main class="wrap">
-        <section class="dashboard-metrics">
-            <div class="metric-card bg-blue">
-                <span class="label">Patrimônio Total</span>
-                <span class="value" id="patrimonioTotalDashboard">R$ 0,00</span>
+    <main class="container">
+        <section class="dashboard">
+            <div class="card">
+                <h3>Patrimônio Total</h3>
+                <p id="patrimonioTotalDashboard">R$ 0,00</p>
+            </div>
+            <div class="card">
+                <h3>Adicionar Novo Ativo</h3>
+                <button id="openModalBtn" class="btn primary full-width">+</button>
+            </div>
+            <div class="card">
+                <h3>Adicionar Categoria</h3>
+                <button id="openAddCategoryModal" class="btn primary full-width">+</button>
             </div>
         </section>
 
-        <section class="card" style="margin-top:20px;">
-            <div class="hd">
-                <span>Rebalanceamento de Carteira</span>
-                <button class="btn sec" id="openAddCategoryModal">Adicionar Categoria</button>
-            </div>
-            <div class="bd">
-                <div style="overflow:auto">
-                    <table id="tabelaRebalanceamento">
-                        <thead>
-                            <tr id="sortable-header-row">
-                                <th class="sortable" data-sort-key="categoria">CATEGORIA</th>
-                                <th class="sortable right" data-sort-key="meta">META</th>
-                                <th class="sortable right" data-sort-key="atual">ATUAL</th>
-                                <th class="sortable right" data-sort-key="patrimonio">PATRIMÔNIO</th>
-                                <th class="sortable right" data-sort-key="aportar">APORTAR</th>
-                                <th class="right">AÇÕES</th>
-                            </tr>
-                        </thead>
-                        <tbody id="corpoTabelaRebalanceamento">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
+        <section class="table-container">
+            <h2>Rebalanceamento por Categorias</h2>
+            <table class="table" id="tabelaRebalanceamento">
+                <thead>
+                    <tr id="sortable-header-row">
+                        <th data-sort-key="categoria" class="sortable">Categoria</th>
+                        <th data-sort-key="meta" class="right sortable">Meta</th>
+                        <th data-sort-key="atual" class="right sortable">Atual</th>
+                        <th data-sort-key="patrimonio" class="right sortable">Patrimônio</th>
+                        <th data-sort-key="aportar" class="right sortable">Aportar</th>
+                        <th class="right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoTabelaRebalanceamento">
+                    </tbody>
+            </table>
         </section>
     </main>
-        
+
     <dialog id="modalForm" class="modal">
-        <div class="modal-content">
-            <div class="hd">Adicionar ativo</div>
-            <div class="bd">
-                <form id="formAtivo">
-                    <div class="row">
-                        <div class="col" style="grid-column: span 4;">
-                            <label for="ticker">Ticker (B3)</label>
-                            <input id="ticker" name="ticker" placeholder="ex: PETR4, VALE3, MXRF11" required />
-                        </div>
-                        <div class="col" style="grid-column: span 4;">
-                            <label for="tipo">Tipo</label>
-                            <select id="tipo" name="tipo">
-                                </select>
-                        </div>
-                        <div class="col" style="grid-column: span 4;">
-                            <label for="setorSelect">Setor</label>
-                            <select id="setorSelect" name="setorSelect">
-                                <option value="">Nenhum</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col" style="grid-column: span 4;">
-                            <label for="segmentoSelect">Segmento</label>
-                            <select id="segmentoSelect" name="segmentoSelect">
-                                <option value="">Nenhum</option>
-                            </select>
-                        </div>
-                        <div class="col" style="grid-column: span 4;">
-                            <label for="quantidade">Quantidade</label>
-                            <input id="quantidade" name="quantidade" type="number" min="1" step="any" placeholder="ex: 10,5" required />
-                        </div>
-                        <div class="col" style="grid-column: span 4;">
-                            <label for="preco">Preço (R$)</label>
-                            <input id="preco" name="preco" inputmode="decimal" placeholder="ex: 28,75" required />
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col" style="grid-column: span 3;">
-                            <label for="corretagem">Taxas (R$)</label>
-                            <input id="corretagem" name="corretagem" inputmode="decimal" placeholder="0,00" />
-                        </div>
-                        <div class="col" style="grid-column: span 3;">
-                            <label for="data">Data</label>
-                            <input id="data" name="data" type="date" />
-                        </div>
-                        <div class="col" style="grid-column: span 6; display:flex; align-items:flex-end; justify-content:flex-end">
-                            <div class="actions">
-                                <button class="btn" type="button" id="closeModalBtn">Cancelar</button>
-                                <button class="btn primary" type="submit">Adicionar</button>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="hint" style="margin-top:10px">Dica: use vírgula como separador decimal (ex: 10,50). O preço é o valor por cota/ação.</p>
-                </form>
+        <form id="formAtivo" class="modal-content">
+            <div class="modal-header">
+                <h2>Adicionar Novo Ativo</h2>
+                <button type="button" class="close-btn" id="closeModalBtn">&times;</button>
             </div>
-        </div>
+            <label for="ticker">Ticker:</label>
+            <input type="text" id="ticker" name="ticker" placeholder="Ex: BBAS3" required>
+
+            <label for="tipo">Categoria:</label>
+            <select id="tipo" name="tipo" required></select>
+            
+            <label for="setorSelect">Setor:</label>
+            <select id="setorSelect" name="setorSelect">
+                <option value="">Nenhum</option>
+            </select>
+            
+            <label for="segmentoSelect">Segmento:</label>
+            <select id="segmentoSelect" name="segmentoSelect">
+                <option value="">Nenhum</option>
+            </select>
+
+            <label for="quantidade">Quantidade:</label>
+            <input type="number" id="quantidade" name="quantidade" min="1" step="1" required>
+
+            <label for="preco">Preço de Compra (R$):</label>
+            <input type="text" id="preco" name="preco" class="money-input" placeholder="0,00" required>
+            
+            <label for="corretagem">Corretagem (R$):</label>
+            <input type="text" id="corretagem" name="corretagem" class="money-input" value="0,00">
+
+            <button type="submit" class="btn primary full-width">Adicionar</button>
+        </form>
     </dialog>
 
     <dialog id="modalAddCategory" class="modal">
-        <div class="modal-content">
-            <div class="hd">Adicionar Categoria</div>
-            <div class="bd">
-                <form id="formAddCategory">
-                    <div class="row">
-                        <div class="col" style="grid-column: span 12;">
-                            <label for="categoryName">Nome da Categoria</label>
-                            <input id="categoryName" name="categoryName" placeholder="ex: Fiagro" required />
-                        </div>
-                        <div class="col" style="grid-column: span 12;">
-                            <label for="categoryMeta">Meta (%)</label>
-                            <input id="categoryMeta" name="categoryMeta" type="number" min="0" max="100" step="1" placeholder="ex: 10" required />
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col" style="grid-column: span 12; display:flex; justify-content:flex-end">
-                            <div class="actions">
-                                <button class="btn" type="button" id="closeAddCategoryModal">Cancelar</button>
-                                <button class="btn primary" type="submit">Adicionar</button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
+        <form id="formAddCategory" class="modal-content">
+            <div class="modal-header">
+                <h2>Adicionar Categoria</h2>
+                <button type="button" class="close-btn" id="closeAddCategoryModal">&times;</button>
             </div>
-        </div>
-    </dialog>
-    
-    <dialog id="modalAtivos" class="modal large">
-        <div class="modal-content">
-            <div class="hd" style="display: flex; justify-content: space-between; align-items: center;">
-                <span id="ativosModalTitle">Ativos</span>
-                <div class="modal-title-group">
-                    <span id="patrimonioTitleModal" class="modal-total-title"></span>
-                    <span id="totalInvestidoModal" class="modal-total-value"></span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <button class="btn sec btn-sm" id="openSetoresModalBtn">Gerenciar</button>
-                    <button class="btn danger btn-sm" id="closeAtivosModal">Fechar</button>
-                </div>
-            </div>
-            <div class="bd">
-                <table id="tabelaAtivosModal">
-                    <thead>
-                        <tr>
-                            <th>TICKER</th>
-                            <th>QUANTIDADE</th>
-                            <th>PREÇO ATUAL</th>
-                            <th>SETOR</th>
-                            <th>SEGMENTO</th>
-                            <th>TOTAL INVESTIDO</th>
-                            <th>AÇÕES</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        </tbody>
-                </table>
-            </div>
-        </div>
+            <label for="categoryName">Nome da Categoria:</label>
+            <input type="text" id="categoryName" name="categoryName" required>
+            
+            <label for="categoryMeta">Meta (%):</label>
+            <input type="number" id="categoryMeta" name="categoryMeta" min="0" max="100" step="1" required>
+
+            <button type="submit" class="btn primary full-width">Adicionar</button>
+        </form>
     </dialog>
 
     <dialog id="modalSetores" class="modal">
         <div class="modal-content">
-            <div class="hd">
-                <span id="gerenciarModalTitle">Gerenciar Setores/Segmentos</span>
-                <button class="btn danger btn-sm" id="closeSetoresModalBtn">Fechar</button>
+            <div class="modal-header">
+                <h2 id="gerenciarModalTitle">Gerenciar Setores/Segmentos</h2>
+                <button type="button" class="close-btn" id="closeSetoresModalBtn">&times;</button>
             </div>
-            <div class="bd">
+            <div class="modal-body">
                 <form id="formSetores">
-                    <div class="row">
-                        <div class="col" style="grid-column: span 6;">
-                            <label for="setorInput">Adicionar Setor</label>
-                            <div style="display:flex; gap:8px;">
-                                <input id="setorInput" placeholder="ex: Financeiro" />
-                                <button class="btn primary btn-sm" type="submit">Adicionar</button>
-                            </div>
-                        </div>
-                        <div class="col" style="grid-column: span 6;">
-                            <label for="segmentoInput">Adicionar Segmento</label>
-                            <div style="display:flex; gap:8px;">
-                                <input id="segmentoInput" placeholder="ex: Bancos" />
-                                <button class="btn primary btn-sm" type="submit">Adicionar</button>
-                            </div>
-                        </div>
-                    </div>
+                    <label for="setorInput">Adicionar Setor:</label>
+                    <input type="text" id="setorInput" placeholder="Ex: Financeiro">
+                    <label for="segmentoInput">Adicionar Segmento:</label>
+                    <input type="text" id="segmentoInput" placeholder="Ex: Bancos">
+                    <button type="submit" class="btn primary full-width">Adicionar</button>
                 </form>
-                <div class="row" style="margin-top: 20px;">
-                    <div class="col" style="grid-column: span 6;">
-                        <span class="muted" style="display: block; margin-bottom: 8px;">Setores criados:</span>
-                        <ul id="setorList" class="tags-list"></ul>
+                <div class="lists-container">
+                    <div>
+                        <h3>Setores</h3>
+                        <ul id="setorList"></ul>
                     </div>
-                    <div class="col" style="grid-column: span 6;">
-                        <span class="muted" style="display: block; margin-bottom: 8px;">Segmentos criados:</span>
-                        <ul id="segmentoList" class="tags-list"></ul>
+                    <div>
+                        <h3>Segmentos</h3>
+                        <ul id="segmentoList"></ul>
                     </div>
                 </div>
             </div>
         </div>
     </dialog>
 
-    <dialog id="modalFilteredAssets" class="modal large">
+    <dialog id="modalFilteredAssets" class="modal">
         <div class="modal-content">
-            <div class="hd" style="display: flex; justify-content: space-between; align-items: center;">
-                <span id="filteredModalTitle"></span>
-                <div class="modal-title-group">
-                    <span id="patrimonioTitleFilteredModal" class="modal-total-title"></span>
-                    <span id="totalInvestidoFilteredModal" class="modal-total-value"></span>
-                </div>
-                <button class="btn danger btn-sm" id="closeFilteredModalBtn">Fechar</button>
+            <div class="modal-header">
+                <h2 id="filteredModalTitle">Ativos Filtrados</h2>
+                <button type="button" class="close-btn" id="closeFilteredModalBtn">&times;</button>
             </div>
-            <div class="bd">
-                <table id="tabelaFilteredAssetsModal">
+            <div class="modal-body">
+                <p id="patrimonioTitleFilteredModal">Patrimônio Total Filtrado: <strong id="totalInvestidoFilteredModal">R$ 0,00</strong></p>
+                <table class="table">
                     <thead>
                         <tr>
-                            <th>TICKER</th>
-                            <th>QUANTIDADE</th>
-                            <th>CATEGORIA</th>
-                            <th>PREÇO ATUAL</th>
-                            <th>SETOR</th>
-                            <th>SEGMENTO</th>
-                            <th>TOTAL INVESTIDO</th>
+                            <th>Ticker</th>
+                            <th>Quantidade</th>
+                            <th>Categoria</th>
+                            <th>Preço Atual</th>
+                            <th>Setor</th>
+                            <th>Segmento</th>
+                            <th>Patrimônio</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        </tbody>
+                    <tbody id="tabelaFilteredAssetsModal"></tbody>
                 </table>
             </div>
         </div>
     </dialog>
 
-    <div class="footer">Criado por isaque Pavão.</div>
-
-    <script type="module" src="script.js"></script>
+    <script type="module" src="SCRIPT.JS"></script>
 </body>
 </html>
