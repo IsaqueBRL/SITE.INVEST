@@ -213,23 +213,18 @@ function renderSetoresSegmentosList(category) {
 
 // ATUALIZADO: Refatorada para calcular o total antes de renderizar a tabela
 function renderTabelaAtivos(ativos) {
-    // 1. Calcula o patrimônio total da categoria primeiro
     const patrimonioTotal = ativos.reduce((sum, ativo) => {
         const valorAtual = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
         return sum + valorAtual;
     }, 0);
 
-    // Atualiza o total no painel de controle
     totalPatrimonio.textContent = toBRL(patrimonioTotal);
 
-    // 2. Limpa a tabela para renderizar novamente
     tabelaAtivosCategoria.innerHTML = '';
     
-    // 3. Itera sobre os ativos para criar as linhas da tabela
     ativos.forEach(ativo => {
         const valorAtual = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
         
-        // Calcula a porcentagem de participação
         const percentualNaCategoria = patrimonioTotal > 0 ? (valorAtual / patrimonioTotal) * 100 : 0;
         
         const row = document.createElement('tr');
@@ -346,6 +341,40 @@ function renderCharts(ativos) {
         }
     });
 }
+
+// NOVO: Código para o drag-and-drop das colunas
+const tableHeader = document.getElementById('tableHeader');
+const tableBody = document.getElementById('tabelaAtivosCategoria');
+
+// Inicializa o Sortable.js no cabeçalho da tabela
+const sortable = new Sortable(tableHeader.querySelector('tr'), {
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    handle: 'th',
+    onEnd: function (evt) {
+        // Encontra a linha do cabeçalho
+        const headerRow = evt.to;
+        // Obtém a nova ordem dos cabeçalhos
+        const newOrder = Array.from(headerRow.children).map(th => th.textContent.trim());
+
+        // Reordena as células de cada linha do corpo da tabela
+        Array.from(tableBody.children).forEach(row => {
+            const cells = Array.from(row.children);
+            const newCells = [];
+            
+            newOrder.forEach((headerText, index) => {
+                // Encontra a célula correspondente ao cabeçalho na linha original
+                const originalIndex = Array.from(tableHeader.querySelectorAll('th')).findIndex(th => th.textContent.trim() === headerText);
+                if (originalIndex !== -1) {
+                    newCells.push(cells[originalIndex]);
+                }
+            });
+
+            // Reorganiza as células na linha do corpo da tabela
+            newCells.forEach(cell => row.appendChild(cell));
+        });
+    },
+});
 
 // ===== Inicialização e Listeners do Firebase =====
 onValue(carteiraRef, (snapshot) => {
