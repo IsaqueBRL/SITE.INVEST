@@ -45,19 +45,20 @@ function toBRL(n) { return fmtBRL.format(n || 0); }
 function toPct(n) { return (n || 0).toFixed(2) + '%'; }
 function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
 
-// Chave da API para buscar a cotação
-// NOVA CHAVE DE API ADICIONADA:
-const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
-
-// Função para buscar preço atual da ação na API
+// Função para buscar preço atual da ação na API do Yahoo Finance
 async function buscarPreco(ticker) {
-    const url = `https://brapi.dev/api/quote/${ticker}?token=${API_KEY}`;
+    const tickerFormatado = `${ticker}.SA`; // Formato exigido pelo Yahoo Finance para a bolsa brasileira (B3)
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${tickerFormatado}`;
+    
     try {
         const resp = await fetch(url);
         const json = await resp.json();
+        
         // Loga a resposta da API para depuração
-        console.log("Resposta da API para o ticker:", ticker, json);
-        const price = json.results?.[0]?.regularMarketPrice;
+        console.log("Resposta da API do Yahoo Finance para o ticker:", ticker, json);
+        
+        const price = json.chart.result?.[0]?.meta?.regularMarketPrice;
+
         return typeof price === 'number' ? price : null;
     } catch (err) {
         console.error("Erro ao buscar preço para o ticker:", ticker, err);
@@ -136,8 +137,19 @@ closeFilteredModalBtn.addEventListener('click', () => modalFilteredAssets.close(
     });
 });
 
-// REMOVIDO: A busca de preço automática ao digitar para maior estabilidade.
-// tickerInput.addEventListener('input', async () => { ... });
+// Listener para preencher o preço ao digitar no campo do Ticker
+// Agora usando a nova API para autocompletar o preço
+tickerInput.addEventListener('input', async () => {
+    const ticker = tickerInput.value.trim().toUpperCase();
+    if (ticker.length >= 4) {
+        const preco = await buscarPreco(ticker);
+        if (preco) {
+            precoInput.value = preco.toFixed(2).replace('.', ',');
+        } else {
+            precoInput.value = '';
+        }
+    }
+});
 
 // Listener para preencher os selects de setor/segmento ao mudar a categoria
 tipoSelect.addEventListener('change', () => {
@@ -160,7 +172,6 @@ formAtivo.addEventListener('submit', async (e) => {
     const investido = round2(quantidade * preco + corretagem);
     const precoMedio = round2(investido / quantidade);
 
-    // MOVENDO: A busca de preço para o evento de submissão do formulário.
     const precoAtual = await buscarPreco(ticker);
 
     const existenteKey = Object.keys(carteira).find(key => carteira[key].ticker === ticker && carteira[key].tipo === tipo);
