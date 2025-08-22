@@ -144,7 +144,6 @@ document.addEventListener('click', (e) => {
         }
     }
     
-    // NOVO: Lógica para abrir o modal de gerenciar
     if (e.target.matches('#openSetoresModalBtn')) {
         currentCategoryForGerenciar = category;
         renderSetoresSegmentosList(currentCategoryForGerenciar);
@@ -152,7 +151,6 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// NOVO: Função para criar o dropdown editável
 function makeEditableDropdown(td, ativoKey, type) {
     const currentVal = carteira[ativoKey]?.[type] || '';
     const category = carteira[ativoKey]?.tipo;
@@ -176,14 +174,12 @@ function makeEditableDropdown(td, ativoKey, type) {
         if (newValue !== currentVal) {
             update(ref(db, `carteira/${ativoKey}`), { [type]: newValue });
         }
-        // A tabela será re-renderizada automaticamente pelo listener do Firebase
     }
 
     select.addEventListener('change', updateAndRevert);
     select.addEventListener('blur', updateAndRevert);
 }
 
-// NOVO: Adiciona a lógica de clique duplo para edição
 document.addEventListener('dblclick', (e) => {
     if (e.target.matches('[data-type="setor"]')) {
         const ativoKey = e.target.dataset.ativoKey;
@@ -195,7 +191,6 @@ document.addEventListener('dblclick', (e) => {
     }
 });
 
-// Lógica para renderizar a lista de setores/segmentos da categoria
 function renderSetoresSegmentosList(category) {
     gerenciarModalTitle.textContent = `Gerenciar Setores/Segmentos para ${category}`;
 
@@ -216,14 +211,26 @@ function renderSetoresSegmentosList(category) {
     });
 }
 
-// Função para renderizar a tabela de ativos
+// ATUALIZADO: Refatorada para calcular o total antes de renderizar a tabela
 function renderTabelaAtivos(ativos) {
-    let patrimonioTotal = 0;
+    // 1. Calcula o patrimônio total da categoria primeiro
+    const patrimonioTotal = ativos.reduce((sum, ativo) => {
+        const valorAtual = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
+        return sum + valorAtual;
+    }, 0);
+
+    // Atualiza o total no painel de controle
+    totalPatrimonio.textContent = toBRL(patrimonioTotal);
+
+    // 2. Limpa a tabela para renderizar novamente
     tabelaAtivosCategoria.innerHTML = '';
     
+    // 3. Itera sobre os ativos para criar as linhas da tabela
     ativos.forEach(ativo => {
         const valorAtual = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
-        patrimonioTotal += valorAtual;
+        
+        // Calcula a porcentagem de participação
+        const percentualNaCategoria = patrimonioTotal > 0 ? (valorAtual / patrimonioTotal) * 100 : 0;
         
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -233,14 +240,13 @@ function renderTabelaAtivos(ativos) {
             <td data-ativo-key="${ativo.key}" data-type="setor">${ativo.setor || '-'}</td>
             <td data-ativo-key="${ativo.key}" data-type="segmento">${ativo.segmento || '-'}</td>
             <td>${toBRL(valorAtual)}</td>
+            <td class="right">${percentualNaCategoria.toFixed(2)}%</td>
             <td class="right">
                 <button class="btn danger btn-sm" data-del-ativo="${ativo.key}">X</button>
             </td>
         `;
         tabelaAtivosCategoria.appendChild(row);
     });
-    
-    totalPatrimonio.textContent = toBRL(patrimonioTotal);
 }
 
 // Função para renderizar os gráficos de pizza
