@@ -1,5 +1,5 @@
 // Importa as funções do Firebase SDK
-import { getDatabase, ref, onValue, remove, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, onValue, remove, push, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 // ===== Configuração do Firebase =====
@@ -54,7 +54,7 @@ function toBRL(n) { return fmtBRL.format(n || 0); }
 function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
 
 // Chave da API para buscar a cotação
-const API_KEY = "jaAoNZhHBLxF7FAUh6QDVp"; // Chave da Brapi
+const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
 
 // Função para buscar preço atual da ação na API da Brapi
 async function buscarPreco(ticker) {
@@ -143,6 +143,56 @@ document.addEventListener('click', (e) => {
             remove(ref(db, `carteira/${ativoKey}`));
         }
     }
+    
+    // NOVO: Lógica para abrir o modal de gerenciar
+    if (e.target.matches('#openSetoresModalBtn')) {
+        currentCategoryForGerenciar = category;
+        renderSetoresSegmentosList(currentCategoryForGerenciar);
+        modalSetores.showModal();
+    }
+});
+
+// NOVO: Função para criar o dropdown editável
+function makeEditableDropdown(td, ativoKey, type) {
+    const currentVal = carteira[ativoKey]?.[type] || '';
+    const category = carteira[ativoKey]?.tipo;
+    const options = Object.values(type === 'setor' ? (setores[category] || {}) : (segmentos[category] || {}));
+
+    const select = document.createElement('select');
+    select.style.cssText = 'width: 100%; padding: 6px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px;';
+    
+    let optionsHtml = `<option value="">Nenhum</option>`;
+    options.forEach(optionVal => {
+        optionsHtml += `<option value="${optionVal}" ${currentVal === optionVal ? 'selected' : ''}>${optionVal}</option>`;
+    });
+    select.innerHTML = optionsHtml;
+    
+    td.innerHTML = '';
+    td.appendChild(select);
+    select.focus();
+
+    function updateAndRevert() {
+        const newValue = select.value;
+        if (newValue !== currentVal) {
+            update(ref(db, `carteira/${ativoKey}`), { [type]: newValue });
+        }
+        // A tabela será re-renderizada automaticamente pelo listener do Firebase
+    }
+
+    select.addEventListener('change', updateAndRevert);
+    select.addEventListener('blur', updateAndRevert);
+}
+
+// NOVO: Adiciona a lógica de clique duplo para edição
+document.addEventListener('dblclick', (e) => {
+    if (e.target.matches('[data-type="setor"]')) {
+        const ativoKey = e.target.dataset.ativoKey;
+        makeEditableDropdown(e.target, ativoKey, 'setor');
+    }
+    if (e.target.matches('[data-type="segmento"]')) {
+        const ativoKey = e.target.dataset.ativoKey;
+        makeEditableDropdown(e.target, ativoKey, 'segmento');
+    }
 });
 
 // Lógica para renderizar a lista de setores/segmentos da categoria
@@ -180,8 +230,8 @@ function renderTabelaAtivos(ativos) {
             <td>${ativo.ticker}</td>
             <td>${fmtNum.format(ativo.quantidade)}</td>
             <td>${toBRL(ativo.precoAtual || ativo.precoMedio)}</td>
-            <td>${ativo.setor || '-'}</td>
-            <td>${ativo.segmento || '-'}</td>
+            <td data-ativo-key="${ativo.key}" data-type="setor">${ativo.setor || '-'}</td>
+            <td data-ativo-key="${ativo.key}" data-type="segmento">${ativo.segmento || '-'}</td>
             <td>${toBRL(valorAtual)}</td>
             <td class="right">
                 <button class="btn danger btn-sm" data-del-ativo="${ativo.key}">X</button>
@@ -195,7 +245,6 @@ function renderTabelaAtivos(ativos) {
 
 // Função para renderizar os gráficos de pizza
 function renderCharts(ativos) {
-    // 1. Processar dados para o gráfico de setor
     const patrimonioPorSetor = ativos.reduce((acc, ativo) => {
         const setor = ativo.setor || 'Outros';
         const valor = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
@@ -206,7 +255,6 @@ function renderCharts(ativos) {
     const setoresLabels = Object.keys(patrimonioPorSetor);
     const setoresData = Object.values(patrimonioPorSetor);
 
-    // 2. Processar dados para o gráfico de segmento
     const patrimonioPorSegmento = ativos.reduce((acc, ativo) => {
         const segmento = ativo.segmento || 'Outros';
         const valor = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
@@ -217,7 +265,6 @@ function renderCharts(ativos) {
     const segmentosLabels = Object.keys(patrimonioPorSegmento);
     const segmentosData = Object.values(patrimonioPorSegmento);
 
-    // 3. Destruir instâncias de gráficos existentes para evitar duplicação
     if (setorChartInstance) {
         setorChartInstance.destroy();
     }
@@ -225,7 +272,6 @@ function renderCharts(ativos) {
         segmentoChartInstance.destroy();
     }
 
-    // 4. Configurar e renderizar o gráfico de setor
     const setorCtx = document.getElementById('setorChart').getContext('2d');
     setorChartInstance = new Chart(setorCtx, {
         type: 'doughnut',
@@ -260,7 +306,6 @@ function renderCharts(ativos) {
         }
     });
 
-    // 5. Configurar e renderizar o gráfico de segmento
     const segmentoCtx = document.getElementById('segmentoChart').getContext('2d');
     segmentoChartInstance = new Chart(segmentoCtx, {
         type: 'doughnut',
