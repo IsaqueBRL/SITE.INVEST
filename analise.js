@@ -48,7 +48,7 @@ const gerenciarModalTitle = document.getElementById('gerenciarModalTitle');
 
 // ===== Utilitários de Formatação =====
 const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-const fmtNum = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
+const fmtNum = new Intl.Number.Format('pt-BR', { maximumFractionDigits: 2 });
 function parseBRL(str) { return Number(String(str).replace(/\./g,'').replace(',', '.')) || 0; }
 function toBRL(n) { return fmtBRL.format(n || 0); }
 function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
@@ -211,7 +211,6 @@ function renderSetoresSegmentosList(category) {
     });
 }
 
-// ATUALIZADO: Refatorada para calcular o total antes de renderizar a tabela
 function renderTabelaAtivos(ativos) {
     const patrimonioTotal = ativos.reduce((sum, ativo) => {
         const valorAtual = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
@@ -244,7 +243,6 @@ function renderTabelaAtivos(ativos) {
     });
 }
 
-// Função para renderizar os gráficos de pizza
 function renderCharts(ativos) {
     const patrimonioPorSetor = ativos.reduce((acc, ativo) => {
         const setor = ativo.setor || 'Outros';
@@ -342,7 +340,6 @@ function renderCharts(ativos) {
     });
 }
 
-// NOVO: Código para o drag-and-drop das colunas
 const tableHeader = document.getElementById('tableHeader');
 const tableBody = document.getElementById('tabelaAtivosCategoria');
 
@@ -352,26 +349,25 @@ const sortable = new Sortable(tableHeader.querySelector('tr'), {
     ghostClass: 'sortable-ghost',
     handle: 'th',
     onEnd: function (evt) {
-        // Encontra a linha do cabeçalho
-        const headerRow = evt.to;
-        // Obtém a nova ordem dos cabeçalhos
-        const newOrder = Array.from(headerRow.children).map(th => th.textContent.trim());
+        const oldIndex = evt.oldIndex;
+        const newIndex = evt.newIndex;
+        
+        if (oldIndex === newIndex) {
+            return;
+        }
 
         // Reordena as células de cada linha do corpo da tabela
         Array.from(tableBody.children).forEach(row => {
             const cells = Array.from(row.children);
-            const newCells = [];
-            
-            newOrder.forEach((headerText, index) => {
-                // Encontra a célula correspondente ao cabeçalho na linha original
-                const originalIndex = Array.from(tableHeader.querySelectorAll('th')).findIndex(th => th.textContent.trim() === headerText);
-                if (originalIndex !== -1) {
-                    newCells.push(cells[originalIndex]);
-                }
-            });
+            const movedCell = cells[oldIndex];
+            const referenceCell = cells[newIndex];
 
             // Reorganiza as células na linha do corpo da tabela
-            newCells.forEach(cell => row.appendChild(cell));
+            if (oldIndex < newIndex) {
+                row.insertBefore(movedCell, referenceCell.nextSibling);
+            } else {
+                row.insertBefore(movedCell, referenceCell);
+            }
         });
     },
 });
