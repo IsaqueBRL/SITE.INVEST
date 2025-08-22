@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 </head>
 <body>
     <header class="header">
@@ -31,7 +32,7 @@
         <section class="table-container">
             <h2>Ativos da Categoria</h2>
             <table class="table">
-                <thead>
+                <thead id="tableHeader">
                     <tr>
                         <th>Ticker</th>
                         <th>Quantidade</th>
