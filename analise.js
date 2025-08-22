@@ -48,7 +48,7 @@ const gerenciarModalTitle = document.getElementById('gerenciarModalTitle');
 
 // ===== Utilitários de Formatação =====
 const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-const fmtNum = new Intl.Number.Format('pt-BR', { maximumFractionDigits: 2 });
+const fmtNum = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
 function parseBRL(str) { return Number(String(str).replace(/\./g,'').replace(',', '.')) || 0; }
 function toBRL(n) { return fmtBRL.format(n || 0); }
 function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
@@ -271,73 +271,77 @@ function renderCharts(ativos) {
         segmentoChartInstance.destroy();
     }
 
-    const setorCtx = document.getElementById('setorChart').getContext('2d');
-    setorChartInstance = new Chart(setorCtx, {
-        type: 'doughnut',
-        data: {
-            labels: setoresLabels,
-            datasets: [{
-                data: setoresData,
-                backgroundColor: [
-                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#D8BFD8'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        color: '#a0aec0'
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label || '';
-                            const value = context.parsed;
-                            return `${label}: ${toBRL(value)}`;
+    const setorCtx = document.getElementById('setorChart');
+    if (setorCtx) {
+        setorChartInstance = new Chart(setorCtx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: setoresLabels,
+                datasets: [{
+                    data: setoresData,
+                    backgroundColor: [
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#D8BFD8'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#a0aec0'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                return `${label}: ${toBRL(value)}`;
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+    }
 
-    const segmentoCtx = document.getElementById('segmentoChart').getContext('2d');
-    segmentoChartInstance = new Chart(segmentoCtx, {
-        type: 'doughnut',
-        data: {
-            labels: segmentosLabels,
-            datasets: [{
-                data: segmentosData,
-                backgroundColor: [
-                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#D8BFD8', '#42A5F5', '#66BB6A'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        color: '#a0aec0'
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label || '';
-                            const value = context.parsed;
-                            return `${label}: ${toBRL(value)}`;
+    const segmentoCtx = document.getElementById('segmentoChart');
+    if (segmentoCtx) {
+        segmentoChartInstance = new Chart(segmentoCtx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: segmentosLabels,
+                datasets: [{
+                    data: segmentosData,
+                    backgroundColor: [
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#D8BFD8', '#42A5F5', '#66BB6A'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#a0aec0'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                return `${label}: ${toBRL(value)}`;
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+    }
 }
 
 const tableHeader = document.getElementById('tableHeader');
@@ -362,7 +366,6 @@ const sortable = new Sortable(tableHeader.querySelector('tr'), {
             const movedCell = cells[oldIndex];
             const referenceCell = cells[newIndex];
 
-            // Reorganiza as células na linha do corpo da tabela
             if (oldIndex < newIndex) {
                 row.insertBefore(movedCell, referenceCell.nextSibling);
             } else {
