@@ -21,13 +21,13 @@ const db = getDatabase(app);
 const carteiraRef = ref(db, 'carteira');
 const setoresRef = ref(db, 'setores');
 const segmentosRef = ref(db, 'segmentos');
-const metasDeAporteRef = ref(db, 'metasDeAporte'); // NOVO: Referência para as metas de aporte
+const metasDeAporteRef = ref(db, 'metasDeAporte');
 
 // Variáveis de estado
 let carteira = {};
 let setores = {};
 let segmentos = {};
-let metasDeAporte = {}; // NOVO: Objeto para armazenar as metas
+let metasDeAporte = {};
 let currentCategoryForGerenciar = '';
 
 // Variáveis para as instâncias dos gráficos
@@ -48,7 +48,7 @@ const setorList = document.getElementById('setorList');
 const segmentoList = document.getElementById('segmentoList');
 const gerenciarModalTitle = document.getElementById('gerenciarModalTitle');
 
-// NOVO: Elementos da nova tabela
+// Elementos da nova tabela
 const planoAporteHeader = document.getElementById('planoAporteHeader');
 const planoAporteContent = document.getElementById('planoAporteContent');
 const tabelaPlanoAporteBody = document.getElementById('tabelaPlanoAporteBody');
