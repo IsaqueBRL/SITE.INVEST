@@ -45,21 +45,42 @@ function toBRL(n) { return fmtBRL.format(n || 0); }
 function toPct(n) { return (n || 0).toFixed(2) + '%'; }
 function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
 
-// Função para buscar preço atual da ação na API do Yahoo Finance
+// Chave da API para buscar a cotação
+const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
+
+// Função para buscar preço atual da ação na API da Brapi
 async function buscarPreco(ticker) {
-    const tickerFormatado = `${ticker}.SA`; // Formato exigido pelo Yahoo Finance para a bolsa brasileira (B3)
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${tickerFormatado}`;
+    const url = `https://brapi.dev/api/quote/${ticker}?token=${API_KEY}`;
     
+    // Log de depuração: Mostra a URL que está sendo usada
+    console.log("Tentando buscar preço na URL:", url);
+
     try {
         const resp = await fetch(url);
+        
+        // Log de depuração: Mostra o status da resposta da requisição
+        console.log("Status da resposta da API:", resp.status);
+
+        if (!resp.ok) {
+            console.error("Erro na resposta da API:", resp.statusText);
+            return null;
+        }
+
         const json = await resp.json();
         
-        // Loga a resposta da API para depuração
-        console.log("Resposta da API do Yahoo Finance para o ticker:", ticker, json);
+        // Log de depuração: Mostra a resposta JSON completa da API
+        console.log("Resposta JSON completa da API:", json);
         
-        const price = json.chart.result?.[0]?.meta?.regularMarketPrice;
+        const price = json.results?.[0]?.regularMarketPrice;
 
-        return typeof price === 'number' ? price : null;
+        if (typeof price === 'number') {
+            console.log("Preço do ativo encontrado:", price);
+            return price;
+        } else {
+            console.warn("Preço não encontrado na resposta da API. Verifique se o ticker está correto.");
+            return null;
+        }
+
     } catch (err) {
         console.error("Erro ao buscar preço para o ticker:", ticker, err);
         return null;
@@ -138,7 +159,6 @@ closeFilteredModalBtn.addEventListener('click', () => modalFilteredAssets.close(
 });
 
 // Listener para preencher o preço ao digitar no campo do Ticker
-// Agora usando a nova API para autocompletar o preço
 tickerInput.addEventListener('input', async () => {
     const ticker = tickerInput.value.trim().toUpperCase();
     if (ticker.length >= 4) {
