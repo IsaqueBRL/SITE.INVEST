@@ -95,7 +95,7 @@ if (category) {
     currentCategoryForGerenciar = category;
 }
 
-// NOVO: Lógica de show/hide para o Plano de Aporte
+// Lógica de show/hide para o Plano de Aporte
 planoAporteHeader.addEventListener('click', () => {
     planoAporteContent.classList.toggle('show');
     planoAporteHeader.classList.toggle('active');
@@ -195,7 +195,7 @@ function makeEditableDropdown(td, ativoKey, type) {
     select.addEventListener('blur', updateAndRevert);
 }
 
-// NOVO: Função para tornar a célula de "Meta" editável
+// Função para tornar a célula de "Meta" editável
 function makeEditableMetaCell(td, segmento) {
     const currentMeta = metasDeAporte[category]?.[segmento] || 0;
     
@@ -228,7 +228,7 @@ function makeEditableMetaCell(td, segmento) {
     });
 }
 
-// NOVO: Lógica de duplo clique para a nova tabela
+// Lógica de duplo clique para a nova tabela
 document.addEventListener('dblclick', (e) => {
     if (e.target.closest('#tabelaPlanoAporteBody') && e.target.matches('td:nth-child(2)')) {
         const row = e.target.closest('tr');
@@ -300,7 +300,6 @@ function renderTabelaAtivos(ativos) {
     });
 }
 
-// NOVO: Função para renderizar a tabela de Plano de Aporte
 function renderPlanoDeAporte(ativos) {
     tabelaPlanoAporteBody.innerHTML = '';
     
@@ -504,7 +503,7 @@ onValue(carteiraRef, (snapshot) => {
         .map(key => ({ key, ...carteira[key] }));
         
     renderTabelaAtivos(ativosDaCategoria);
-    renderPlanoDeAporte(ativosDaCategoria); // NOVO: Chama a renderização do plano de aporte
+    renderPlanoDeAporte(ativosDaCategoria);
     renderCharts(ativosDaCategoria);
 });
 
@@ -522,10 +521,9 @@ onValue(segmentosRef, (snapshot) => {
     }
 });
 
-// NOVO: Listener para as metas de aporte
+// Listener para as metas de aporte
 onValue(metasDeAporteRef, (snapshot) => {
     metasDeAporte = snapshot.val() || {};
-    // Re-renderiza a tabela de plano de aporte para refletir as novas metas
     const ativosDaCategoria = Object.keys(carteira)
         .filter(key => carteira[key].tipo === category)
         .map(key => ({ key, ...carteira[key] }));
