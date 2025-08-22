@@ -1,5 +1,5 @@
 // Importa as funções do Firebase SDK
-import { getDatabase, ref, onValue, remove, push, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, onValue, remove, push, update, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 // ===== Configuração do Firebase =====
@@ -375,6 +375,30 @@ const sortable = new Sortable(tableHeader.querySelector('tr'), {
     },
 });
 
+// NOVO: Função para atualizar os preços de todos os ativos
+async function atualizarPrecos() {
+    console.log("Iniciando atualização de preços dos ativos...");
+
+    // Obtém um "snapshot" (cópia) da carteira para iterar
+    const snapshot = await get(carteiraRef);
+    if (snapshot.exists()) {
+        const ativos = snapshot.val();
+        for (const key in ativos) {
+            const ativo = ativos[key];
+            if (ativo.ticker) {
+                const novoPreco = await buscarPreco(ativo.ticker);
+                // Atualiza o valor apenas se houver uma mudança
+                if (novoPreco !== null && novoPreco !== ativo.precoAtual) {
+                    await update(ref(db, `carteira/${key}`), {
+                        precoAtual: novoPreco
+                    });
+                    console.log(`Preço de ${ativo.ticker} atualizado para ${toBRL(novoPreco)}`);
+                }
+            }
+        }
+    }
+}
+
 // ===== Inicialização e Listeners do Firebase =====
 onValue(carteiraRef, (snapshot) => {
     const data = snapshot.val() || {};
@@ -400,3 +424,9 @@ onValue(segmentosRef, (snapshot) => {
         renderSetoresSegmentosList(currentCategoryForGerenciar);
     }
 });
+
+// Chama a função de atualização de preços a cada 5 minutos (300.000 milissegundos)
+setInterval(atualizarPrecos, 300000);
+
+// Chama a função uma vez ao carregar a página
+atualizarPrecos();
