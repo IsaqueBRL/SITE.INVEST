@@ -178,11 +178,11 @@ formAtivo.addEventListener('submit', async (e) => {
     const segmento = segmentoSelect.value;
     const quantidade = Number(formAtivo.quantidade.value);
     const preco = parseBRL(formAtivo.preco.value);
-    const corretagem = parseBRL(formAtivo.corretagem.value);
-
+    
     if(!ticker || !quantidade || !preco) return;
 
-    const investido = round2(quantidade * preco + corretagem);
+    // A corretagem foi removida, então o valor investido é apenas a quantidade vezes o preço
+    const investido = round2(quantidade * preco);
     const precoMedio = round2(investido / quantidade);
 
     const precoAtual = await buscarPreco(ticker);
