@@ -107,14 +107,7 @@ const openAddCategoryModal = document.getElementById('openAddCategoryModal');
 const closeAddCategoryModal = document.getElementById('closeAddCategoryModal');
 const formAddCategory = document.getElementById('formAddCategory');
 
-const modalAtivos = document.getElementById('modalAtivos');
-const closeAtivosModal = document.getElementById('closeAtivosModal');
-const ativosModalTitle = document.getElementById('ativosModalTitle');
-const totalInvestidoModal = document.getElementById('totalInvestidoModal');
-const patrimonioTitleModal = document.getElementById('patrimonioTitleModal');
-const tabelaAtivosModal = document.getElementById('tabelaAtivosModal');
-const openSetoresModalBtn = document.getElementById('openSetoresModalBtn');
-
+// Modal para Gerenciar Setores/Segmentos
 const modalSetores = document.getElementById('modalSetores');
 const closeSetoresModalBtn = document.getElementById('closeSetoresModalBtn');
 const formSetores = document.getElementById('formSetores');
@@ -124,6 +117,7 @@ const setorList = document.getElementById('setorList');
 const segmentoList = document.getElementById('segmentoList');
 const gerenciarModalTitle = document.getElementById('gerenciarModalTitle');
 
+// Modal para Ativos Filtrados (agora separado)
 const modalFilteredAssets = document.getElementById('modalFilteredAssets');
 const filteredModalTitle = document.getElementById('filteredModalTitle');
 const totalInvestidoFilteredModal = document.getElementById('totalInvestidoFilteredModal');
@@ -144,12 +138,11 @@ openAddCategoryModal.addEventListener('click', () => {
 });
 closeAddCategoryModal.addEventListener('click', () => modalAddCategory.close());
 
-closeAtivosModal.addEventListener('click', () => modalAtivos.close());
 closeSetoresModalBtn.addEventListener('click', () => modalSetores.close());
 closeFilteredModalBtn.addEventListener('click', () => modalFilteredAssets.close());
 
 // Fechar modais clicando fora
-[modalForm, modalAddCategory, modalAtivos, modalSetores, modalFilteredAssets].forEach(modal => {
+[modalForm, modalAddCategory, modalSetores, modalFilteredAssets].forEach(modal => {
     modal.addEventListener('click', e => {
         const dialogDimensions = modal.getBoundingClientRect();
         if (e.clientX < dialogDimensions.left || e.clientX > dialogDimensions.right || e.clientY < dialogDimensions.top || e.clientY > dialogDimensions.bottom) {
@@ -331,44 +324,6 @@ function renderSetorSegmentoSelects(category) {
     });
 }
 
-function renderAtivosModal(category) {
-    const ativos = Object.entries(carteira).filter(([key, ativo]) => ativo.tipo === category);
-    
-    // Cálculo da soma do Total Investido
-    const totalInvestido = ativos.reduce((sum, [, ativo]) => sum + ((ativo.precoAtual || ativo.precoMedio) * ativo.quantidade), 0);
-    totalInvestidoModal.textContent = toBRL(totalInvestido);
-    patrimonioTitleModal.textContent = `Patrimônio em ${category}`;
-    
-    ativosModalTitle.textContent = `Ativos em ${category}`;
-    
-    const sortedAtivos = ativos.sort(([, a], [, b]) => {
-        const valorA = (a.precoAtual || a.precoMedio) * a.quantidade;
-        const valorB = (b.precoAtual || b.precoMedio) * b.quantidade;
-        return valorB - valorA;
-    });
-
-    const ativoRows = sortedAtivos.map(([key, ativo]) => {
-        const valorAtual = (ativo.precoAtual || ativo.precoMedio) * ativo.quantidade;
-        
-        return `
-            <tr>
-                <td>${ativo.ticker}</td>
-                <td>${fmtNum.format(ativo.quantidade)}</td>
-                <td>${toBRL(ativo.precoAtual || ativo.precoMedio)}</td>
-                <td data-edit-setor="${key}"><span class="editable-field">${ativo.setor || '-'}</span></td>
-                <td data-edit-segmento="${key}"><span class="editable-field">${ativo.segmento || '-'}</span></td>
-                <td>${toBRL(valorAtual)}</td>
-                <td class="right">
-                    <button class="btn danger btn-sm" data-del-ativo="${key}">X</button>
-                </td>
-            </tr>
-        `;
-    }).join('');
-
-    tabelaAtivosModal.querySelector('tbody').innerHTML = ativos.length > 0 ? ativoRows : `<tr><td colspan="7" style="text-align:center; padding: 20px;">Nenhum ativo nesta categoria.</td></tr>`;
-    modalAtivos.showModal();
-}
-
 // Lógica para renderizar a lista de setores/segmentos da categoria
 function renderSetoresSegmentosList(category) {
     gerenciarModalTitle.textContent = `Gerenciar Setores/Segmentos para ${category}`;
@@ -472,7 +427,7 @@ function renderTabela() {
         const vals = categoriasComValores[cat] || {};
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><a href="#" class="category-link" data-cat="${cat}">${cat}</a></td>
+            <td><a href="analise.html?categoria=${encodeURIComponent(cat)}" class="category-link">${cat}</a></td>
             <td class="right" data-edit-meta="${cat}">${toPct(vals.meta)}</td>
             <td class="right ${vals.atual > vals.meta * 1.05 ? 'red' : vals.atual < vals.meta * 0.95 ? 'green' : ''}">${toPct(vals.atual)}</td>
             <td class="right">${toBRL(vals.patrimonio)}</td>
@@ -566,21 +521,6 @@ document.addEventListener('click', (e) => {
         }
     }
     
-    // Lógica para abrir o modal de ativos
-    if (e.target.matches('.category-link')) {
-        e.preventDefault();
-        const category = e.target.dataset.cat;
-        renderAtivosModal(category);
-    }
-    
-    // Lógica para deletar ativo individual
-    if (e.target.matches('[data-del-ativo]')) {
-        const ativoKey = e.target.dataset.delAtivo;
-        if (confirm("Tem certeza que deseja excluir este ativo?")) {
-            remove(ref(db, `carteira/${ativoKey}`));
-        }
-    }
-    
     // Lógica para abrir o modal de gerenciar
     if (e.target.matches('#openSetoresModalBtn')) {
         const category = ativosModalTitle.textContent.replace('Ativos em ', '').trim();
@@ -620,18 +560,6 @@ document.addEventListener('dblclick', (e) => {
     if (e.target.matches('[data-edit-meta]')) {
         const category = e.target.dataset.editMeta;
         makeEditableMeta(e.target, category);
-    }
-
-    if (e.target.closest('[data-edit-setor]')) {
-        const td = e.target.closest('[data-edit-setor]');
-        const ativoKey = td.dataset.editSetor;
-        makeEditableDropdown(td, ativoKey, 'setor');
-    }
-    
-    if (e.target.closest('[data-edit-segmento]')) {
-        const td = e.target.closest('[data-edit-segmento]');
-        const ativoKey = td.dataset.editSegmento;
-        makeEditableDropdown(td, ativoKey, 'segmento');
     }
 });
 
