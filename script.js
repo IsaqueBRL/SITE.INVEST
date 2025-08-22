@@ -46,10 +46,8 @@ function toPct(n) { return (n || 0).toFixed(2) + '%'; }
 function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
 
 // Chave da API para buscar a cotação
-// IMPORTANTE: A chave genérica abaixo pode não funcionar.
-// Você precisará obter uma chave da API válida no site brapi.dev
-// e substituí-la aqui.
-const API_KEY = "jaAoNZhBBLxF7FAUh6QDVp";
+// NOVA CHAVE DE API ADICIONADA:
+const API_KEY = "jaAoNZHhBLxF7FAUh6QDVp";
 
 // Função para buscar preço atual da ação na API
 async function buscarPreco(ticker) {
@@ -138,18 +136,8 @@ closeFilteredModalBtn.addEventListener('click', () => modalFilteredAssets.close(
     });
 });
 
-// Listener para preencher o preço ao digitar no campo do Ticker
-tickerInput.addEventListener('input', async () => {
-    const ticker = tickerInput.value.trim().toUpperCase();
-    if (ticker.length >= 4) {
-        const preco = await buscarPreco(ticker);
-        if (preco) {
-            precoInput.value = preco.toFixed(2).replace('.', ',');
-        } else {
-            precoInput.value = '';
-        }
-    }
-});
+// REMOVIDO: A busca de preço automática ao digitar para maior estabilidade.
+// tickerInput.addEventListener('input', async () => { ... });
 
 // Listener para preencher os selects de setor/segmento ao mudar a categoria
 tipoSelect.addEventListener('change', () => {
@@ -172,6 +160,7 @@ formAtivo.addEventListener('submit', async (e) => {
     const investido = round2(quantidade * preco + corretagem);
     const precoMedio = round2(investido / quantidade);
 
+    // MOVENDO: A busca de preço para o evento de submissão do formulário.
     const precoAtual = await buscarPreco(ticker);
 
     const existenteKey = Object.keys(carteira).find(key => carteira[key].ticker === ticker && carteira[key].tipo === tipo);
