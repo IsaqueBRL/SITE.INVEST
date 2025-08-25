@@ -5,34 +5,103 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minha Carteira de Investimentos</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <header>
-        <h1>Minha Carteira</h1>
+    <header class="header">
+        <h1>Minha Carteira de Investimentos</h1>
+        <button id="addAtivoBtn" class="btn primary">Adicionar Novo Ativo</button>
     </header>
 
-    <main>
-        <section class="rebalanceamento">
-            <h2>Rebalanceamento por Categorias</h2>
-            <table class="tabela-principal">
+    <main class="container">
+        <section class="dashboard">
+            <div class="card">
+                <h3>Patrimônio Total</h3>
+                <p id="totalPatrimonio">R$ 0,00</p>
+            </div>
+            <div class="card">
+                <h3>Patrimônio por Categoria</h3>
+                <canvas id="patrimonioPorCategoriaChart"></canvas>
+            </div>
+        </section>
+
+        <section class="table-container">
+            <h2>Categorias</h2>
+            <table class="table">
                 <thead>
                     <tr>
-                        <th>CATEGORIA</th>
-                        <th>META</th>
-                        <th>ATUAL</th>
-                        <th>PATRIMÔNIO</th>
-                        <th>APORTAR</th>
-                        <th>AÇÕES</th>
+                        <th>Categoria</th>
+                        <th>Patrimônio</th>
+                        <th>Participação</th>
+                        <th class="right">Ações</th>
                     </tr>
                 </thead>
-                <tbody id="tabela-categorias-body">
-                    </tbody>
+                <tbody id="tabelaCategorias">
+                </tbody>
             </table>
         </section>
         
-        <button id="adicionar-categoria-btn">Adicionar Nova Categoria</button>
+        <section class="table-container">
+            <h2>Ativos</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Ticker</th>
+                        <th>Categoria</th>
+                        <th>Quantidade</th>
+                        <th>Preço Médio</th>
+                        <th>Patrimônio</th>
+                        <th>Participação</th>
+                        <th class="right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaAtivos">
+                </tbody>
+            </table>
+        </section>
     </main>
 
-    <script src="js/script.js"></script>
+    <dialog id="addAtivoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Adicionar Ativo</h2>
+                <button type="button" class="close-btn" id="closeAddAtivoModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addAtivoForm">
+                    <label for="tickerInput">Ticker:</label>
+                    <input type="text" id="tickerInput" required placeholder="Ex: ABEV3">
+                    <label for="tipoSelect">Categoria:</label>
+                    <select id="tipoSelect" required></select>
+                    <label for="quantidadeInput">Quantidade:</label>
+                    <input type="number" id="quantidadeInput" required min="1" placeholder="Ex: 100">
+                    <label for="precoMedioInput">Preço Médio:</label>
+                    <input type="text" id="precoMedioInput" required placeholder="Ex: 12,50">
+                    <button type="submit" class="btn primary full-width">Adicionar</button>
+                </form>
+            </div>
+        </div>
+    </dialog>
+    
+    <dialog id="addCategoriaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Adicionar Categoria</h2>
+                <button type="button" class="close-btn" id="closeAddCategoriaModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addCategoriaForm">
+                    <label for="categoriaInput">Nome da Categoria:</label>
+                    <input type="text" id="categoriaInput" required placeholder="Ex: Ações">
+                    <button type="submit" class="btn primary full-width">Adicionar</button>
+                </form>
+            </div>
+        </div>
+    </dialog>
+
+    <script type="module" src="js/script.js"></script>
 </body>
 </html>
