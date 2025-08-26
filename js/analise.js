@@ -5,13 +5,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const verbaSpan = document.getElementById('categoriaVerba');
 
     const fileMap = {
-        'FIIs': 'PLANO DE APORTES GERAL .xlsx - FIIs POR SEGMENTO.csv',
-        'AÇÕES': 'PLANO DE APORTES GERAL .xlsx - AÇÕES POR SEGMENTO.csv',
-        'FIAGRO': 'PLANO DE APORTES GERAL .xlsx - FIAGROS.csv',
-        'REITS': 'PLANO DE APORTES GERAL .xlsx - REITS POR SEGMENTO.csv',
-        'STOKS': 'PLANO DE APORTES GERAL .xlsx - STOKS POR SETOR.csv',
-        'ETF Exterior': 'PLANO DE APORTES GERAL .xlsx - ETF EXTERIOR.csv',
-        'ETF BRASIL': 'PLANO DE APORTES GERAL .xlsx - ETF BRASIL.csv'
+        'FIIs': 'PLANO DE APORTES GERAL .xlsx/PLANO DE APORTES GERAL .xlsx - FIIs POR SEGMENTO.csv',
+        'AÇÕES': 'PLANO DE APORTES GERAL .xlsx/PLANO DE APORTES GERAL .xlsx - AÇÕES POR SEGMENTO.csv',
+        'FIAGRO': 'PLANO DE APORTES GERAL .xlsx/PLANO DE APORTES GERAL .xlsx - FIAGROS.csv',
+        'REITS': 'PLANO DE APORTES GERAL .xlsx/PLANO DE APORTES GERAL .xlsx - REITS POR SEGMENTO.csv',
+        'STOKS': 'PLANO DE APORTES GERAL .xlsx/PLANO DE APORTES GERAL .xlsx - STOKS POR SETOR.csv',
+        'ETF Exterior': 'PLANO DE APORTES GERAL .xlsx/PLANO DE APORTES GERAL .xlsx - ETF EXTERIOR.csv',
+        'ETF BRASIL': 'PLANO DE APORTES GERAL .xlsx/PLANO DE APORTES GERAL .xlsx - ETF BRASIL.csv'
     };
 
     function loadData(categoria) {

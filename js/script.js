@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    fetch('PLANO DE APORTES GERAL .xlsx - PAINEL GERAL.csv')
+    fetch('PLANO DE APORTES GERAL .xlsx/PLANO DE APORTES GERAL .xlsx - PAINEL GERAL.csv')
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Erro HTTP! status: ${response.status}`);
