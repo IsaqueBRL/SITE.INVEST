@@ -1,6 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
     fetch('PLANO DE APORTES GERAL .xlsx - PAINEL GERAL.csv')
-        .then(response => response.text())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Erro HTTP! status: ${response.status}`);
+            }
+            return response.text();
+        })
         .then(csvText => {
             const rows = csvText.trim().split('\n').map(row => row.split(','));
             const header = rows[0];

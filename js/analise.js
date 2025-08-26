@@ -24,7 +24,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         fetch(filePath)
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP! status: ${response.status}`);
+                }
+                return response.text();
+            })
             .then(csvText => {
                 const rows = csvText.trim().split('\n').map(row => row.split(','));
                 tableBody.innerHTML = '';
