@@ -1,5 +1,5 @@
 body {
-    font-family: sans-serif;
+    font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
     background-color: #f4f4f4;
@@ -7,66 +7,131 @@ body {
 }
 
 header {
-    background-color: #333;
-    color: #fff;
-    padding: 1rem;
+    background-color: #005f73;
+    color: white;
+    padding: 1rem 2rem;
     text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+header h1 {
+    margin: 0 0 0.5rem;
+}
+
+nav {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+nav a:hover {
+    background-color: #0a9396;
 }
 
 main {
     padding: 2rem;
-    max-width: 900px;
-    margin: 0 auto;
+    max-width: 1200px;
+    margin: auto;
 }
 
-.rebalanceamento {
+.summary, .category-summary {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 1rem;
     margin-bottom: 2rem;
 }
 
-.tabela-principal {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 1rem;
+.summary-item {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    text-align: center;
+    flex: 1;
+    min-width: 250px;
 }
 
-.tabela-principal th, 
-.tabela-principal td {
-    padding: 0.75rem;
-    border: 1px solid #ddd;
+.summary-item h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+    color: #005f73;
+}
+
+.summary-item p {
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0;
+    color: #00b4d8;
+}
+
+.table-container {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
     text-align: left;
 }
 
-.tabela-principal th {
-    background-color: #eee;
-    font-weight: bold;
-    text-transform: uppercase;
+th, td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #ddd;
 }
 
-.tabela-principal tr:nth-child(even) {
+thead th {
+    background-color: #e9ecef;
+    font-weight: bold;
+    color: #555;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+}
+
+tbody tr:nth-child(even) {
     background-color: #f9f9f9;
 }
 
-.tabela-principal button {
-    padding: 0.5rem 0.8rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-left: 5px;
+tbody tr:hover {
+    background-color: #eef;
 }
 
-.tabela-principal .remover-btn {
-    background-color: #e74c3c;
-    color: #fff;
+.controls {
+    text-align: center;
+    margin-bottom: 2rem;
 }
 
-#adicionar-categoria-btn {
-    display: block;
-    margin-top: 1rem;
-    padding: 1rem 2rem;
-    background-color: #2ecc71;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+#categoria-select {
+    padding: 0.5rem 1rem;
     font-size: 1rem;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+@media (max-width: 768px) {
+    header {
+        padding: 1rem;
+    }
+
+    nav {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .summary, .category-summary {
+        flex-direction: column;
+    }
 }

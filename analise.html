@@ -3,23 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análise de Categoria</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <title>Análise por Categoria</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header class="header">
-        <h1>Análise de Categoria</h1>
-        <button onclick="window.history.back()" class="btn primary">Voltar para a Carteira</button>
+    <header>
+        <h1>Análise Detalhada</h1>
+        <nav>
+            <a href="index.html">Painel Geral</a>
+            <a href="analise.html">Análise por Categoria</a>
+        </nav>
     </header>
-
-    <main class="container">
-        </main>
-
-    <script type="module" src="js/analise.js"></script>
+    <main>
+        <div class="controls">
+            <label for="categoria-select">Selecione uma Categoria:</label>
+            <select id="categoria-select">
+                <option value="FIIs">FIIs</option>
+                <option value="AÇÕES">Ações</option>
+                <option value="FIAGRO">FIAGRO</option>
+                <option value="REITS">REITs</option>
+                <option value="STOKS">STOKs</option>
+                <option value="ETF Exterior">ETF Exterior</option>
+                <option value="ETF BRASIL">ETF Brasil</option>
+            </select>
+        </div>
+        <div class="analysis-container">
+            <div class="category-summary">
+                <div class="summary-item">
+                    <h2>Patrimônio da Categoria</h2>
+                    <p id="categoriaPatrimonio"></p>
+                </div>
+                <div class="summary-item">
+                    <h2>Verba a Aportar</h2>
+                    <p id="categoriaVerba"></p>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="analysisTable">
+                    <thead>
+                        <tr>
+                            <th>Ativo</th>
+                            <th>Segmento</th>
+                            <th>Patrimônio</th>
+                            <th>% na Categoria</th>
+                        </tr>
+                    </thead>
+                    <tbody id="analysisTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    <script src="analise.js"></script>
 </body>
 </html>
