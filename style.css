@@ -98,3 +98,21 @@ table tbody tr:last-of-type {
 .input-form button:hover {
     background-color: #27ae60;
 }
+
+.delete-btn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.delete-btn:hover {
+    background-color: #c0392b;
+}
+
+table td.actions-cell {
+    text-align: center;
+}

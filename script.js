@@ -9,6 +9,14 @@ const formatCurrency = (value) => {
     }).format(value);
 };
 
+// Função para excluir uma categoria
+const deleteAsset = (index) => {
+    if (confirm('Tem certeza que deseja excluir esta categoria?')) {
+        assets.splice(index, 1); // Remove o item do array
+        renderTable(); // Recarrega a tabela
+    }
+};
+
 // Função principal que calcula todos os valores e renderiza a tabela
 const renderTable = () => {
     const tableBody = document.getElementById('investment-table-body');
@@ -21,7 +29,7 @@ const renderTable = () => {
     // Calcula a porcentagem atual e o valor a aportar para cada categoria
     let totalAportar = 0;
     
-    assets.forEach(asset => {
+    assets.forEach((asset, index) => {
         const atualPorcentagem = totalPatrimonio > 0 ? (asset.patrimonio / totalPatrimonio) * 100 : 0;
         const metaValor = totalPatrimonio * (asset.meta / 100);
         const aportarValor = metaValor - asset.patrimonio;
@@ -29,7 +37,6 @@ const renderTable = () => {
         asset.atual = atualPorcentagem;
         asset.aportar = aportarValor;
 
-        // Se o valor a aportar for positivo, adiciona ao total
         if (aportarValor > 0) {
             totalAportar += aportarValor;
         }
@@ -42,6 +49,9 @@ const renderTable = () => {
             <td>${asset.atual.toFixed(2)}%</td>
             <td>${formatCurrency(asset.patrimonio)}</td>
             <td style="color: ${asset.aportar > 0 ? 'green' : 'red'}; font-weight: bold;">${formatCurrency(asset.aportar)}</td>
+            <td class="actions-cell">
+                <button onclick="deleteAsset(${index})" class="delete-btn">Excluir</button>
+            </td>
         `;
         tableBody.appendChild(row);
     });
