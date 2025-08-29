@@ -1,5 +1,6 @@
-// Array para armazenar as categorias de investimento
-let assets = [];
+// Acessa o banco de dados do Firebase
+const database = firebase.database();
+const assetsRef = database.ref('assets');
 
 // Função para formatar números como moeda
 const formatCurrency = (value) => {
@@ -9,57 +10,55 @@ const formatCurrency = (value) => {
     }).format(value);
 };
 
-// Função para excluir uma categoria
-const deleteAsset = (index) => {
+// Função para excluir uma categoria do Firebase
+const deleteAsset = (key) => {
     if (confirm('Tem certeza que deseja excluir esta categoria?')) {
-        assets.splice(index, 1); // Remove o item do array
-        renderTable(); // Recarrega a tabela
+        assetsRef.child(key).remove();
     }
 };
 
 // Função principal que calcula todos os valores e renderiza a tabela
-const renderTable = () => {
+const renderTable = (assets) => {
     const tableBody = document.getElementById('investment-table-body');
-    tableBody.innerHTML = ''; // Limpa a tabela antes de renderizar
+    tableBody.innerHTML = '';
     
-    // Calcula o patrimônio total
-    const totalPatrimonio = assets.reduce((sum, asset) => sum + parseFloat(asset.patrimonio), 0);
+    // Converte o objeto de assets em um array para facilitar o cálculo
+    const assetsArray = Object.values(assets);
+
+    const totalPatrimonio = assetsArray.reduce((sum, asset) => sum + parseFloat(asset.patrimonio), 0);
     document.getElementById('total-patrimonio').textContent = formatCurrency(totalPatrimonio);
 
-    // Calcula a porcentagem atual e o valor a aportar para cada categoria
     let totalAportar = 0;
     
-    assets.forEach((asset, index) => {
+    // Itera sobre o objeto de assets para renderizar a tabela
+    for (const key in assets) {
+        const asset = assets[key];
         const atualPorcentagem = totalPatrimonio > 0 ? (asset.patrimonio / totalPatrimonio) * 100 : 0;
         const metaValor = totalPatrimonio * (asset.meta / 100);
         const aportarValor = metaValor - asset.patrimonio;
         
-        asset.atual = atualPorcentagem;
-        asset.aportar = aportarValor;
-
-        if (aportarValor > 0) {
-            totalAportar += aportarValor;
-        }
-
-        // Cria a linha da tabela
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${asset.categoria}</td>
             <td>${asset.meta.toFixed(2)}%</td>
-            <td>${asset.atual.toFixed(2)}%</td>
+            <td>${atualPorcentagem.toFixed(2)}%</td>
             <td>${formatCurrency(asset.patrimonio)}</td>
-            <td style="color: ${asset.aportar > 0 ? 'green' : 'red'}; font-weight: bold;">${formatCurrency(asset.aportar)}</td>
+            <td style="color: ${aportarValor > 0 ? 'green' : 'red'}; font-weight: bold;">${formatCurrency(aportarValor)}</td>
             <td class="actions-cell">
-                <button onclick="deleteAsset(${index})" class="delete-btn">Excluir</button>
+                <button onclick="deleteAsset('${key}')" class="delete-btn">Excluir</button>
             </td>
         `;
         tableBody.appendChild(row);
-    });
+
+        if (aportarValor > 0) {
+            totalAportar += aportarValor;
+        }
+    }
 
     document.getElementById('total-aportar').textContent = formatCurrency(totalAportar);
 };
 
-// Função para adicionar ou atualizar uma categoria
+// Função para adicionar ou atualizar uma categoria no Firebase
 const addOrUpdateAsset = () => {
     const categoriaInput = document.getElementById('categoria-input');
     const patrimonioInput = document.getElementById('patrimonio-input');
@@ -69,38 +68,40 @@ const addOrUpdateAsset = () => {
     const patrimonio = parseFloat(patrimonioInput.value);
     const meta = parseFloat(metaInput.value);
 
-    // Validações básicas
     if (!categoria || isNaN(patrimonio) || isNaN(meta) || meta < 0 || patrimonio < 0) {
         alert('Por favor, preencha todos os campos com valores válidos.');
         return;
     }
 
-    // Procura se a categoria já existe
-    const existingAssetIndex = assets.findIndex(a => a.categoria.toLowerCase() === categoria.toLowerCase());
+    // Procura se a categoria já existe no banco de dados
+    assetsRef.orderByChild('categoria').equalTo(categoria).once('value', snapshot => {
+        const existingAsset = snapshot.val();
+        
+        if (existingAsset) {
+            // Se existir, atualiza a categoria
+            const key = Object.keys(existingAsset)[0];
+            assetsRef.child(key).update({
+                patrimonio: patrimonio,
+                meta: meta
+            });
+        } else {
+            // Se não existir, adiciona uma nova categoria
+            assetsRef.push({
+                categoria: categoria,
+                patrimonio: patrimonio,
+                meta: meta
+            });
+        }
+    });
 
-    if (existingAssetIndex !== -1) {
-        // Se existir, atualiza os valores
-        assets[existingAssetIndex].patrimonio = patrimonio;
-        assets[existingAssetIndex].meta = meta;
-    } else {
-        // Se não existir, adiciona uma nova categoria
-        assets.push({ categoria, patrimonio, meta, atual: 0, aportar: 0 });
-    }
-
-    // Limpa os campos de input
     categoriaInput.value = '';
     patrimonioInput.value = '';
     metaInput.value = '';
-
-    renderTable(); // Recalcula e renderiza a tabela
 };
 
-// Função para carregar dados iniciais, se houver
-window.onload = () => {
-    // Exemplo de dados iniciais, você pode remover ou modificar
-    assets.push({ categoria: 'Renda Fixa', patrimonio: 5000, meta: 30, atual: 0, aportar: 0 });
-    assets.push({ categoria: 'Ações BR', patrimonio: 3000, meta: 40, atual: 0, aportar: 0 });
-    assets.push({ categoria: 'Ações EUA', patrimonio: 2000, meta: 20, atual: 0, aportar: 0 });
-    assets.push({ categoria: 'Fundos Imobiliários', patrimonio: 1000, meta: 10, atual: 0, aportar: 0 });
-    renderTable();
-};
+// Carrega os dados do Firebase e os atualiza em tempo real
+assetsRef.on('value', (snapshot) => {
+    const data = snapshot.val();
+    const assets = data || {};
+    renderTable(assets);
+});
