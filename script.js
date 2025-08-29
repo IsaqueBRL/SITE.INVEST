@@ -8,6 +8,9 @@ let sortState = {
     direction: 'asc'      // Direção inicial (ascendente)
 };
 
+// Variável para armazenar a última lista de ativos carregada
+let currentAssets = {};
+
 // Função para formatar números como moeda
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -64,17 +67,16 @@ const sortAssets = (column) => {
         sortState.column = column;
         sortState.direction = 'asc';
     }
-    assetsRef.once('value', (snapshot) => {
-        const data = snapshot.val();
-        const assets = data || {};
-        renderTable(assets);
-    });
+    renderTable(currentAssets);
 };
 
 // Função principal que calcula todos os valores e renderiza a tabela
 const renderTable = (assets) => {
     const tableBody = document.getElementById('investment-table-body');
     tableBody.innerHTML = '';
+
+    // Salva os ativos para a próxima ordenação
+    currentAssets = assets;
 
     const assetsArray = Object.entries(assets).map(([key, value]) => ({ key, ...value }));
 
