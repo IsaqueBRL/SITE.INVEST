@@ -1,8 +1,6 @@
-// Acessa o banco de dados do Firebase
 const database = firebase.database();
 const assetsRef = database.ref('assets');
 
-// Função para formatar números como moeda
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
@@ -10,19 +8,50 @@ const formatCurrency = (value) => {
     }).format(value);
 };
 
-// Função para excluir uma categoria do Firebase
 const deleteAsset = (key) => {
     if (confirm('Tem certeza que deseja excluir esta categoria?')) {
         assetsRef.child(key).remove();
     }
 };
 
-// Função principal que calcula todos os valores e renderiza a tabela
+const enableEdit = (element, key, currentMeta) => {
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.value = currentMeta;
+    input.min = 0;
+    input.max = 100;
+    input.step = 0.01;
+    input.style.width = '60px';
+
+    element.innerHTML = '';
+    element.appendChild(input);
+    input.focus();
+
+    const saveMeta = () => {
+        const newMeta = parseFloat(input.value);
+        if (!isNaN(newMeta) && newMeta >= 0 && newMeta <= 100) {
+            assetsRef.child(key).update({
+                meta: newMeta
+            }).catch(error => {
+                console.error("Erro ao atualizar a meta:", error);
+            });
+        }
+        element.innerHTML = `${currentMeta.toFixed(2)}%`;
+    };
+
+    input.addEventListener('blur', saveMeta);
+
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            saveMeta();
+        }
+    });
+};
+
 const renderTable = (assets) => {
     const tableBody = document.getElementById('investment-table-body');
     tableBody.innerHTML = '';
     
-    // Converte o objeto de assets em um array para facilitar o cálculo
     const assetsArray = Object.values(assets);
 
     const totalPatrimonio = assetsArray.reduce((sum, asset) => sum + parseFloat(asset.patrimonio), 0);
@@ -30,7 +59,6 @@ const renderTable = (assets) => {
 
     let totalAportar = 0;
     
-    // Itera sobre o objeto de assets para renderizar a tabela
     for (const key in assets) {
         const asset = assets[key];
         const atualPorcentagem = totalPatrimonio > 0 ? (asset.patrimonio / totalPatrimonio) * 100 : 0;
@@ -40,7 +68,7 @@ const renderTable = (assets) => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${asset.categoria}</td>
-            <td>${asset.meta.toFixed(2)}%</td>
+            <td class="editable-meta" data-key="${key}">${asset.meta.toFixed(2)}%</td>
             <td>${atualPorcentagem.toFixed(2)}%</td>
             <td>${formatCurrency(asset.patrimonio)}</td>
             <td style="color: ${aportarValor > 0 ? 'green' : 'red'}; font-weight: bold;">${formatCurrency(aportarValor)}</td>
@@ -50,6 +78,11 @@ const renderTable = (assets) => {
         `;
         tableBody.appendChild(row);
 
+        const metaCell = row.querySelector('.editable-meta');
+        metaCell.addEventListener('click', () => {
+            enableEdit(metaCell, key, asset.meta);
+        });
+
         if (aportarValor > 0) {
             totalAportar += aportarValor;
         }
@@ -58,7 +91,6 @@ const renderTable = (assets) => {
     document.getElementById('total-aportar').textContent = formatCurrency(totalAportar);
 };
 
-// Função para adicionar ou atualizar uma categoria no Firebase
 const addOrUpdateAsset = () => {
     const categoriaInput = document.getElementById('categoria-input');
     const patrimonioInput = document.getElementById('patrimonio-input');
@@ -73,19 +105,16 @@ const addOrUpdateAsset = () => {
         return;
     }
 
-    // Procura se a categoria já existe no banco de dados
     assetsRef.orderByChild('categoria').equalTo(categoria).once('value', snapshot => {
         const existingAsset = snapshot.val();
         
         if (existingAsset) {
-            // Se existir, atualiza a categoria
             const key = Object.keys(existingAsset)[0];
             assetsRef.child(key).update({
                 patrimonio: patrimonio,
                 meta: meta
             });
         } else {
-            // Se não existir, adiciona uma nova categoria
             assetsRef.push({
                 categoria: categoria,
                 patrimonio: patrimonio,
@@ -99,7 +128,6 @@ const addOrUpdateAsset = () => {
     metaInput.value = '';
 };
 
-// Carrega os dados do Firebase e os atualiza em tempo real
 assetsRef.on('value', (snapshot) => {
     const data = snapshot.val();
     const assets = data || {};
