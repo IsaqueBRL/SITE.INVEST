@@ -24,7 +24,8 @@
                 </tr>
             </thead>
             <tbody id="investment-table-body">
-                </tbody>
+                <!-- Linhas da tabela serão adicionadas via JavaScript -->
+            </tbody>
         </table>
 
         <div class="summary">
@@ -41,6 +42,23 @@
         </div>
 
     </div>
+
+    <!-- Adicione as bibliotecas do Firebase aqui, já com a sua configuração -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script>
+        // Sua configuração do Firebase já adicionada
+        const firebaseConfig = {
+            apiKey: "AIzaSyBNBf_DachNBO2RmQGmfOPg3PEuig5cVRw",
+            authDomain: "banco-de-dados---site-invest.firebaseapp.com",
+            databaseURL: "https://banco-de-dados---site-invest-default-rtdb.firebaseio.com",
+            projectId: "banco-de-dados---site-invest",
+            storageBucket: "banco-de-dados---site-invest.firebasestorage.app",
+            messagingSenderId: "581873866515",
+            appId: "1:581873866515:web:f258fcecad958acf6aace6"
+        };
+        firebase.initializeApp(firebaseConfig);
+    </script>
 
     <script src="script.js"></script>
 </body>
