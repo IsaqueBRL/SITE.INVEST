@@ -1,6 +1,14 @@
+// Acessa o banco de dados do Firebase
 const database = firebase.database();
 const assetsRef = database.ref('assets');
 
+// Estado de ordenação da tabela
+let sortState = {
+    column: 'categoria', // Coluna inicial para ordenação
+    direction: 'asc'      // Direção inicial (ascendente)
+};
+
+// Função para formatar números como moeda
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
@@ -8,12 +16,14 @@ const formatCurrency = (value) => {
     }).format(value);
 };
 
+// Função para excluir uma categoria do Firebase
 const deleteAsset = (key) => {
     if (confirm('Tem certeza que deseja excluir esta categoria?')) {
         assetsRef.child(key).remove();
     }
 };
 
+// Função para habilitar a edição da célula de meta
 const enableEdit = (element, key, currentMeta) => {
     const input = document.createElement('input');
     input.type = 'number';
@@ -36,11 +46,9 @@ const enableEdit = (element, key, currentMeta) => {
                 console.error("Erro ao atualizar a meta:", error);
             });
         }
-        element.innerHTML = `${currentMeta.toFixed(2)}%`;
     };
 
     input.addEventListener('blur', saveMeta);
-
     input.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             saveMeta();
@@ -48,49 +56,83 @@ const enableEdit = (element, key, currentMeta) => {
     });
 };
 
+// Função para ordenar os ativos
+const sortAssets = (column) => {
+    if (sortState.column === column) {
+        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortState.column = column;
+        sortState.direction = 'asc';
+    }
+    assetsRef.once('value', (snapshot) => {
+        const data = snapshot.val();
+        const assets = data || {};
+        renderTable(assets);
+    });
+};
+
+// Função principal que calcula todos os valores e renderiza a tabela
 const renderTable = (assets) => {
     const tableBody = document.getElementById('investment-table-body');
     tableBody.innerHTML = '';
-    
-    const assetsArray = Object.values(assets);
 
+    const assetsArray = Object.entries(assets).map(([key, value]) => ({ key, ...value }));
+
+    // Calcular a porcentagem atual para ordenação
     const totalPatrimonio = assetsArray.reduce((sum, asset) => sum + parseFloat(asset.patrimonio), 0);
+    assetsArray.forEach(asset => {
+        asset.atualPorcentagem = totalPatrimonio > 0 ? (asset.patrimonio / totalPatrimonio) * 100 : 0;
+        asset.metaValor = totalPatrimonio * (asset.meta / 100);
+        asset.aportarValor = asset.metaValor - asset.patrimonio;
+    });
+
+    // Ordenar o array com base no estado atual
+    assetsArray.sort((a, b) => {
+        const aValue = a[sortState.column];
+        const bValue = b[sortState.column];
+
+        let comparison = 0;
+        if (typeof aValue === 'string') {
+            comparison = aValue.localeCompare(bValue);
+        } else {
+            comparison = aValue - bValue;
+        }
+
+        return sortState.direction === 'asc' ? comparison : -comparison;
+    });
+
     document.getElementById('total-patrimonio').textContent = formatCurrency(totalPatrimonio);
 
     let totalAportar = 0;
-    
-    for (const key in assets) {
-        const asset = assets[key];
-        const atualPorcentagem = totalPatrimonio > 0 ? (asset.patrimonio / totalPatrimonio) * 100 : 0;
-        const metaValor = totalPatrimonio * (asset.meta / 100);
-        const aportarValor = metaValor - asset.patrimonio;
-        
+
+    assetsArray.forEach(asset => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${asset.categoria}</td>
-            <td class="editable-meta" data-key="${key}">${asset.meta.toFixed(2)}%</td>
-            <td>${atualPorcentagem.toFixed(2)}%</td>
+            <td class="editable-meta" data-key="${asset.key}">${asset.meta.toFixed(2)}%</td>
+            <td>${asset.atualPorcentagem.toFixed(2)}%</td>
             <td>${formatCurrency(asset.patrimonio)}</td>
-            <td style="color: ${aportarValor > 0 ? 'green' : 'red'}; font-weight: bold;">${formatCurrency(aportarValor)}</td>
+            <td style="color: ${asset.aportarValor > 0 ? 'green' : 'red'}; font-weight: bold;">${formatCurrency(asset.aportarValor)}</td>
             <td class="actions-cell">
-                <button onclick="deleteAsset('${key}')" class="delete-btn">Excluir</button>
+                <button onclick="deleteAsset('${asset.key}')" class="delete-btn">Excluir</button>
             </td>
         `;
         tableBody.appendChild(row);
 
         const metaCell = row.querySelector('.editable-meta');
         metaCell.addEventListener('click', () => {
-            enableEdit(metaCell, key, asset.meta);
+            enableEdit(metaCell, asset.key, asset.meta);
         });
 
-        if (aportarValor > 0) {
-            totalAportar += aportarValor;
+        if (asset.aportarValor > 0) {
+            totalAportar += asset.aportarValor;
         }
-    }
+    });
 
     document.getElementById('total-aportar').textContent = formatCurrency(totalAportar);
 };
 
+// Função para adicionar ou atualizar uma categoria no Firebase
 const addOrUpdateAsset = () => {
     const categoriaInput = document.getElementById('categoria-input');
     const patrimonioInput = document.getElementById('patrimonio-input');
@@ -128,6 +170,7 @@ const addOrUpdateAsset = () => {
     metaInput.value = '';
 };
 
+// Carrega os dados do Firebase e os atualiza em tempo real
 assetsRef.on('value', (snapshot) => {
     const data = snapshot.val();
     const assets = data || {};

@@ -59,6 +59,10 @@ table tbody tr:last-of-type {
     border-bottom: 2px solid #3498db;
 }
 
+.sortable {
+    cursor: pointer;
+}
+
 .summary {
     text-align: center;
     font-size: 1.1em;
