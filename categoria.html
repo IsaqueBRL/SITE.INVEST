@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes da Categoria</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1 id="categoria-titulo"></h1>
+        <a href="index.html" class="back-link">Voltar para o Gerenciador</a>
+
+        <div class="input-form">
+            <h2>Adicionar Ativo</h2>
+            <input type="text" id="ativo-input" placeholder="Nome do Ativo">
+            <input type="number" id="valor-input" placeholder="Valor (R$)">
+            <button onclick="addAtivo()">Adicionar</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Ativo</th>
+                    <th>Valor</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="ativos-table-body">
+            </tbody>
+        </table>
+
+        <p class="summary"><strong>Patrimônio Total da Categoria:</strong> <span id="total-categoria">R$ 0,00</span></p>
+
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBNBf_DachNBO2RmQGmfOPg3PEuig5cVRw",
+            authDomain: "banco-de-dados---site-invest.firebaseapp.com",
+            databaseURL: "https://banco-de-dados---site-invest-default-rtdb.firebaseio.com",
+            projectId: "banco-de-dados---site-invest",
+            storageBucket: "banco-de-dados---site-invest.firebasestorage.app",
+            messagingSenderId: "581873866515",
+            appId: "1:581873866515:web:0b5463f4bbbb26726aace6"
+        };
+        firebase.initializeApp(firebaseConfig);
+    </script>
+    <script src="categoria-script.js"></script>
+</body>
+</html>

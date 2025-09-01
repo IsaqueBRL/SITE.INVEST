@@ -110,7 +110,7 @@ const renderTable = (assets) => {
     assetsArray.forEach(asset => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${asset.categoria}</td>
+            <td><a href="categoria.html?key=${asset.key}">${asset.categoria}</a></td>
             <td class="editable-meta" data-key="${asset.key}">${asset.meta.toFixed(2)}%</td>
             <td>${asset.atualPorcentagem.toFixed(2)}%</td>
             <td>${formatCurrency(asset.patrimonio)}</td>
