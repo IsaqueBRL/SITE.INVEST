@@ -127,15 +127,25 @@ const renderAtivosTable = (ativos) => {
 const renderPlanoTable = (planos) => {
     const tableBody = document.getElementById('plano-table-body');
     tableBody.innerHTML = '';
-    
+
     if (planos) {
+        // Calcular o patrimônio total de todos os segmentos para o cálculo de porcentagem da carteira
+        let totalPatrimonioPlanos = 0;
         Object.values(planos).forEach(plano => {
+            totalPatrimonioPlanos += plano.patrimonio || 0;
+        });
+
+        Object.entries(planos).forEach(([key, plano]) => {
             const row = document.createElement('tr');
+            
+            // Recalcular a porcentagem da carteira
+            const patrimonioPorcentagem = totalPatrimonioPlanos > 0 ? ((plano.patrimonio || 0) / totalPatrimonioPlanos) * 100 : 0;
+            
             row.innerHTML = `
                 <td>${plano.segmento}</td>
                 <td>${(plano.meta_porcentagem || 0).toFixed(2)}%</td>
                 <td>${formatCurrency(plano.meta || 0)}</td>
-                <td>${(plano.patrimonio_porcentagem || 0).toFixed(2)}%</td>
+                <td>${patrimonioPorcentagem.toFixed(2)}%</td>
                 <td>${formatCurrency(plano.patrimonio || 0)}</td>
                 <td><button class="aportar-btn">Aportar</button></td>
             `;
@@ -230,7 +240,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const categoriaData = snapshot.val();
             if (categoriaData) {
                 document.getElementById('categoria-titulo').textContent = categoriaData.categoria;
-                // renderPlanoTable(categoriaData); // Esta chamada foi movida para o listener de `planos`
             } else {
                 document.getElementById('categoria-titulo').textContent = 'Categoria não encontrada';
             }
