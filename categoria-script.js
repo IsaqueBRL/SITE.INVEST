@@ -256,6 +256,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const ativos = snapshot.val();
             renderAtivosTable(ativos);
         });
+        
+        const addSegmentoBtn = document.getElementById('add-segmento-btn');
+        if (addSegmentoBtn) {
+            addSegmentoBtn.addEventListener('click', addSegmento);
+        }
 
         setInterval(updateAllPrices, 300000);
         
