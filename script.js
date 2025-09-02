@@ -21,7 +21,7 @@ const renderAssetsTable = (assets) => {
             row.innerHTML = `
                 <td><a href="categoria.html?key=${key}" class="category-link">${asset.categoria}</a></td>
                 <td>${formatCurrency(asset.patrimonio || 0)}</td>
-                <td class="editable-meta" data-key="${key}">${formatCurrency(asset.meta || 0)}</td>
+                <td class="editable-meta" data-key="${key}">${asset.meta || 0}</td>
                 <td class="actions-cell">
                     <button onclick="deleteCategoria('${key}')" class="delete-btn">Excluir</button>
                 </td>
