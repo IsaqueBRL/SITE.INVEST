@@ -1,7 +1,7 @@
 // Acessa o banco de dados do Firebase
 const database = firebase.database();
 let categoriaKey;
-let api_key = "jaAoNZHhBLxF7FAUh6QDVp"; // CHAVE INSERIDA AQUI
+let api_key = "jaAoNZHhBLxF7FAUh6QDVp";
 
 // Função para formatar números como moeda
 const formatCurrency = (value) => {
@@ -38,6 +38,38 @@ const fetchAssetPrice = async (symbol) => {
     }
 };
 
+// Função para habilitar a edição da célula de quantidade
+const enableEditQuantity = (element, ativoKey, currentQuantity) => {
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.value = currentQuantity;
+    input.min = 0;
+    input.step = 1;
+    input.style.width = '60px';
+
+    element.innerHTML = '';
+    element.appendChild(input);
+    input.focus();
+
+    const saveQuantity = () => {
+        const newQuantity = parseInt(input.value);
+        if (!isNaN(newQuantity) && newQuantity >= 0) {
+            database.ref(`assets/${categoriaKey}/ativos/${ativoKey}`).update({
+                quantidade: newQuantity
+            }).catch(error => {
+                console.error("Erro ao atualizar a quantidade:", error);
+            });
+        }
+    };
+
+    input.addEventListener('blur', saveQuantity);
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            saveQuantity();
+        }
+    });
+};
+
 // Renderiza a tabela de ativos e recalcula o total
 const renderAtivosTable = (ativos) => {
     const tableBody = document.getElementById('ativos-table-body');
@@ -47,15 +79,25 @@ const renderAtivosTable = (ativos) => {
     if (ativos) {
         Object.entries(ativos).forEach(([key, ativo]) => {
             const row = document.createElement('tr');
+            
+            // Calcula o valor total do ativo (preço * quantidade)
+            const valorTotalAtivo = ativo.valor * (ativo.quantidade || 0);
+            totalValor += valorTotalAtivo;
+
             row.innerHTML = `
                 <td>${ativo.nome}</td>
                 <td>${formatCurrency(ativo.valor)}</td>
+                <td class="editable-quantity" data-key="${key}">${ativo.quantidade || 0}</td>
                 <td class="actions-cell">
                     <button onclick="deleteAtivo('${key}')" class="delete-btn">Excluir</button>
                 </td>
             `;
             tableBody.appendChild(row);
-            totalValor += ativo.valor;
+
+            const quantityCell = row.querySelector('.editable-quantity');
+            quantityCell.addEventListener('click', () => {
+                enableEditQuantity(quantityCell, key, ativo.quantidade);
+            });
         });
     }
 
@@ -90,7 +132,8 @@ const addAtivo = async () => {
     const ativosRef = database.ref(`assets/${categoriaKey}/ativos`);
     ativosRef.push({
         nome: nomeAtivo,
-        valor: precoInicial
+        valor: precoInicial,
+        quantidade: 1 // Adiciona a quantidade padrão de 1
     });
 
     document.getElementById('ativo-input').value = '';
