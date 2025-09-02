@@ -77,7 +77,8 @@ const renderAtivosTable = (ativos) => {
     let totalValor = 0;
 
     if (ativos) {
-        Object.entries(ativos).forEach(([key, ativo]) => {
+        // Primeiro, calcula o patrimônio total da categoria
+        Object.values(ativos).forEach(ativo => {
             const valorTotalAtivo = (ativo.valor || 0) * (ativo.quantidade || 0);
             totalValor += valorTotalAtivo;
         });
@@ -86,6 +87,7 @@ const renderAtivosTable = (ativos) => {
         const categoriaNome = document.getElementById('categoria-titulo').textContent;
         document.getElementById('peso-categoria-header').textContent = `EM (${categoriaNome})`;
 
+        // Em seguida, renderiza a tabela com os cálculos prontos
         Object.entries(ativos).forEach(([key, ativo]) => {
             const row = document.createElement('tr');
             
