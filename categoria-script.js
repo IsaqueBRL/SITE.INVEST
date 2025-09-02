@@ -78,16 +78,27 @@ const renderAtivosTable = (ativos) => {
 
     if (ativos) {
         Object.entries(ativos).forEach(([key, ativo]) => {
-            const row = document.createElement('tr');
-            
-            // Calcula o valor total do ativo (preço * quantidade)
             const valorTotalAtivo = (ativo.valor || 0) * (ativo.quantidade || 0);
             totalValor += valorTotalAtivo;
+        });
+
+        // Adiciona o nome da categoria ao cabeçalho da nova coluna
+        const categoriaNome = document.getElementById('categoria-titulo').textContent;
+        document.getElementById('peso-categoria-header').textContent = `EM (${categoriaNome})`;
+
+        Object.entries(ativos).forEach(([key, ativo]) => {
+            const row = document.createElement('tr');
+            
+            const valorTotalAtivo = (ativo.valor || 0) * (ativo.quantidade || 0);
+            
+            const porcentagem = totalValor > 0 ? (valorTotalAtivo / totalValor) * 100 : 0;
+            const porcentagemFormatada = porcentagem.toFixed(2) + '%';
 
             row.innerHTML = `
                 <td>${ativo.nome}</td>
                 <td>${formatCurrency(ativo.valor)}</td>
                 <td class="editable-quantity" data-key="${key}">${ativo.quantidade || 0}</td>
+                <td>${porcentagemFormatada}</td>
                 <td>${formatCurrency(valorTotalAtivo)}</td>
                 <td class="actions-cell">
                     <button onclick="deleteAtivo('${key}')" class="delete-btn">Excluir</button>
