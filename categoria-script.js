@@ -123,6 +123,25 @@ const renderAtivosTable = (ativos) => {
     });
 };
 
+// Função para renderizar a nova tabela "PLANO"
+const renderPlanoTable = (categoriaData) => {
+    const tableBody = document.getElementById('plano-table-body');
+    tableBody.innerHTML = '';
+
+    if (categoriaData) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${categoriaData.categoria}</td>
+            <td>${(categoriaData.meta_porcentagem || 0).toFixed(2)}%</td>
+            <td>${formatCurrency(categoriaData.meta || 0)}</td>
+            <td>${(categoriaData.patrimonio_porcentagem || 0).toFixed(2)}%</td>
+            <td>${formatCurrency(categoriaData.patrimonio || 0)}</td>
+            <td><button class="aportar-btn">Aportar</button></td>
+        `;
+        tableBody.appendChild(row);
+    }
+};
+
 // Adicionar um novo ativo e buscar o preço
 const addAtivo = async () => {
     const nomeAtivo = document.getElementById('ativo-input').value.trim().toUpperCase();
@@ -189,6 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const categoriaData = snapshot.val();
             if (categoriaData) {
                 document.getElementById('categoria-titulo').textContent = categoriaData.categoria;
+                renderPlanoTable(categoriaData); // Chama a nova função de renderização
             } else {
                 document.getElementById('categoria-titulo').textContent = 'Categoria não encontrada';
             }
@@ -205,4 +225,4 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         document.getElementById('categoria-titulo').textContent = 'Categoria não especificada';
     }
-}); 
+});

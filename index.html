@@ -7,39 +7,30 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <div class="container">
         <h1>Gerenciador de Investimentos</h1>
-        <p>Acompanhe suas metas de alocação de ativos e saiba onde aportar.</p>
+
+        <div class="input-form">
+            <h2>Adicionar Categoria</h2>
+            <input type="text" id="categoria-input" placeholder="Nome da Categoria">
+            <input type="number" id="meta-input" placeholder="Meta">
+            <button onclick="addCategoria()">Adicionar</button>
+        </div>
 
         <table>
             <thead>
                 <tr>
-                    <th onclick="sortAssets('categoria')" class="sortable">Categoria</th>
-                    <th onclick="sortAssets('meta')" class="sortable">Meta (%)</th>
-                    <th onclick="sortAssets('atualPorcentagem')" class="sortable">Atual (%)</th>
-                    <th onclick="sortAssets('patrimonio')" class="sortable">Patrimônio</th>
-                    <th>Aportar</th>
+                    <th>Categorias</th>
+                    <th>Patrimônio</th>
+                    <th>Meta</th>
                     <th>Ações</th>
                 </tr>
             </thead>
-            <tbody id="investment-table-body">
+            <tbody id="assets-table-body">
             </tbody>
         </table>
 
-        <div class="summary">
-            <p><strong>Patrimônio Total:</strong> <span id="total-patrimonio">R$ 0,00</span></p>
-            <p><strong>Aporte Total:</strong> <span id="total-aportar">R$ 0,00</span></p>
-        </div>
-
-        <div class="input-form">
-            <h2>Adicionar ou Atualizar Categoria</h2>
-            <input type="text" id="categoria-input" placeholder="Categoria">
-            <input type="number" id="patrimonio-input" placeholder="Patrimônio (R$)">
-            <input type="number" id="meta-input" placeholder="Meta (%)">
-            <button onclick="addOrUpdateAsset()">Adicionar/Atualizar</button>
-        </div>
-
+        <p class="summary"><strong>Patrimônio Total:</strong> <span id="patrimonio-total">R$ 0,00</span></p>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
