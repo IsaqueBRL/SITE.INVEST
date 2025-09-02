@@ -88,6 +88,7 @@ const renderAtivosTable = (ativos) => {
                 <td>${ativo.nome}</td>
                 <td>${formatCurrency(ativo.valor)}</td>
                 <td class="editable-quantity" data-key="${key}">${ativo.quantidade || 0}</td>
+                <td>${formatCurrency(valorTotalAtivo)}</td>
                 <td class="actions-cell">
                     <button onclick="deleteAtivo('${key}')" class="delete-btn">Excluir</button>
                 </td>
