@@ -124,21 +124,43 @@ const renderAtivosTable = (ativos) => {
 };
 
 // Função para renderizar a nova tabela "PLANO"
-const renderPlanoTable = (categoriaData) => {
+const renderPlanoTable = (planos) => {
     const tableBody = document.getElementById('plano-table-body');
     tableBody.innerHTML = '';
+    
+    if (planos) {
+        Object.values(planos).forEach(plano => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${plano.segmento}</td>
+                <td>${(plano.meta_porcentagem || 0).toFixed(2)}%</td>
+                <td>${formatCurrency(plano.meta || 0)}</td>
+                <td>${(plano.patrimonio_porcentagem || 0).toFixed(2)}%</td>
+                <td>${formatCurrency(plano.patrimonio || 0)}</td>
+                <td><button class="aportar-btn">Aportar</button></td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+};
 
-    if (categoriaData) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${categoriaData.categoria}</td>
-            <td>${(categoriaData.meta_porcentagem || 0).toFixed(2)}%</td>
-            <td>${formatCurrency(categoriaData.meta || 0)}</td>
-            <td>${(categoriaData.patrimonio_porcentagem || 0).toFixed(2)}%</td>
-            <td>${formatCurrency(categoriaData.patrimonio || 0)}</td>
-            <td><button class="aportar-btn">Aportar</button></td>
-        `;
-        tableBody.appendChild(row);
+// Adicionar um novo segmento
+const addSegmento = () => {
+    const segmentoInput = document.getElementById('segmento-input');
+    const nomeSegmento = segmentoInput.value.trim();
+
+    if (nomeSegmento !== '') {
+        const segmentosRef = database.ref(`assets/${categoriaKey}/planos`);
+        segmentosRef.push({
+            segmento: nomeSegmento,
+            meta_porcentagem: 0,
+            meta: 0,
+            patrimonio_porcentagem: 0,
+            patrimonio: 0
+        });
+        segmentoInput.value = '';
+    } else {
+        alert('Por favor, insira o nome do segmento.');
     }
 };
 
@@ -208,10 +230,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const categoriaData = snapshot.val();
             if (categoriaData) {
                 document.getElementById('categoria-titulo').textContent = categoriaData.categoria;
-                renderPlanoTable(categoriaData); // Chama a nova função de renderização
+                // renderPlanoTable(categoriaData); // Esta chamada foi movida para o listener de `planos`
             } else {
                 document.getElementById('categoria-titulo').textContent = 'Categoria não encontrada';
             }
+        });
+
+        const planosRef = database.ref(`assets/${categoriaKey}/planos`);
+        planosRef.on('value', snapshot => {
+            const planos = snapshot.val();
+            renderPlanoTable(planos);
         });
 
         const ativosRef = database.ref(`assets/${categoriaKey}/ativos`);
