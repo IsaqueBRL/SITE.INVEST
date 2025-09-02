@@ -70,6 +70,38 @@ const enableEditQuantity = (element, ativoKey, currentQuantity) => {
     });
 };
 
+// Função para habilitar a edição da porcentagem de meta
+const enableEditMetaPorcentagem = (element, planoKey, currentMetaPorcentagem) => {
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.value = currentMetaPorcentagem;
+    input.min = 0;
+    input.step = 0.01;
+    input.style.width = '60px';
+
+    element.innerHTML = '';
+    element.appendChild(input);
+    input.focus();
+
+    const saveMetaPorcentagem = () => {
+        const newMetaPorcentagem = parseFloat(input.value);
+        if (!isNaN(newMetaPorcentagem) && newMetaPorcentagem >= 0) {
+            database.ref(`assets/${categoriaKey}/planos/${planoKey}`).update({
+                meta_porcentagem: newMetaPorcentagem
+            }).catch(error => {
+                console.error("Erro ao atualizar a porcentagem de meta:", error);
+            });
+        }
+    };
+
+    input.addEventListener('blur', saveMetaPorcentagem);
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            saveMetaPorcentagem();
+        }
+    });
+};
+
 // Renderiza a tabela de ativos e recalcula o total
 const renderAtivosTable = (ativos) => {
     const tableBody = document.getElementById('ativos-table-body');
@@ -141,15 +173,32 @@ const renderPlanoTable = (planos) => {
             // Recalcular a porcentagem da carteira
             const patrimonioPorcentagem = totalPatrimonioPlanos > 0 ? ((plano.patrimonio || 0) / totalPatrimonioPlanos) * 100 : 0;
             
+            // Cálculo do aporte com base na sua fórmula
+            let aporte = 0;
+            if (plano.meta_porcentagem > 0 && patrimonioPorcentagem > 0 && totalPatrimonioPlanos > 0) {
+                // A sua fórmula original é `(META - CARTEIRA) * PATRIMONIO / CARTEIRA`
+                // Convertendo para as variáveis do nosso código:
+                // (meta_porcentagem - patrimonio_porcentagem) * totalPatrimonioPlanos / patrimonio_porcentagem
+                aporte = ((plano.meta_porcentagem - patrimonioPorcentagem) / patrimonioPorcentagem) * (plano.patrimonio || 0);
+            } else if (plano.meta_porcentagem > 0 && patrimonioPorcentagem === 0) {
+                 // Caso o patrimônio atual seja zero, o aporte é a meta em Reais
+                aporte = (plano.meta_porcentagem / 100) * totalPatrimonioPlanos;
+            }
+            
             row.innerHTML = `
                 <td>${plano.segmento}</td>
-                <td>${(plano.meta_porcentagem || 0).toFixed(2)}%</td>
-                <td>${formatCurrency(plano.meta || 0)}</td>
-                <td>${patrimonioPorcentagem.toFixed(2)}%</td>
+                <td class="editable-meta-porcentagem" data-key="${key}">${plano.meta_porcentagem.toFixed(2)}%</td>
+                <td>${formatCurrency((plano.meta_porcentagem / 100) * totalPatrimonioPlanos)}</td>
                 <td>${formatCurrency(plano.patrimonio || 0)}</td>
-                <td><button class="aportar-btn">Aportar</button></td>
+                <td>${formatCurrency(plano.patrimonio || 0)}</td>
+                <td>${formatCurrency(aporte)}</td>
             `;
             tableBody.appendChild(row);
+            
+            const metaPorcentagemCell = row.querySelector('.editable-meta-porcentagem');
+            metaPorcentagemCell.addEventListener('click', () => {
+                enableEditMetaPorcentagem(metaPorcentagemCell, key, plano.meta_porcentagem);
+            });
         });
     }
 };
