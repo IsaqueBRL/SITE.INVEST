@@ -81,7 +81,7 @@ const renderAtivosTable = (ativos) => {
             const row = document.createElement('tr');
             
             // Calcula o valor total do ativo (preço * quantidade)
-            const valorTotalAtivo = ativo.valor * (ativo.quantidade || 0);
+            const valorTotalAtivo = (ativo.valor || 0) * (ativo.quantidade || 0);
             totalValor += valorTotalAtivo;
 
             row.innerHTML = `
