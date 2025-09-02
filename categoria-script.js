@@ -192,4 +192,4 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         document.getElementById('categoria-titulo').textContent = 'Categoria não especificada';
     }
-}); 
+});
