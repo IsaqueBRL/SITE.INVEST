@@ -192,6 +192,9 @@ const renderPlanoTable = (planos) => {
                 <td>${formatCurrency(plano.patrimonio || 0)}</td>
                 <td>${formatCurrency(plano.patrimonio || 0)}</td>
                 <td>${formatCurrency(aporte)}</td>
+                <td class="actions-cell">
+                    <button onclick="deleteSegmento('${key}')" class="delete-btn">Excluir</button>
+                </td>
             `;
             tableBody.appendChild(row);
             
@@ -200,6 +203,14 @@ const renderPlanoTable = (planos) => {
                 enableEditMetaPorcentagem(metaPorcentagemCell, key, plano.meta_porcentagem);
             });
         });
+    }
+};
+
+// Função para excluir um segmento
+const deleteSegmento = (segmentoKey) => {
+    if (confirm('Tem certeza que deseja excluir este segmento?')) {
+        const segmentoRef = database.ref(`assets/${categoriaKey}/planos/${segmentoKey}`);
+        segmentoRef.remove();
     }
 };
 
