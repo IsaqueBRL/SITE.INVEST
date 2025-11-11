@@ -1,66 +1,122 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Painel de Investimentos</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tabela de Investimentos</title>
   <style>
-    :root { font-family: Inter, system-ui, sans-serif; }
-    body { background:#f6f8fb; margin:0; padding:24px; color:#0f172a; }
-    .card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 6px 16px rgba(0,0,0,0.06); }
-    h1 { margin-bottom:16px; }
-    table { width:100%; border-collapse:collapse; font-size:14px; }
-    th, td { padding:10px; border-bottom:1px solid #e5e7eb; text-align:left; }
-    th { background:#f9fafb; }
-    td[contenteditable] { background:#fff; min-width:80px; border-radius:6px; outline:none; transition: background 0.2s; }
-    td[contenteditable]:focus { background:#e0f2fe; }
-    tr:hover { background:#fdfdfd; }
-    button { padding:6px 10px; border:none; border-radius:6px; cursor:pointer; }
-    .btn-primary { background:#2563eb; color:white; }
-    .btn-danger { background:#ef4444; color:white; }
-    #popup { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; }
-    #popup-content { background:white; padding:20px; border-radius:10px; width:300px; text-align:center; }
-    #popup-content input { width:100%; padding:8px; margin-bottom:10px; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background: #f6f8fa;
+    }
+    h1 {
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    button {
+      padding: 8px 12px;
+      margin: 5px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #popup {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    #popup-content {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 400px;
+    }
+    #popup-content input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+    .category-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f4f4f4;
+      margin-bottom: 5px;
+      padding: 6px 10px;
+      border-radius: 5px;
+    }
+    .category-item button {
+      background: #dc3545;
+      margin-left: 5px;
+    }
+    .category-item button.edit-btn {
+      background: #ffc107;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>📊 Painel de Investimentos</h1>
-    <div>
-      <button id="addRow">➕ Nova Linha</button>
-      <button id="saveFirebase" class="btn-primary">💾 Salvar no Banco</button>
-    </div>
-    <br>
-    <table id="table">
-      <thead>
-        <tr>
-          <th>Categoria</th>
-          <th>Meta (%)</th>
-          <th>Atual (%)</th>
-          <th>Patrimônio (R$)</th>
-          <th>Aportar (R$)</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
 
-  <!-- Popup de categorias -->
+  <h1>Tabela de Investimentos</h1>
+  <button onclick="openCategoryPopup()">Gerenciar Categorias</button>
+  <button onclick="addRow()">Adicionar Linha</button>
+
+  <table id="investmentTable">
+    <thead>
+      <tr>
+        <th>Categoria</th>
+        <th>Meta (%)</th>
+        <th>Atual (%)</th>
+        <th>Patrimônio (R$)</th>
+        <th>Aportar (R$)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- POPUP -->
   <div id="popup">
     <div id="popup-content">
-      <h3>Selecionar Categoria</h3>
-      <div id="categoria-list"></div>
-      <input type="text" id="novaCategoria" placeholder="Nova categoria" />
-      <button id="addCategoria" class="btn-primary">Adicionar</button>
-      <button id="closePopup" class="btn-danger">Fechar</button>
+      <h3>Gerenciar Categorias</h3>
+      <input type="text" id="newCategoryInput" placeholder="Nova categoria">
+      <button onclick="addCategory()">Adicionar</button>
+      <div id="categoryList"></div>
+      <button onclick="closeCategoryPopup()">Fechar</button>
     </div>
   </div>
 
-  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCaVDJ4LtJu-dlvSi4QrDygfhx1hBGSdDM",
@@ -75,129 +131,139 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const tabelaRef = ref(db, "investimentos/tabela");
-    const categoriasRef = ref(db, "investimentos/categorias");
 
-    const tbody = document.querySelector("#table tbody");
-    const popup = document.getElementById("popup");
-    const categoriaList = document.getElementById("categoria-list");
-    const novaCategoriaInput = document.getElementById("novaCategoria");
+    const tableBody = document.querySelector("#investmentTable tbody");
+    let categories = [];
 
-    let rows = [];
-    let categorias = [];
+    async function loadCategories() {
+      const snapshot = await get(ref(db, "categorias"));
+      categories = snapshot.exists() ? snapshot.val() : [];
+      renderCategoryList();
+    }
 
-    function render() {
-      const totalPatrimonio = rows.reduce((sum, r) => sum + (Number(r.patrimonio) || 0), 0);
-      tbody.innerHTML = "";
-      rows.forEach((r, i) => {
-        const atual = totalPatrimonio > 0 ? ((r.patrimonio / totalPatrimonio) * 100) : 0;
-        const aportar = ((r.meta / 100) * totalPatrimonio) - r.patrimonio;
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><button data-index="${i}" class="categoria-btn btn-primary">${r.categoria || "Selecionar"}</button></td>
-          <td contenteditable="true" data-key="meta">${r.meta}</td>
-          <td>${atual.toFixed(2)}%</td>
-          <td contenteditable="true" data-key="patrimonio">${r.patrimonio.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</td>
-          <td>${aportar.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</td>
-          <td><button class="btn-danger" data-del="${i}">Excluir</button></td>
-        `;
-        tbody.appendChild(tr);
+    function saveCategories() {
+      set(ref(db, "categorias"), categories);
+    }
+
+    function openCategoryPopup() {
+      document.getElementById("popup").style.display = "flex";
+      renderCategoryList();
+    }
+
+    function closeCategoryPopup() {
+      document.getElementById("popup").style.display = "none";
+    }
+
+    function addCategory() {
+      const input = document.getElementById("newCategoryInput");
+      const value = input.value.trim();
+      if (value && !categories.includes(value)) {
+        categories.push(value);
+        input.value = "";
+        renderCategoryList();
+        saveCategories();
+      }
+    }
+
+    function editCategory(oldName) {
+      const newName = prompt("Editar categoria:", oldName);
+      if (newName && newName.trim() !== "") {
+        const index = categories.indexOf(oldName);
+        if (index !== -1) categories[index] = newName.trim();
+        renderCategoryList();
+        saveCategories();
+      }
+    }
+
+    function deleteCategory(name) {
+      categories = categories.filter(c => c !== name);
+      renderCategoryList();
+      saveCategories();
+    }
+
+    function renderCategoryList() {
+      const list = document.getElementById("categoryList");
+      list.innerHTML = "";
+      categories.forEach(cat => {
+        const div = document.createElement("div");
+        div.className = "category-item";
+        div.innerHTML = `
+          <span>${cat}</span>
+          <div>
+            <button class="edit-btn" onclick="editCategory('${cat}')">Editar</button>
+            <button onclick="deleteCategory('${cat}')">Excluir</button>
+          </div>`;
+        list.appendChild(div);
       });
     }
 
-    // Atualização em tempo real
-    onValue(tabelaRef, snap => {
-      rows = snap.val() || [];
-      render();
-    });
+    window.openCategoryPopup = openCategoryPopup;
+    window.closeCategoryPopup = closeCategoryPopup;
+    window.addCategory = addCategory;
+    window.editCategory = editCategory;
+    window.deleteCategory = deleteCategory;
 
-    onValue(categoriasRef, snap => {
-      categorias = snap.val() || [];
-    });
+    // TABELA ---------------------------
+    function addRow() {
+      const row = document.createElement("tr");
 
-    // Adicionar linha
-    document.getElementById("addRow").addEventListener("click", () => {
-      rows.push({ categoria: "", meta: 0, patrimonio: 0 });
-      render();
-    });
+      const categoriaCell = document.createElement("td");
+      const select = document.createElement("select");
+      categories.forEach(cat => {
+        const opt = document.createElement("option");
+        opt.textContent = cat;
+        select.appendChild(opt);
+      });
+      categoriaCell.appendChild(select);
 
-    // Edição fluida (somente atualiza ao sair da célula)
-    tbody.addEventListener("blur", e => {
-      const td = e.target;
-      if (!td.dataset.key) return;
+      const metaCell = document.createElement("td");
+      metaCell.contentEditable = "true";
+      metaCell.addEventListener("input", updateTable);
 
-      const tr = td.closest("tr");
-      const idx = [...tbody.children].indexOf(tr);
+      const atualCell = document.createElement("td");
 
-      if (td.dataset.key === "meta") {
-        const val = parseFloat(td.innerText.replace(",", ".").trim()) || 0;
-        rows[idx].meta = val;
-      } else if (td.dataset.key === "patrimonio") {
-        const val = parseFloat(td.innerText.replace(/[^\d,.-]/g, "").replace(",", ".")) || 0;
-        rows[idx].patrimonio = val;
-      }
+      const patrimonioCell = document.createElement("td");
+      patrimonioCell.contentEditable = "true";
+      patrimonioCell.addEventListener("input", updateTable);
 
-      render();
-    }, true);
+      const aportarCell = document.createElement("td");
 
-    // Permitir confirmar com Enter
-    tbody.addEventListener("keydown", e => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        e.target.blur();
-      }
-    });
-
-    // Excluir linha
-    tbody.addEventListener("click", e => {
-      if (e.target.dataset.del) {
-        rows.splice(e.target.dataset.del, 1);
-        render();
-      }
-    });
-
-    // Popup de categorias
-    tbody.addEventListener("click", e => {
-      if (e.target.classList.contains("categoria-btn")) {
-        const idx = e.target.dataset.index;
-        abrirPopup(idx);
-      }
-    });
-
-    function abrirPopup(index) {
-      popup.style.display = "flex";
-      categoriaList.innerHTML = categorias.map(c => `
-        <button class="btn-primary catItem" data-cat="${c}" data-index="${index}" style="margin:4px">${c}</button>
-      `).join("");
+      row.append(categoriaCell, metaCell, atualCell, patrimonioCell, aportarCell);
+      tableBody.appendChild(row);
     }
 
-    categoriaList.addEventListener("click", e => {
-      if (e.target.classList.contains("catItem")) {
-        const idx = e.target.dataset.index;
-        const cat = e.target.dataset.cat;
-        rows[idx].categoria = cat;
-        popup.style.display = "none";
-        render();
-      }
-    });
+    function parsePercent(value) {
+      return parseFloat(value.replace("%", "").replace(",", ".") || 0);
+    }
 
-    document.getElementById("addCategoria").addEventListener("click", () => {
-      const nova = novaCategoriaInput.value.trim();
-      if (nova && !categorias.includes(nova)) {
-        categorias.push(nova);
-        set(categoriasRef, categorias);
-        novaCategoriaInput.value = "";
-        abrirPopup(rows.length - 1);
-      }
-    });
+    function parseMoney(value) {
+      return parseFloat(value.replace(/[R$\s.]/g, "").replace(",", ".") || 0);
+    }
 
-    document.getElementById("closePopup").addEventListener("click", () => popup.style.display = "none");
+    function formatMoney(value) {
+      return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    }
 
-    // Salvar no banco
-    document.getElementById("saveFirebase").addEventListener("click", async () => {
-      await set(tabelaRef, rows);
-      alert("✅ Dados salvos com sucesso!");
-    });
+    function updateTable() {
+      let total = 0;
+      const rows = Array.from(tableBody.rows);
+      rows.forEach(row => {
+        const patrimonio = parseMoney(row.cells[3].innerText);
+        total += patrimonio;
+      });
+
+      rows.forEach(row => {
+        const meta = parsePercent(row.cells[1].innerText);
+        const patrimonio = parseMoney(row.cells[3].innerText);
+        const atual = total ? (patrimonio / total) * 100 : 0;
+        const aportar = ((meta / 100) * total) - patrimonio;
+
+        row.cells[2].innerText = atual.toFixed(2) + "%";
+        row.cells[4].innerText = formatMoney(aportar);
+      });
+    }
+
+    loadCategories();
   </script>
 </body>
 </html>
