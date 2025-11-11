@@ -3,243 +3,139 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tabela Editável</title>
+  <title>Tabela Editável com Firebase</title>
   <style>
     :root{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;margin:0}
     body{padding:24px;background:#f6f8fb;color:#0f172a}
     .card{background:#fff;border-radius:12px;box-shadow:0 6px 18px rgba(14,20,30,0.06);padding:18px}
     h1{margin:0 0 14px;font-size:18px}
-
-    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-    .controls > *{padding:8px 10px;border-radius:8px;border:1px solid #e6e9ef;background:#fff}
-    .controls input[type="text"]{min-width:220px}
-
     table{width:100%;border-collapse:collapse;font-size:14px}
     th,td{padding:10px;border-bottom:1px solid #eef2f7;text-align:left}
-    th{background:#fbfdff;position:sticky;top:0}
-    tr:hover{background:#fbfcff}
+    th{background:#fbfdff}
     td[contenteditable]{min-width:80px}
-
-    .small{font-size:13px;padding:6px 8px}
+    tr:hover{background:#fbfcff}
+    button{padding:6px 10px;margin:2px;border-radius:6px;cursor:pointer}
     .btn-primary{background:#0b69ff;color:#fff;border:none}
     .btn-danger{background:#ff5b5b;color:#fff;border:none}
-
-    .right{margin-left:auto}
-    .muted{color:#64748b;font-size:13px}
-    .actions{display:flex;gap:6px}
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>Tabela Editável — Salve/Exporte/Importe</h1>
-    <div class="controls">
-      <button id="addRow" class="small">➕ Adicionar linha</button>
-      <button id="delRow" class="small btn-danger">🗑️ Excluir selecionadas</button>
-      <button id="exportCsv" class="small btn-primary">⬇️ Exportar CSV</button>
-      <label style="display:inline-flex;align-items:center;gap:8px">
-        <input id="importCsv" type="file" accept=".csv" style="display:none"/>
-        <button id="importBtn" class="small">⬆️ Importar CSV</button>
-      </label>
-      <button id="saveLocal" class="small">💾 Salvar local</button>
-      <button id="loadLocal" class="small">📂 Carregar local</button>
-      <input id="search" type="text" placeholder="Pesquisar..." />
-      <div class="right muted">Clique duas vezes em uma célula para editar.</div>
+    <h1>Tabela Editável (Firebase)</h1>
+    <div>
+      <button id="addRow">➕ Adicionar Linha</button>
+      <button id="saveFirebase" class="btn-primary">💾 Salvar no Banco</button>
+      <button id="loadFirebase">📂 Carregar do Banco</button>
     </div>
-
-    <div style="overflow:auto;max-height:60vh">
-      <table id="table">
-        <thead>
-          <tr>
-            <th style="width:36px"><input id="selectAll" type="checkbox" /></th>
-            <th>Nome</th>
-            <th>Email</th>
-            <th>Telefone</th>
-            <th>Observações</th>
-            <th style="width:120px">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- linhas geradas via JS -->
-        </tbody>
-      </table>
-    </div>
+    <br>
+    <table id="table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Email</th>
+          <th>Telefone</th>
+          <th>Observações</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
-  <script>
-    // Dados iniciais de exemplo
-    const initialData = [
-      {nome:'Isaque Moises', email:'isaque@example.com', telefone:'(69) 9xxxx-xxxx', obs:'Cliente VIP'},
-      {nome:'Maria Silva', email:'maria@example.com', telefone:'(69) 9yyyy-yyyy', obs:'Fornecedor'}
-    ];
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-    const tbody = document.querySelector('#table tbody');
-    const searchInput = document.getElementById('search');
+    // Configuração Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCaVDJ4LtJu-dlvSi4QrDygfhx1hBGSdDM",
+      authDomain: "banco-de-dados-invest.firebaseapp.com",
+      databaseURL: "https://banco-de-dados-invest-default-rtdb.firebaseio.com",
+      projectId: "banco-de-dados-invest",
+      storageBucket: "banco-de-dados-invest.firebasestorage.app",
+      messagingSenderId: "5603892998",
+      appId: "1:5603892998:web:459556f888d31629050887",
+      measurementId: "G-JJWKMYXHTH"
+    };
 
-    function render(data = []){
-      tbody.innerHTML = '';
-      data.forEach((row, idx) => {
-        const tr = document.createElement('tr');
-        tr.dataset.index = idx;
+    // Inicialização
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
+    const tbody = document.querySelector("#table tbody");
+    let rows = [];
+
+    function render() {
+      tbody.innerHTML = "";
+      rows.forEach((r, i) => {
+        const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td><input class="rowSel" type="checkbox"/></td>
-          <td contenteditable="true" data-key="nome">${escapeHtml(row.nome || '')}</td>
-          <td contenteditable="true" data-key="email">${escapeHtml(row.email || '')}</td>
-          <td contenteditable="true" data-key="telefone">${escapeHtml(row.telefone || '')}</td>
-          <td contenteditable="true" data-key="obs">${escapeHtml(row.obs || '')}</td>
-          <td class="actions">
-            <button class="small" data-action="duplicate">Duplicar</button>
-            <button class="small btn-danger" data-action="delete">Excluir</button>
+          <td contenteditable="true" data-key="nome">${r.nome || ""}</td>
+          <td contenteditable="true" data-key="email">${r.email || ""}</td>
+          <td contenteditable="true" data-key="telefone">${r.telefone || ""}</td>
+          <td contenteditable="true" data-key="obs">${r.obs || ""}</td>
+          <td>
+            <button class="btn-danger" data-index="${i}">Excluir</button>
           </td>`;
-
         tbody.appendChild(tr);
       });
     }
 
-    // util
-    function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+    // Adicionar linha
+    document.getElementById("addRow").addEventListener("click", () => {
+      rows.push({ nome: "", email: "", telefone: "", obs: "" });
+      render();
+    });
 
-    // state
-    let rows = JSON.parse(localStorage.getItem('tabela:rows')) || initialData.slice();
-    render(rows);
-
-    // eventos - delegação
-    tbody.addEventListener('click', (e)=>{
-      const btn = e.target.closest('button');
-      if(!btn) return;
-      const tr = e.target.closest('tr');
-      const i = Number(tr.dataset.index);
-      const action = btn.dataset.action;
-      if(action === 'delete'){
-        rows.splice(i,1);
-        saveAndRender();
-      }
-      if(action === 'duplicate'){
-        rows.splice(i+1,0, {...rows[i] });
-        saveAndRender();
+    // Excluir linha
+    tbody.addEventListener("click", (e) => {
+      if (e.target.matches(".btn-danger")) {
+        const idx = e.target.dataset.index;
+        rows.splice(idx, 1);
+        render();
       }
     });
 
-    // aplicar edição inline
-    tbody.addEventListener('input', (e)=>{
-      const td = e.target.closest('td[contenteditable]');
-      if(!td) return;
+    // Editar células
+    tbody.addEventListener("input", (e) => {
+      const td = e.target;
       const key = td.dataset.key;
-      const tr = td.closest('tr');
-      const i = Number(tr.dataset.index);
-      rows[i][key] = td.innerText.trim();
-      // debounced save optional
+      const tr = td.closest("tr");
+      const idx = [...tbody.children].indexOf(tr);
+      rows[idx][key] = td.innerText.trim();
     });
 
-    // adicionar linha
-    document.getElementById('addRow').addEventListener('click', ()=>{
-      rows.push({nome:'',email:'',telefone:'',obs:''});
-      saveAndRender();
-      // focar na última linha, primeira célula
-      requestAnimationFrame(()=>{
-        const last = tbody.querySelector('tr:last-child td[contenteditable]');
-        if(last) last.focus();
-      });
-    });
-
-    // excluir selecionadas
-    document.getElementById('delRow').addEventListener('click', ()=>{
-      const sels = Array.from(tbody.querySelectorAll('.rowSel'));
-      const toKeep = [];
-      sels.forEach((chk, idx)=>{ if(!chk.checked) toKeep.push(rows[idx]); });
-      rows = toKeep;
-      saveAndRender();
-    });
-
-    // select all
-    document.getElementById('selectAll').addEventListener('change', e=>{
-      const checked = e.target.checked;
-      tbody.querySelectorAll('.rowSel').forEach(c=>c.checked = checked);
-    });
-
-    // ações salvar/carregar local
-    document.getElementById('saveLocal').addEventListener('click', ()=>{
-      localStorage.setItem('tabela:rows', JSON.stringify(rows));
-      alert('Salvo no armazenamento local do navegador.');
-    });
-    document.getElementById('loadLocal').addEventListener('click', ()=>{
-      const stored = localStorage.getItem('tabela:rows');
-      if(stored) rows = JSON.parse(stored);
-      saveAndRender();
-      alert('Carregado do armazenamento local.');
-    });
-
-    // export CSV
-    document.getElementById('exportCsv').addEventListener('click', ()=>{
-      const csv = toCsv(rows);
-      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'tabela.csv';
-      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    });
-
-    // import CSV
-    const importInput = document.getElementById('importCsv');
-    document.getElementById('importBtn').addEventListener('click', ()=> importInput.click());
-    importInput.addEventListener('change', async (e)=>{
-      const f = e.target.files[0]; if(!f) return;
-      const txt = await f.text();
-      const parsed = csvToObjects(txt);
-      if(parsed.length) rows = parsed;
-      saveAndRender();
-    });
-
-    // pesquisar
-    searchInput.addEventListener('input', ()=>{
-      const q = searchInput.value.trim().toLowerCase();
-      if(!q){ render(rows); return; }
-      const filtered = rows.filter(r => Object.values(r).join(' ').toLowerCase().includes(q));
-      render(filtered);
-    });
-
-    // helper: salvar estado e re-renderizar
-    function saveAndRender(){
-      // keep persistent copy in localstorage but do not auto-overwrite unless user saves explicitly
-      render(rows);
-    }
-
-    // CSV helpers (simples)
-    function toCsv(arr){
-      const headers = ['nome','email','telefone','obs'];
-      const esc = v => '"' + String(v||'').replace(/"/g,'""') + '"';
-      const lines = [headers.join(',')];
-      arr.forEach(r => { lines.push([r.nome,r.email,r.telefone,r.obs].map(esc).join(',')); });
-      return lines.join('\n');
-    }
-    function csvToObjects(txt){
-      const rows = txt.split(/\r?\n/).filter(Boolean);
-      if(rows.length === 0) return [];
-      const headers = rows[0].split(',').map(h=>h.replace(/(^\s+|\s+$|\"|\')/g,''));
-      const out = [];
-      for(let i=1;i<rows.length;i++){
-        const cols = parseCsvLine(rows[i]);
-        const obj = {};
-        headers.forEach((h,idx)=> obj[h.trim()] = cols[idx] || '');
-        out.push({nome: obj.nome||'', email: obj.email||'', telefone: obj.telefone||'', obs: obj.obs||''});
+    // Salvar no Firebase
+    document.getElementById("saveFirebase").addEventListener("click", async () => {
+      try {
+        await set(ref(db, "tabela"), rows);
+        alert("✅ Dados salvos com sucesso no Firebase!");
+      } catch (err) {
+        console.error(err);
+        alert("❌ Erro ao salvar no Firebase");
       }
-      return out;
-    }
-    function parseCsvLine(line){
-      const result = [];
-      let cur = '', inQuotes = false;
-      for(let i=0;i<line.length;i++){
-        const ch = line[i];
-        if(ch === '"') { inQuotes = !inQuotes; continue; }
-        if(ch === ',' && !inQuotes){ result.push(cur); cur = ''; continue; }
-        cur += ch;
-      }
-      result.push(cur);
-      return result.map(s=>s.trim());
-    }
+    });
 
-    // initialize
-    saveAndRender();
+    // Carregar do Firebase
+    document.getElementById("loadFirebase").addEventListener("click", async () => {
+      try {
+        const snapshot = await get(child(ref(db), "tabela"));
+        if (snapshot.exists()) {
+          rows = snapshot.val();
+          render();
+          alert("📂 Dados carregados do Firebase!");
+        } else {
+          alert("Nenhum dado encontrado no banco!");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("❌ Erro ao carregar do Firebase");
+      }
+    });
+
+    // Render inicial
+    render();
   </script>
 </body>
 </html>
