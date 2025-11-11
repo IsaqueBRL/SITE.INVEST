@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tabela Editável com Firebase</title>
+  <title>Tabela Editável com Firebase (Tempo Real)</title>
   <style>
     :root{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;margin:0}
     body{padding:24px;background:#f6f8fb;color:#0f172a}
@@ -21,11 +21,10 @@
 </head>
 <body>
   <div class="card">
-    <h1>Tabela Editável (Firebase)</h1>
+    <h1>Tabela Editável (Firebase em tempo real)</h1>
     <div>
       <button id="addRow">➕ Adicionar Linha</button>
       <button id="saveFirebase" class="btn-primary">💾 Salvar no Banco</button>
-      <button id="loadFirebase">📂 Carregar do Banco</button>
     </div>
     <br>
     <table id="table">
@@ -42,10 +41,10 @@
     </table>
   </div>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
     // Configuração Firebase
     const firebaseConfig = {
@@ -62,10 +61,12 @@
     // Inicialização
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    const tabelaRef = ref(db, "tabela");
 
     const tbody = document.querySelector("#table tbody");
     let rows = [];
 
+    // Renderização
     function render() {
       tbody.innerHTML = "";
       rows.forEach((r, i) => {
@@ -75,12 +76,32 @@
           <td contenteditable="true" data-key="email">${r.email || ""}</td>
           <td contenteditable="true" data-key="telefone">${r.telefone || ""}</td>
           <td contenteditable="true" data-key="obs">${r.obs || ""}</td>
-          <td>
-            <button class="btn-danger" data-index="${i}">Excluir</button>
-          </td>`;
+          <td><button class="btn-danger" data-index="${i}">Excluir</button></td>
+        `;
         tbody.appendChild(tr);
       });
     }
+
+    // Atualização em tempo real (carrega automaticamente e atualiza se mudar no banco)
+    onValue(tabelaRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        rows = data;
+        render();
+      } else {
+        rows = [];
+        render();
+      }
+    });
+
+    // Editar células
+    tbody.addEventListener("input", (e) => {
+      const td = e.target;
+      const key = td.dataset.key;
+      const tr = td.closest("tr");
+      const idx = [...tbody.children].indexOf(tr);
+      rows[idx][key] = td.innerText.trim();
+    });
 
     // Adicionar linha
     document.getElementById("addRow").addEventListener("click", () => {
@@ -97,45 +118,16 @@
       }
     });
 
-    // Editar células
-    tbody.addEventListener("input", (e) => {
-      const td = e.target;
-      const key = td.dataset.key;
-      const tr = td.closest("tr");
-      const idx = [...tbody.children].indexOf(tr);
-      rows[idx][key] = td.innerText.trim();
-    });
-
-    // Salvar no Firebase
+    // Salvar manualmente
     document.getElementById("saveFirebase").addEventListener("click", async () => {
       try {
-        await set(ref(db, "tabela"), rows);
+        await set(tabelaRef, rows);
         alert("✅ Dados salvos com sucesso no Firebase!");
       } catch (err) {
         console.error(err);
-        alert("❌ Erro ao salvar no Firebase");
+        alert("❌ Erro ao salvar no Firebase (verifique regras ou permissões).");
       }
     });
-
-    // Carregar do Firebase
-    document.getElementById("loadFirebase").addEventListener("click", async () => {
-      try {
-        const snapshot = await get(child(ref(db), "tabela"));
-        if (snapshot.exists()) {
-          rows = snapshot.val();
-          render();
-          alert("📂 Dados carregados do Firebase!");
-        } else {
-          alert("Nenhum dado encontrado no banco!");
-        }
-      } catch (err) {
-        console.error(err);
-        alert("❌ Erro ao carregar do Firebase");
-      }
-    });
-
-    // Render inicial
-    render();
   </script>
 </body>
 </html>
