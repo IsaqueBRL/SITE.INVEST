@@ -3,37 +3,42 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tabela Editável com Firebase (Tempo Real)</title>
+  <title>Painel de Investimentos</title>
   <style>
-    :root{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;margin:0}
-    body{padding:24px;background:#f6f8fb;color:#0f172a}
-    .card{background:#fff;border-radius:12px;box-shadow:0 6px 18px rgba(14,20,30,0.06);padding:18px}
-    h1{margin:0 0 14px;font-size:18px}
-    table{width:100%;border-collapse:collapse;font-size:14px}
-    th,td{padding:10px;border-bottom:1px solid #eef2f7;text-align:left}
-    th{background:#fbfdff}
-    td[contenteditable]{min-width:80px}
-    tr:hover{background:#fbfcff}
-    button{padding:6px 10px;margin:2px;border-radius:6px;cursor:pointer}
-    .btn-primary{background:#0b69ff;color:#fff;border:none}
-    .btn-danger{background:#ff5b5b;color:#fff;border:none}
+    :root { font-family: Inter, system-ui, sans-serif; }
+    body { background:#f6f8fb; margin:0; padding:24px; color:#0f172a; }
+    .card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 6px 16px rgba(0,0,0,0.06); }
+    h1 { margin-bottom:16px; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th, td { padding:10px; border-bottom:1px solid #e5e7eb; text-align:left; }
+    th { background:#f9fafb; }
+    td[contenteditable] { background:#fff; min-width:80px; border-radius:6px; }
+    tr:hover { background:#fdfdfd; }
+    button { padding:6px 10px; border:none; border-radius:6px; cursor:pointer; }
+    .btn-primary { background:#2563eb; color:white; }
+    .btn-danger { background:#ef4444; color:white; }
+    #popup { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; }
+    #popup-content { background:white; padding:20px; border-radius:10px; width:300px; text-align:center; }
+    #popup-content input { width:100%; padding:8px; margin-bottom:10px; }
+    .right { float:right; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>Tabela Editável (Firebase em tempo real)</h1>
+    <h1>📊 Painel de Investimentos</h1>
     <div>
-      <button id="addRow">➕ Adicionar Linha</button>
+      <button id="addRow">➕ Nova Linha</button>
       <button id="saveFirebase" class="btn-primary">💾 Salvar no Banco</button>
     </div>
     <br>
     <table id="table">
       <thead>
         <tr>
-          <th>Nome</th>
-          <th>Email</th>
-          <th>Telefone</th>
-          <th>Observações</th>
+          <th>Categoria</th>
+          <th>Meta (%)</th>
+          <th>Atual (%)</th>
+          <th>Patrimônio (R$)</th>
+          <th>Aportar (R$)</th>
           <th>Ações</th>
         </tr>
       </thead>
@@ -41,12 +46,22 @@
     </table>
   </div>
 
-  <!-- Firebase SDK -->
+  <!-- Popup de categorias -->
+  <div id="popup">
+    <div id="popup-content">
+      <h3>Selecionar Categoria</h3>
+      <div id="categoria-list"></div>
+      <input type="text" id="novaCategoria" placeholder="Nova categoria" />
+      <button id="addCategoria" class="btn-primary">Adicionar</button>
+      <button id="closePopup" class="btn-danger">Fechar</button>
+    </div>
+  </div>
+
+  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-    // Configuração Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCaVDJ4LtJu-dlvSi4QrDygfhx1hBGSdDM",
       authDomain: "banco-de-dados-invest.firebaseapp.com",
@@ -58,75 +73,115 @@
       measurementId: "G-JJWKMYXHTH"
     };
 
-    // Inicialização
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const tabelaRef = ref(db, "tabela");
+    const tabelaRef = ref(db, "investimentos/tabela");
+    const categoriasRef = ref(db, "investimentos/categorias");
 
     const tbody = document.querySelector("#table tbody");
+    const popup = document.getElementById("popup");
+    const categoriaList = document.getElementById("categoria-list");
+    const novaCategoriaInput = document.getElementById("novaCategoria");
     let rows = [];
+    let categorias = [];
 
-    // Renderização
+    // === Funções ===
     function render() {
+      const totalPatrimonio = rows.reduce((sum, r) => sum + (Number(r.patrimonio) || 0), 0);
       tbody.innerHTML = "";
       rows.forEach((r, i) => {
+        const atual = totalPatrimonio > 0 ? ((r.patrimonio / totalPatrimonio) * 100) : 0;
+        const aportar = ((r.meta / 100) * totalPatrimonio) - r.patrimonio;
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td contenteditable="true" data-key="nome">${r.nome || ""}</td>
-          <td contenteditable="true" data-key="email">${r.email || ""}</td>
-          <td contenteditable="true" data-key="telefone">${r.telefone || ""}</td>
-          <td contenteditable="true" data-key="obs">${r.obs || ""}</td>
-          <td><button class="btn-danger" data-index="${i}">Excluir</button></td>
+          <td><button data-index="${i}" class="categoria-btn btn-primary">${r.categoria || "Selecionar"}</button></td>
+          <td contenteditable="true" data-key="meta">${r.meta || 0}%</td>
+          <td>${atual.toFixed(2)}%</td>
+          <td>${r.patrimonio.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</td>
+          <td>${aportar.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</td>
+          <td><button class="btn-danger" data-del="${i}">Excluir</button></td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    // Atualização em tempo real (carrega automaticamente e atualiza se mudar no banco)
-    onValue(tabelaRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        rows = data;
-        render();
-      } else {
-        rows = [];
-        render();
-      }
+    // Atualização em tempo real
+    onValue(tabelaRef, snap => {
+      rows = snap.val() || [];
+      render();
     });
 
-    // Editar células
-    tbody.addEventListener("input", (e) => {
-      const td = e.target;
-      const key = td.dataset.key;
-      const tr = td.closest("tr");
-      const idx = [...tbody.children].indexOf(tr);
-      rows[idx][key] = td.innerText.trim();
+    onValue(categoriasRef, snap => {
+      categorias = snap.val() || [];
     });
 
     // Adicionar linha
     document.getElementById("addRow").addEventListener("click", () => {
-      rows.push({ nome: "", email: "", telefone: "", obs: "" });
+      rows.push({ categoria: "", meta: 0, patrimonio: 0 });
       render();
     });
 
-    // Excluir linha
-    tbody.addEventListener("click", (e) => {
-      if (e.target.matches(".btn-danger")) {
-        const idx = e.target.dataset.index;
-        rows.splice(idx, 1);
+    // Editar meta
+    tbody.addEventListener("input", e => {
+      const td = e.target;
+      if (td.dataset.key === "meta") {
+        const tr = td.closest("tr");
+        const idx = [...tbody.children].indexOf(tr);
+        const val = parseFloat(td.innerText.replace("%","").trim()) || 0;
+        rows[idx].meta = val;
         render();
       }
     });
 
-    // Salvar manualmente
-    document.getElementById("saveFirebase").addEventListener("click", async () => {
-      try {
-        await set(tabelaRef, rows);
-        alert("✅ Dados salvos com sucesso no Firebase!");
-      } catch (err) {
-        console.error(err);
-        alert("❌ Erro ao salvar no Firebase (verifique regras ou permissões).");
+    // Excluir linha
+    tbody.addEventListener("click", e => {
+      if (e.target.dataset.del) {
+        rows.splice(e.target.dataset.del, 1);
+        render();
       }
+    });
+
+    // Popup de categorias
+    tbody.addEventListener("click", e => {
+      if (e.target.classList.contains("categoria-btn")) {
+        const idx = e.target.dataset.index;
+        abrirPopup(idx);
+      }
+    });
+
+    function abrirPopup(index) {
+      popup.style.display = "flex";
+      categoriaList.innerHTML = categorias.map(c => `
+        <button class="btn-primary catItem" data-cat="${c}" data-index="${index}" style="margin:4px">${c}</button>
+      `).join("");
+    }
+
+    categoriaList.addEventListener("click", e => {
+      if (e.target.classList.contains("catItem")) {
+        const idx = e.target.dataset.index;
+        const cat = e.target.dataset.cat;
+        rows[idx].categoria = cat;
+        popup.style.display = "none";
+        render();
+      }
+    });
+
+    document.getElementById("addCategoria").addEventListener("click", () => {
+      const nova = novaCategoriaInput.value.trim();
+      if (nova && !categorias.includes(nova)) {
+        categorias.push(nova);
+        set(categoriasRef, categorias);
+        novaCategoriaInput.value = "";
+        abrirPopup(rows.length - 1);
+      }
+    });
+
+    document.getElementById("closePopup").addEventListener("click", () => popup.style.display = "none");
+
+    // Salvar no banco
+    document.getElementById("saveFirebase").addEventListener("click", async () => {
+      await set(tabelaRef, rows);
+      alert("✅ Dados salvos com sucesso!");
     });
   </script>
 </body>
