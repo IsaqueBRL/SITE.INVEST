@@ -3,228 +3,27 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Página editável - Exemplo</title>
-  <style>
-    :root{
-      --accent:#0b84ff;
-      --bg:#f6f8fb;
-      --card:#ffffff;
-    }
-    body{
-      font-family: Inter, system-ui, Arial, sans-serif;
-      margin:0;
-      background:var(--bg);
-      color:#111;
-      line-height:1.5;
-    }
-    header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding:12px 16px;
-      background:linear-gradient(90deg,#ffffffcc, #f0f6ffcc);
-      box-shadow:0 1px 0 rgba(0,0,0,0.04);
-      position:sticky;
-      top:0;
-      z-index:40;
-    }
-    .controls { display:flex; gap:8px; align-items:center; }
-    button, .tool {
-      background:var(--card);
-      border:1px solid #e3e7ee;
-      padding:8px 10px;
-      border-radius:8px;
-      cursor:pointer;
-      font-size:14px;
-    }
-    button.toggle-edit { background:linear-gradient(180deg,var(--accent), #0073e6); color:white; border:none; }
-    .toolbar {
-      display:flex;
-      gap:6px;
-      padding:8px;
-      border-radius:10px;
-      align-items:center;
-    }
-    .toolbar button { padding:6px 8px; font-weight:600; }
-    .badge { font-size:12px; color:#555; margin-left:6px; }
-    main {
-      max-width:1000px;
-      margin:22px auto;
-      background:var(--card);
-      padding:20px;
-      border-radius:12px;
-      box-shadow:0 6px 18px rgba(20,30,40,0.06);
-    }
-    .editable-on {
-      outline: 3px dashed rgba(11,132,255,0.18);
-      transition: outline 120ms;
-    }
-    .hint { font-size:13px; color:#666; margin-top:8px; }
-    .tools-hidden { display:none; }
-    /* small responsive */
-    @media (max-width:640px){
-      header { flex-direction:column; align-items:stretch; gap:8px; }
-      .controls{ justify-content:flex-start; }
-    }
-  </style>
+  <title>Página editável com Firebase</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <div style="display:flex;flex-direction:column;">
+    <div>
       <strong>Editor rápido da página</strong>
-      <span class="badge">Clique em "Entrar em edição" para tornar a página editável</span>
+      <span class="badge">Agora salvando no Firebase 🔥</span>
     </div>
-
     <div class="controls">
-      <div id="toolbar" class="toolbar tools-hidden" aria-hidden="true">
-        <button class="tool" onclick="format('bold')" title="Negrito (Ctrl/Cmd+B)"><b>B</b></button>
-        <button class="tool" onclick="format('italic')" title="Itálico (Ctrl/Cmd+I)"><i>I</i></button>
-        <button class="tool" onclick="format('underline')" title="Sublinhado (Ctrl/Cmd+U)"><u>U</u></button>
-        <button class="tool" onclick="createLink()" title="Inserir link">Link</button>
-        <button class="tool" onclick="insertImage()" title="Inserir imagem">Imagem</button>
-        <button class="tool" onclick="format('undo')" title="Desfazer">↶</button>
-        <button class="tool" onclick="format('redo')" title="Refazer">↷</button>
-      </div>
-
-      <button id="toggleBtn" class="toggle-edit" onclick="toggleEdit()">Entrar em edição</button>
-      <button id="saveBtn" class="tool" onclick="saveHTML()" title="Baixar HTML atual">Baixar HTML</button>
+      <button id="toggleBtn" class="toggle-edit">Entrar em edição</button>
+      <button id="saveBtn" class="tool">Salvar no banco</button>
     </div>
   </header>
 
   <main id="content">
-    <h1>Exemplo: página totalmente editável</h1>
-    <p>Este é um conteúdo de exemplo. Quando você clicar em <strong>Entrar em edição</strong>, tudo nesta área (e em toda a página) ficará editável — você poderá alterar textos, colar imagens, apagar seções e reorganizar conteúdo.</p>
-
-    <h2>Como funciona</h2>
-    <ul>
-      <li>Pressione <strong>Entrar em edição</strong> para ativar o modo de edição.</li>
-      <li>Use a pequena barra de ferramentas para formatação básica.</li>
-      <li>Quando terminar, clique em <strong>Baixar HTML</strong> para salvar o resultado como um arquivo .html.</li>
-    </ul>
-
-    <h3>Exemplos de conteúdo</h3>
-    <p>Você pode colar texto do Word, colar imagens (arraste + solte ou Ctrl+V), criar links e reformatar.</p>
-
-    <p class="hint"><em>Observação:</em> editar a página localmente não altera nenhum servidor — é só no seu navegador. Se quiser persistir mudanças em um site real, será necessário enviar o HTML para o servidor ou usar um backend.</p>
+    <h1>Exemplo com Firebase</h1>
+    <p>Edite este conteúdo e clique em "Salvar no banco". Mesmo se atualizar a página, o conteúdo volta do Firebase.</p>
   </main>
 
-  <script>
-    const toggleBtn = document.getElementById('toggleBtn');
-    const toolbar = document.getElementById('toolbar');
-    const content = document.getElementById('content');
-
-    let editing = false;
-
-    function toggleEdit(){
-      editing = !editing;
-      // Torna o body editável — abrange todo o documento
-      document.body.contentEditable = editing ? "true" : "false";
-      // Alterna aparência
-      if(editing){
-        document.body.classList.add('editable-on');
-        toggleBtn.textContent = 'Sair da edição';
-        toolbar.classList.remove('tools-hidden');
-        toolbar.setAttribute('aria-hidden','false');
-        // permitir atalhos de formatação do navegador
-        // foca no conteúdo para começar a digitar
-        content.focus();
-      } else {
-        document.body.classList.remove('editable-on');
-        toggleBtn.textContent = 'Entrar em edição';
-        toolbar.classList.add('tools-hidden');
-        toolbar.setAttribute('aria-hidden','true');
-      }
-    }
-
-    // Usa execCommand para formatações simples (funciona na maioria dos navegadores)
-    function format(cmd, value = null){
-      document.execCommand(cmd, false, value);
-      content.focus();
-    }
-
-    function createLink(){
-      const url = prompt('Endereço do link (ex: https://example.com):');
-      if(url) format('createLink', url);
-    }
-
-    function insertImage(){
-      const url = prompt('URL da imagem (ou cole data URL):');
-      if(url){
-        // insere imagem no local do cursor
-        const imgHtml = '<img src="'+url+'" alt="Imagem inserida" style="max-width:100%;height:auto;" />';
-        document.execCommand('insertHTML', false, imgHtml);
-      } else {
-        // alternativa: permitir upload local (cria input temporário)
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.onchange = () => {
-          const file = input.files[0];
-          if(!file) return;
-          const reader = new FileReader();
-          reader.onload = e => {
-            const imgHtml = '<img src="'+e.target.result+'" alt="Imagem" style="max-width:100%;height:auto;" />';
-            document.execCommand('insertHTML', false, imgHtml);
-          };
-          reader.readAsDataURL(file);
-        };
-        input.click();
-      }
-    }
-
-    // Baixa a versão atual do HTML (inclui o DOCTYPE para abrir localmente)
-    function saveHTML(){
-      // Remover atributos temporários antes de salvar
-      const clone = document.documentElement.cloneNode(true);
-
-      // Desativa edição no clone
-      clone.querySelectorAll('[contenteditable]').forEach(n => n.removeAttribute('contenteditable'));
-      // se o body estava editável, remove o atributo
-      clone.body.removeAttribute('contenteditable');
-
-      // Remove a barra de edição do clone (opcional)
-      const toolbarInClone = clone.querySelector('#toolbar');
-      if(toolbarInClone) toolbarInClone.remove();
-      const toggleInClone = clone.querySelector('#toggleBtn');
-      if(toggleInClone) toggleInClone.remove();
-      const saveInClone = clone.querySelector('#saveBtn');
-      if(saveInClone) saveInClone.remove();
-      const headerInClone = clone.querySelector('header');
-      if(headerInClone) headerInClone.removeAttribute('style');
-
-      // Converte para string
-      const doctype = "<!doctype html>\n";
-      const htmlString = doctype + clone.outerHTML;
-
-      const blob = new Blob([htmlString], {type: 'text/html;charset=utf-8'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'pagina-editada.html';
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    // Atalhos básicos (Ctrl/Cmd+B, I, U) para formatação — navegador normalmente já faz, mas garantimos foco
-    document.addEventListener('keydown', (e) => {
-      if(!editing) return;
-      const mod = e.ctrlKey || e.metaKey;
-      if(!mod) return;
-      if(e.key.toLowerCase() === 's'){ // Ctrl/Cmd+S => salva
-        e.preventDefault();
-        saveHTML();
-      }
-    });
-
-    // Segurança: avisar antes de sair se estiver editando (evita perder alterações)
-    window.addEventListener('beforeunload', (e) => {
-      if(editing){
-        e.preventDefault();
-        e.returnValue = ''; // mensagem padrão do navegador
-      }
-    });
-  </script>
+  <!-- Importa o Firebase SDK (versão modular) -->
+  <script type="module" src="script.js"></script>
 </body>
 </html>
-
