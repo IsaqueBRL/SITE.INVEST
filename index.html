@@ -1,24 +1,28 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Página editável com Realtime Database</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dados da Planilha</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <strong>Editor rápido da página</strong>
-    <div class="controls">
-      <button id="toggleBtn" class="toggle-edit">Entrar em edição</button>
-      <button id="saveBtn" class="tool">Salvar no banco</button>
-    </div>
+    <h1>Dados da Planilha</h1>
   </header>
 
-  <main id="content">
-    <h1>Exemplo com Firebase Realtime Database</h1>
-    <p>Edite este conteúdo e clique em "Salvar no banco". Mesmo após atualizar, o conteúdo volta do Firebase.</p>
-  </main>
+  <section>
+    <table id="tabela">
+      <thead>
+        <tr id="header-row">
+          <!-- cabeçalhos serão inseridos aqui -->
+        </tr>
+      </thead>
+      <tbody id="body-rows">
+        <!-- linhas serão inseridas aqui -->
+      </tbody>
+    </table>
+  </section>
 
   <script type="module" src="script.js"></script>
 </body>
