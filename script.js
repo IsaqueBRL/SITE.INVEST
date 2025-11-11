@@ -1,34 +1,42 @@
-// ID da planilha (pegue da URL da planilha)
-const sheetId = "1d-yourSheetID-here"; // substitua pelo seu ID real
-const sheetName = "Página1"; // ou o nome da aba que você quer puxar
+// === CONFIGURAÇÃO DA PLANILHA ===
+// Esta é a planilha pública que você me mandou
+const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTfkBlTB6KfNQOtVCRwwQJSCVD36B2d709rJ8p-HhALp6Uc725L2-OjZxnJpz-C5KAA-G7pgNWYYcl1/pub?gid=0&single=true&output=csv";
 
-const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+// === FUNÇÃO PARA BUSCAR E EXIBIR OS DADOS ===
+async function carregarPlanilha() {
+  const loading = document.getElementById("loading");
+  const tabela = document.getElementById("tabela");
+  const thead = document.getElementById("tabela-head");
+  const tbody = document.getElementById("tabela-body");
 
-async function fetchSheet() {
   try {
-    const resp = await fetch(url);
-    const text = await resp.text();
+    const response = await fetch(sheetURL);
+    const data = await response.text();
 
-    // A resposta vem como JSONP — precisamos limpar
-    const json = JSON.parse(text.substr(text.indexOf("(") + 1).slice(0, -2));
+    // Converter CSV para linhas
+    const linhas = data.trim().split("\n").map(l => l.split(","));
 
-    const cols = json.table.cols.map(c => c.label);
-    const rows = json.table.rows;
+    // Cabeçalhos
+    const headers = linhas[0];
+    const rows = linhas.slice(1);
 
-    // Inserir cabeçalhos
-    const headerRow = document.getElementById("header-row");
-    headerRow.innerHTML = cols.map(h => `<th>${h}</th>`).join("");
+    // Montar cabeçalho
+    thead.innerHTML = "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
 
-    // Inserir linhas
-    const bodyRows = document.getElementById("body-rows");
-    bodyRows.innerHTML = rows.map(r => {
-      const cells = r.c.map(c => c ? c.v : "");
-      return `<tr>${cells.map(cell => `<td>${cell}</td>`).join("")}</tr>`;
-    }).join("");
+    // Montar corpo da tabela
+    tbody.innerHTML = rows.map(r => 
+      "<tr>" + r.map(c => `<td>${c}</td>`).join("") + "</tr>"
+    ).join("");
 
-  } catch (error) {
-    console.error("Erro ao buscar dados da planilha:", error);
+    // Mostrar tabela
+    loading.style.display = "none";
+    tabela.style.display = "table";
+  } 
+  catch (error) {
+    loading.innerHTML = "❌ Erro ao carregar planilha.";
+    console.error("Erro:", error);
   }
 }
 
-fetchSheet();
+// === CHAMAR FUNÇÃO ===
+carregarPlanilha();
