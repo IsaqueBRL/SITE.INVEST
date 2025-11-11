@@ -3,26 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Dados da Planilha</title>
+  <title>Planilha Integrada ao Site</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <h1>Dados da Planilha</h1>
+    <h1>📊 Dados da Planilha</h1>
   </header>
 
-  <section>
-    <table id="tabela">
-      <thead>
-        <tr id="header-row">
-          <!-- cabeçalhos serão inseridos aqui -->
-        </tr>
-      </thead>
-      <tbody id="body-rows">
-        <!-- linhas serão inseridas aqui -->
-      </tbody>
+  <main>
+    <div id="loading">Carregando dados...</div>
+    <table id="tabela" style="display:none;">
+      <thead id="tabela-head"></thead>
+      <tbody id="tabela-body"></tbody>
     </table>
-  </section>
+  </main>
 
   <script type="module" src="script.js"></script>
 </body>
