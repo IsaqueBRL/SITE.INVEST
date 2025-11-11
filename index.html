@@ -197,13 +197,6 @@
       });
     }
 
-    window.openCategoryPopup = openCategoryPopup;
-    window.closeCategoryPopup = closeCategoryPopup;
-    window.addCategory = addCategory;
-    window.editCategory = editCategory;
-    window.deleteCategory = deleteCategory;
-
-    // TABELA ---------------------------
     function addRow() {
       const row = document.createElement("tr");
 
@@ -262,6 +255,14 @@
         row.cells[4].innerText = formatMoney(aportar);
       });
     }
+
+    // 🔥 Torna funções acessíveis globalmente (corrige o erro)
+    window.openCategoryPopup = openCategoryPopup;
+    window.closeCategoryPopup = closeCategoryPopup;
+    window.addCategory = addCategory;
+    window.editCategory = editCategory;
+    window.deleteCategory = deleteCategory;
+    window.addRow = addRow;
 
     loadCategories();
   </script>
