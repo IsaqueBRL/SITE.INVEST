@@ -1,67 +1,35 @@
 // === Importações Firebase ===
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
+import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-// === Configuração do seu projeto Firebase ===
+// === Configuração do seu Firebase ===
 const firebaseConfig = {
   apiKey: "AIzaSyCaVDJ4LtJu-dlvSi4QrDygfhx1hBGSdDM",
   authDomain: "banco-de-dados-invest.firebaseapp.com",
+  databaseURL: "https://banco-de-dados-invest-default-rtdb.firebaseio.com",
   projectId: "banco-de-dados-invest",
   storageBucket: "banco-de-dados-invest.firebasestorage.app",
   messagingSenderId: "5603892998",
-  appId: "1:5603892998:web:62c066943b123aaf050887",
-  measurementId: "G-CGX76CLQ3E"
+  appId: "1:5603892998:web:459556f888d31629050887",
+  measurementId: "G-JJWKMYXHTH"
 };
 
-// === Inicializa Firebase e Firestore ===
+// === Inicializa Firebase ===
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const analytics = getAnalytics(app);
+const db = getDatabase(app);
 
 // === Seleciona elementos da página ===
-const toggleBtn = document.getElementById('toggleBtn');
-const saveBtn = document.getElementById('saveBtn');
-const content = document.getElementById('content');
+const toggleBtn = document.getElementById("toggleBtn");
+const saveBtn = document.getElementById("saveBtn");
+const content = document.getElementById("content");
 
 let editing = false;
 
-// === Função para ativar/desativar edição ===
-toggleBtn.addEventListener('click', () => {
+// === Alterna entre modo de edição e leitura ===
+toggleBtn.addEventListener("click", () => {
   editing = !editing;
   content.contentEditable = editing ? "true" : "false";
   toggleBtn.textContent = editing ? "Sair da edição" : "Entrar em edição";
-  if (editing) content.focus();
-});
-
-// === Função para carregar o conteúdo do Firebase ===
-async function loadContent() {
-  try {
-    const ref = doc(db, "paginas", "principal");
-    const snap = await getDoc(ref);
-    if (snap.exists()) {
-      content.innerHTML = snap.data().html;
-      console.log("✅ Conteúdo carregado do Firebase!");
-    } else {
-      console.log("⚠️ Nenhum conteúdo salvo ainda.");
-    }
-  } catch (error) {
-    console.error("Erro ao carregar:", error);
-  }
-}
-
-// === Função para salvar o conteúdo no Firebase ===
-async function saveContent() {
-  try {
-    const html = content.innerHTML;
-    await setDoc(doc(db, "paginas", "principal"), { html });
-    alert("✅ Conteúdo salvo com sucesso no Firebase!");
-  } catch (error) {
-    console.error("Erro ao salvar:", error);
-    alert("❌ Erro ao salvar no banco de dados.");
-  }
-}
-
-// === Eventos ===
-saveBtn.addEventListener('click', saveContent);
-
-// === Carrega conteúdo automaticamente ao abrir ===
-loadContent();
+  if (editing) content.focus(
