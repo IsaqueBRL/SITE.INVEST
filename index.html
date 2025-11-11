@@ -12,7 +12,8 @@
     table { width:100%; border-collapse:collapse; font-size:14px; }
     th, td { padding:10px; border-bottom:1px solid #e5e7eb; text-align:left; }
     th { background:#f9fafb; }
-    td[contenteditable] { background:#fff; min-width:80px; border-radius:6px; outline:none; }
+    td[contenteditable] { background:#fff; min-width:80px; border-radius:6px; outline:none; transition: background 0.2s; }
+    td[contenteditable]:focus { background:#e0f2fe; }
     tr:hover { background:#fdfdfd; }
     button { padding:6px 10px; border:none; border-radius:6px; cursor:pointer; }
     .btn-primary { background:#2563eb; color:white; }
@@ -85,7 +86,6 @@
     let rows = [];
     let categorias = [];
 
-    // === Funções ===
     function render() {
       const totalPatrimonio = rows.reduce((sum, r) => sum + (Number(r.patrimonio) || 0), 0);
       tbody.innerHTML = "";
@@ -95,7 +95,7 @@
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td><button data-index="${i}" class="categoria-btn btn-primary">${r.categoria || "Selecionar"}</button></td>
-          <td contenteditable="true" data-key="meta">${r.meta || 0}%</td>
+          <td contenteditable="true" data-key="meta">${r.meta}</td>
           <td>${atual.toFixed(2)}%</td>
           <td contenteditable="true" data-key="patrimonio">${r.patrimonio.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</td>
           <td>${aportar.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</td>
@@ -121,19 +121,31 @@
       render();
     });
 
-    // Editar meta e patrimônio
-    tbody.addEventListener("input", e => {
+    // Edição fluida (somente atualiza ao sair da célula)
+    tbody.addEventListener("blur", e => {
       const td = e.target;
+      if (!td.dataset.key) return;
+
       const tr = td.closest("tr");
       const idx = [...tbody.children].indexOf(tr);
+
       if (td.dataset.key === "meta") {
-        const val = parseFloat(td.innerText.replace("%","").trim()) || 0;
+        const val = parseFloat(td.innerText.replace(",", ".").trim()) || 0;
         rows[idx].meta = val;
       } else if (td.dataset.key === "patrimonio") {
         const val = parseFloat(td.innerText.replace(/[^\d,.-]/g, "").replace(",", ".")) || 0;
         rows[idx].patrimonio = val;
       }
+
       render();
+    }, true);
+
+    // Permitir confirmar com Enter
+    tbody.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.target.blur();
+      }
     });
 
     // Excluir linha
