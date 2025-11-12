@@ -1,5 +1,7 @@
 // script.js
 
+// 🚨 CORREÇÃO: A linha de import do Firebase FOI REMOVIDA para corrigir o SyntaxError.
+
 // Variável global do banco de dados (acessada via window.db, definido em firebase-init.js)
 const db = window.db; 
 
@@ -187,7 +189,7 @@ document.getElementById('add-column-left').addEventListener('click', () => addCo
 
 document.getElementById('save-table').addEventListener('click', () => {
     if (!db) {
-        alert("Erro: O Firebase não foi inicializado corretamente.");
+        alert("Erro: O Firebase não foi inicializado corretamente. Verifique o console.");
         return;
     }
 
