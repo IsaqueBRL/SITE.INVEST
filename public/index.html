@@ -1,1 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClimaBot - Previsão Fictícia (Com Python)</title>
+    <style>
+        /* CSS BÁSICO PARA O CHATBOT */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        /* ESTILOS DO CHATBOT */
+        #chat-box {
+            height: 400px;
+            padding: 15px;
+            overflow-y: scroll;
+            border-bottom: 1px solid #ccc;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 15px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background-color: #e0f7fa;
+            margin-left: auto;
+            text-align: right;
+        }
+        .bot-message {
+            background-color: #ffe0b2;
+            text-align: left;
+        }
+        #input-container {
+            display: flex;
+            padding: 15px;
+        }
+        #user-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px 0 0 5px;
+            outline: none;
+        }
+        #send-button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 0 5px 5px 0;
+        }
+        #send-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
 
+    <div class="container">
+        <header>
+            <h1>☀️ ClimaBot - Seu Assistente Fictício (Python IA)</h1>
+            <p>Pergunte sobre a previsão do tempo em cidades aleatórias.</p>
+        </header>
+
+        <div id="chat-box">
+            <div class="message bot-message">Olá! Sou o ClimaBot. Em qual cidade fictícia você gostaria de saber a previsão? (Ex: "Manaus", "São Paulo", "Rio")</div>
+        </div>
+
+        <div id="input-container">
+            <input type="text" id="user-input" placeholder="Digite sua mensagem..." autofocus>
+            <button id="send-button">Enviar</button> 
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
