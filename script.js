@@ -119,7 +119,7 @@ function sanitizeKey(str) {
 }
 
 
-// --- 1. FUNÇÃO DE SALVAMENTO (MANTIDA) ---
+// --- 1. FUNÇÃO DE SALVAMENTO ---
 
 document.getElementById('save-table').addEventListener('click', () => {
     if (!db) {
@@ -157,7 +157,7 @@ document.getElementById('save-table').addEventListener('click', () => {
         tableData.push(rowData);
     });
 
-    // 4. Estrutura e envia para o Firebase, recarrega a tabela após sucesso
+    // Estrutura e envia para o Firebase
     const dataToSave = {
         data_salvamento: new Date().toISOString(),
         tabela_investimentos: tableData,
@@ -169,7 +169,7 @@ document.getElementById('save-table').addEventListener('click', () => {
     tableRef.push(dataToSave)
         .then(() => {
             alert("Tabela de investimentos salva com sucesso!");
-            // 🚨 NOVO: Recarrega a tabela para exibir a versão atualizada
+            // Recarrega a tabela para exibir a versão atualizada
             loadTableData(); 
         })
         .catch((error) => {
@@ -179,11 +179,10 @@ document.getElementById('save-table').addEventListener('click', () => {
 });
 
 
-// --- 2. FUNÇÃO DE RENDERIZAÇÃO E CARREGAMENTO (NOVO) ---
+// --- 2. FUNÇÃO DE RENDERIZAÇÃO E CARREGAMENTO ---
 
 /**
  * Limpa e reconstrói o cabeçalho e as linhas da tabela com base nos dados do Firebase.
- * @param {object} latestRecord - O objeto de dados lido do Firebase (tabela_investimentos e nomes_cabecalhos).
  */
 function renderTable(latestRecord) {
     const tableData = latestRecord.tabela_investimentos || [];
@@ -211,7 +210,7 @@ function renderTable(latestRecord) {
     tableData.forEach(rowData => {
         const newRow = tbody.insertRow();
         
-        // Itera sobre as chaves (sanitizadas) do objeto de dados
+        // Itera sobre os nomes originais para garantir a ordem correta
         headerNames.forEach(originalName => {
             const sanitizedKey = sanitizeKey(originalName);
             const cell = newRow.insertCell();
@@ -231,13 +230,15 @@ function renderTable(latestRecord) {
  * Busca o último registro de 'tabelas_personalizadas' no Firebase.
  */
 function loadTableData() {
-    if (!db) return; // Sai se o DB não estiver pronto
+    // Verifica se o DB está acessível
+    if (!window.db) {
+        console.error("Firebase DB não está pronto.");
+        return;
+    }
 
     const tableRef = db.ref('tabelas_personalizadas');
     
-    // Busca o último registro, ordenado por chave ($key) e limitado a 1.
-    // Você pode usar orderByChild('data_salvamento') se quiser garantir o último
-    // por data, mas orderByValue/Key geralmente funciona para o último push.
+    // Busca o último registro (limitado a 1)
     tableRef.limitToLast(1).once('value', snapshot => {
         if (snapshot.exists()) {
             const latestRecordKey = Object.keys(snapshot.val())[0];
@@ -247,8 +248,7 @@ function loadTableData() {
             renderTable(latestRecord);
         } else {
             console.log("Nenhum dado de tabela encontrado no Firebase. Usando estrutura HTML padrão.");
-            // Opcional: manter o cabeçalho e a linha de exemplo do HTML se nada for encontrado.
-            
+            // Se não houver dados no Firebase, a tabela manterá o conteúdo inicial do HTML.
         }
     })
     .catch(error => {
@@ -256,13 +256,14 @@ function loadTableData() {
     });
 }
 
-// 3. PONTO DE ENTRADA: Carrega os dados assim que o script terminar de carregar
+// =========================================================================
+// C. PONTO DE ENTRADA (GARANTINDO O CARREGAMENTO AUTOMÁTICO)
+// =========================================================================
+
+/**
+ * 🚨 ESTA PARTE GARANTE QUE OS DADOS SÃO CARREGADOS EM CADA RECARREGAMENTO.
+ * Espera o carregamento completo da página (incluindo imagens) e então carrega os dados.
+ */
 window.onload = function() {
-    // Certifica-se que o firebase-init.js rodou e definiu window.db
-    if (window.db) {
-        loadTableData();
-    } else {
-        // Adiciona um listener para garantir que o loadTableData seja chamado após a inicialização
-        setTimeout(loadTableData, 500); 
-    }
+    loadTableData();
 };
