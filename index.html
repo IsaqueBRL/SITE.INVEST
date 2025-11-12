@@ -3,28 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Dados</title>
+    <title>Gerenciador de Tabela Dinâmica</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <h1>Dados da Tabela</h1>
+    <h1>Gerenciador de Dados</h1>
 
     <table id="tabelaDados">
         <thead>
             <tr>
-                <th>Nome</th>
-                <th>Valor</th>
-                <th>Ação</th>
+                <th contenteditable="false" draggable="false">Nome</th>
+                <th contenteditable="false" draggable="false">Valor</th>
+                <th contenteditable="false" draggable="false">Ação</th>
             </tr>
         </thead>
         <tbody>
             </tbody>
     </table>
 
-    <button id="btnAdicionarLinha">Adicionar Linha</button>
-    
-    <button id="btnSalvarTudo">Salvar Tudo</button>
+    <div class="controles">
+        <button id="btnAdicionarLinha">➕ Adicionar Linha</button>
+        <button id="btnToggleEdicao">⚙️ Ativar Edição da Tabela</button> 
+        <button id="btnSalvarTudo">💾 Salvar Tudo</button>
+    </div>
 
     <script src="script.js"></script>
 </body>
