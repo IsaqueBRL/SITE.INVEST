@@ -1,4 +1,0 @@
-# functions/requirements.txt
-functions-framework==3.*
-flask
-firebase-admin
