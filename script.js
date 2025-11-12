@@ -13,6 +13,8 @@ let draggedCol = null;
 // A. LÓGICA DA TABELA DINÂMICA
 // =========================================================================
 
+// --- FUNÇÕES DE SETUP E MANIPULAÇÃO DA TABELA (MANTIDAS) ---
+
 // Função para adicionar uma nova linha
 document.getElementById('add-row').addEventListener('click', () => {
     const newRow = tbody.insertRow();
@@ -36,30 +38,26 @@ tbody.addEventListener('click', (e) => {
     }
 });
 
-// Funções de Drag and Drop (arrastar e soltar) mantidas
+// Funções de Drag and Drop e addColumn (MANTIDAS)
 function setupDragListeners(header) {
     header.addEventListener('dragstart', (e) => {
         draggedCol = header;
         e.dataTransfer.effectAllowed = 'move';
         setTimeout(() => header.classList.add('dragging'), 0); 
     });
-
     header.addEventListener('dragend', () => {
         draggedCol = null;
         header.classList.remove('dragging');
     });
-
     header.addEventListener('dragover', (e) => {
         e.preventDefault(); 
         if (draggedCol && draggedCol !== header && header.textContent !== 'Ações') {
             header.classList.add('drag-over');
         }
     });
-
     header.addEventListener('dragleave', () => {
         header.classList.remove('drag-over');
     });
-
     header.addEventListener('drop', (e) => {
         e.preventDefault();
         header.classList.remove('drag-over');
@@ -67,19 +65,14 @@ function setupDragListeners(header) {
         if (draggedCol && draggedCol !== header && header.textContent !== 'Ações' && draggedCol.textContent !== 'Ações') {
             const fromIndex = Array.from(headerRow.cells).indexOf(draggedCol);
             const toIndex = Array.from(headerRow.cells).indexOf(header);
-
-            // Mover o cabeçalho (TH)
             if (fromIndex < toIndex) {
                 headerRow.insertBefore(draggedCol, header.nextElementSibling);
             } else {
                 headerRow.insertBefore(draggedCol, header);
             }
-
-            // Mover as células (TD) em cada linha
             Array.from(tbody.rows).forEach(row => {
                 const cellToMove = row.cells[fromIndex];
                 const targetCell = row.cells[toIndex];
-                
                 if (fromIndex < toIndex) {
                     row.insertBefore(cellToMove, targetCell.nextElementSibling);
                 } else {
@@ -89,65 +82,44 @@ function setupDragListeners(header) {
         }
     });
 }
-
-// Inicializa os ouvintes de Drag and Drop para os cabeçalhos existentes
 Array.from(headerRow.cells).forEach(th => {
     if (th.textContent !== 'Ações') { 
         setupDragListeners(th);
     }
 });
-
-// Função principal para adicionar nova coluna
 function addColumn(insertBeforeIndex) {
     const newHeader = document.createElement('th');
     newHeader.setAttribute('contenteditable', 'true');
     newHeader.setAttribute('draggable', 'true');
     newHeader.textContent = 'Nova Coluna';
     setupDragListeners(newHeader); 
-
     let targetIndex = insertBeforeIndex ? 0 : headerRow.cells.length - 1;
-    
-    // Adiciona o cabeçalho (TH)
     headerRow.insertBefore(newHeader, headerRow.cells[targetIndex]);
-
-    // Adiciona a célula (TD) em cada linha
     Array.from(tbody.rows).forEach(row => {
         const newCell = row.insertCell(targetIndex);
         newCell.setAttribute('contenteditable', 'true');
         newCell.textContent = 'Novo Dado';
     });
 }
-
-// Eventos de clique para adicionar coluna
 document.getElementById('add-column-right').addEventListener('click', () => addColumn(false));
 document.getElementById('add-column-left').addEventListener('click', () => addColumn(true));
 
-
 // =========================================================================
-// B. SALVAMENTO DA TABELA NO FIREBASE (CORRIGIDO)
+// B. PERSISTÊNCIA DE DADOS (CARREGAMENTO e SALVAMENTO)
 // =========================================================================
 
 /**
- * Função utilitária APRIMORADA para limpar a string, removendo TODOS os caracteres
- * inválidos para chaves do Firebase.
- * Troca espaços por underscore e remove caracteres especiais.
- * @param {string} str - O nome do cabeçalho original.
- * @returns {string} - A chave limpa.
+ * Função utilitária para limpar a string (chave do Firebase).
  */
 function sanitizeKey(str) {
-    // 1. Converte para minúsculas
     let sanitized = str.toLowerCase();
-    
-    // 2. Remove todos os caracteres que NÃO são letras (a-z) ou números (0-9)
-    // O '+' agrupa múltiplos caracteres não-válidos em um único '_'
     sanitized = sanitized.replace(/[^a-z0-9]+/g, '_'); 
-    
-    // 3. Remove underscores do início e do fim, caso existam
     sanitized = sanitized.replace(/^_+|_+$/g, ''); 
-    
     return sanitized;
 }
 
+
+// --- 1. FUNÇÃO DE SALVAMENTO (MANTIDA) ---
 
 document.getElementById('save-table').addEventListener('click', () => {
     if (!db) {
@@ -156,32 +128,27 @@ document.getElementById('save-table').addEventListener('click', () => {
     }
 
     const tableData = [];
-    const sanitizedHeaders = []; // Apenas chaves limpas são necessárias para o Firebase
+    const sanitizedHeaders = [];
     const rows = table.querySelectorAll('tbody tr');
 
-    // 1. Coleta e LIMPA os cabeçalhos (THs)
     headerRow.querySelectorAll('th').forEach(th => {
         if (th.textContent !== 'Ações') {
             const originalHeader = th.textContent.trim();
             const sanitized = sanitizeKey(originalHeader);
             
-            // Certifica-se de que a chave limpa não está vazia
             if (sanitized) {
                  sanitizedHeaders.push(sanitized); 
             } else {
-                // Se a coluna for apenas de símbolos e ficar vazia, use um nome genérico
                 sanitizedHeaders.push(`coluna_${sanitizedHeaders.length + 1}`);
             }
         }
     });
 
-    // 2. Coleta os dados de cada linha, usando as chaves limpas (CORREÇÃO DE USO)
     rows.forEach(row => {
         const rowData = {};
         const cells = row.querySelectorAll('td');
 
         cells.forEach((cell, index) => {
-            // Usa o índice para mapear o conteúdo da célula para a chave limpa
             if (index < sanitizedHeaders.length) {
                 const sanitizedKey = sanitizedHeaders[index]; 
                 rowData[sanitizedKey] = cell.textContent.trim();
@@ -190,19 +157,112 @@ document.getElementById('save-table').addEventListener('click', () => {
         tableData.push(rowData);
     });
 
-    // 3. Estrutura e envia para o Firebase
+    // 4. Estrutura e envia para o Firebase, recarrega a tabela após sucesso
     const dataToSave = {
         data_salvamento: new Date().toISOString(),
-        tabela_investimentos: tableData
+        tabela_investimentos: tableData,
+        // Salva os nomes originais dos cabeçalhos para recriar a tabela
+        nomes_cabecalhos: Array.from(headerRow.cells).slice(0, -1).map(th => th.textContent.trim()) 
     };
 
     const tableRef = db.ref('tabelas_personalizadas');
     tableRef.push(dataToSave)
         .then(() => {
             alert("Tabela de investimentos salva com sucesso!");
+            // 🚨 NOVO: Recarrega a tabela para exibir a versão atualizada
+            loadTableData(); 
         })
         .catch((error) => {
             console.error("Erro ao salvar a tabela:", error);
-            alert("Erro ao salvar a tabela. Verifique o console ou a autenticação do Firebase (Regras de Leitura/Escrita).");
+            alert("Erro ao salvar a tabela. Verifique o console.");
         });
 });
+
+
+// --- 2. FUNÇÃO DE RENDERIZAÇÃO E CARREGAMENTO (NOVO) ---
+
+/**
+ * Limpa e reconstrói o cabeçalho e as linhas da tabela com base nos dados do Firebase.
+ * @param {object} latestRecord - O objeto de dados lido do Firebase (tabela_investimentos e nomes_cabecalhos).
+ */
+function renderTable(latestRecord) {
+    const tableData = latestRecord.tabela_investimentos || [];
+    const headerNames = latestRecord.nomes_cabecalhos || [];
+    
+    // Limpa o corpo da tabela
+    tbody.innerHTML = '';
+    
+    // 1. Limpa e reconstrói o cabeçalho (TH)
+    headerRow.innerHTML = '';
+    
+    headerNames.forEach(name => {
+        const newHeader = document.createElement('th');
+        newHeader.setAttribute('contenteditable', 'true');
+        newHeader.setAttribute('draggable', 'true');
+        newHeader.textContent = name;
+        setupDragListeners(newHeader); // Re-associa os listeners de drag
+        headerRow.appendChild(newHeader);
+    });
+    // Adiciona o cabeçalho 'Ações' fixo
+    headerRow.innerHTML += '<th>Ações</th>';
+
+
+    // 2. Preenche o corpo da tabela (TD)
+    tableData.forEach(rowData => {
+        const newRow = tbody.insertRow();
+        
+        // Itera sobre as chaves (sanitizadas) do objeto de dados
+        headerNames.forEach(originalName => {
+            const sanitizedKey = sanitizeKey(originalName);
+            const cell = newRow.insertCell();
+            cell.setAttribute('contenteditable', 'true');
+            // Busca o valor usando a chave limpa salva
+            cell.textContent = rowData[sanitizedKey] || ''; 
+        });
+        
+        // Adiciona o botão de exclusão na última célula
+        const deleteCell = newRow.insertCell();
+        deleteCell.innerHTML = '<button class="delete-row">Excluir</button>';
+    });
+}
+
+
+/**
+ * Busca o último registro de 'tabelas_personalizadas' no Firebase.
+ */
+function loadTableData() {
+    if (!db) return; // Sai se o DB não estiver pronto
+
+    const tableRef = db.ref('tabelas_personalizadas');
+    
+    // Busca o último registro, ordenado por chave ($key) e limitado a 1.
+    // Você pode usar orderByChild('data_salvamento') se quiser garantir o último
+    // por data, mas orderByValue/Key geralmente funciona para o último push.
+    tableRef.limitToLast(1).once('value', snapshot => {
+        if (snapshot.exists()) {
+            const latestRecordKey = Object.keys(snapshot.val())[0];
+            const latestRecord = snapshot.val()[latestRecordKey];
+            
+            // Renderiza a tabela com os dados lidos
+            renderTable(latestRecord);
+        } else {
+            console.log("Nenhum dado de tabela encontrado no Firebase. Usando estrutura HTML padrão.");
+            // Opcional: manter o cabeçalho e a linha de exemplo do HTML se nada for encontrado.
+            
+        }
+    })
+    .catch(error => {
+        console.error("Erro ao carregar dados do Firebase:", error);
+    });
+}
+
+// 3. PONTO DE ENTRADA: Carrega os dados assim que o script terminar de carregar
+window.onload = function() {
+    // Certifica-se que o firebase-init.js rodou e definiu window.db
+    if (window.db) {
+        loadTableData();
+    } else {
+        // Adiciona um listener para garantir que o loadTableData seja chamado após a inicialização
+        setTimeout(loadTableData, 500); 
+    }
+};
