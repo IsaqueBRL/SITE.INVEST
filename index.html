@@ -1,37 +1,96 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Projeto Personalizado</title>
-    <link rel="stylesheet" href="style.css">
+    <title>ClimaBot - Previsão Fictícia</title>
+    <style>
+        /* CSS BÁSICO PARA O CHATBOT */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        /* ESTILOS DO CHATBOT */
+        #chat-box {
+            height: 400px;
+            padding: 15px;
+            overflow-y: scroll;
+            border-bottom: 1px solid #ccc;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 15px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background-color: #e0f7fa;
+            margin-left: auto;
+            text-align: right;
+        }
+        .bot-message {
+            background-color: #ffe0b2;
+            text-align: left;
+        }
+        #input-container {
+            display: flex;
+            padding: 15px;
+        }
+        #user-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px 0 0 5px;
+            outline: none;
+        }
+        #send-button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 0 5px 5px 0;
+        }
+        #send-button:hover {
+            background-color: #45a049;
+        }
+    </style>
 </head>
 <body>
 
-    <header>
-        <h1>Bem-vindo ao Meu Site!</h1>
-        <nav>
-            <ul>
-                <li><a href="#">Início</a></li>
-                <li><a href="#">Sobre</a></li>
-                <li><a href="#">Contato</a></li>
-            </ul>
-        </nav>
-    </header>
+    <div class="container">
+        <header>
+            <h1>☀️ ClimaBot - Seu Assistente Fictício</h1>
+            <p>Pergunte sobre a previsão do tempo em cidades aleatórias.</p>
+        </header>
 
-    <main>
-        <section id="conteudo-principal">
-            <h2>Sua Área de Criação</h2>
-            <p>Este é um parágrafo de exemplo. Comece a adicionar seus próprios elementos HTML aqui, como títulos, imagens, listas, formulários, etc.</p>
-            <button id="meuBotao">Clique em Mim</button>
-        </section>
-    </main>
+        <div id="chat-box">
+            <div class="message bot-message">Olá! Sou o ClimaBot. Em qual cidade fictícia você gostaria de saber a previsão? (Ex: "Manaus", "São Paulo", "Rio")</div>
+        </div>
 
-    <footer>
-        <p>&copy; 2025 Seu Nome/Empresa</p>
-    </footer>
+        <div id="input-container">
+            <input type="text" id="user-input" placeholder="Digite sua mensagem..." autofocus>
+            <button id="send-button">Enviar</button>
+        </div>
+    </div>
 
     <script src="script.js"></script>
-
 </body>
 </html>
