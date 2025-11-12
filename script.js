@@ -12,13 +12,12 @@ const btnToggleEdicao = document.getElementById('btnToggleEdicao');
 let modoEdicaoAtivo = false;
 let colunaArrastada = null;
 
-// --- Event Listeners ---
+// --- Event Listeners Iniciais ---
 btnAdicionar.addEventListener('click', adicionarLinha);
 btnSalvar.addEventListener('click', salvarDados);
 btnToggleEdicao.addEventListener('click', toggleModoEdicao);
 
-// Inicializa os event listeners de Drag and Drop nos cabeçalhos existentes
-// Eles só serão ativados se o modoEdicaoAtivo for true (ver toggleModoEdicao)
+// Anexa os listeners de Drag and Drop a todos os cabeçalhos (TH)
 tabelaHeadRow.querySelectorAll('th').forEach(th => {
     th.addEventListener('dragstart', handleDragStart);
     th.addEventListener('dragover', handleDragOver);
@@ -33,17 +32,16 @@ tabelaHeadRow.querySelectorAll('th').forEach(th => {
 function toggleModoEdicao() {
     modoEdicaoAtivo = !modoEdicaoAtivo; // Inverte o estado
     
-    // 1. Atualiza o texto do botão
     btnToggleEdicao.textContent = modoEdicaoAtivo ? '✅ Desativar Edição' : '⚙️ Ativar Edição da Tabela';
     
-    // 2. Habilita/Desabilita a edição e o drag and drop
     const ths = tabelaHeadRow.querySelectorAll('th');
     ths.forEach(th => {
-        th.contentEditable = modoEdicaoAtivo; // Habilita/Desabilita a edição de texto
-        th.draggable = modoEdicaoAtivo; // Habilita/Desabilita o Drag and Drop
-        th.classList.toggle('draggable', modoEdicaoAtivo); // Adiciona classe CSS
+        // Habilita/Desabilita a edição e o drag and drop
+        th.contentEditable = modoEdicaoAtivo; 
+        th.draggable = modoEdicaoAtivo; 
+        th.classList.toggle('draggable', modoEdicaoAtivo);
 
-        // Desativa a edição de texto na célula "Ação" para evitar que o usuário estrague a funcionalidade
+        // Desativa a edição de texto na célula "Ação"
         if (th.textContent.trim() === 'Ação') {
              th.contentEditable = false;
         }
@@ -53,7 +51,6 @@ function toggleModoEdicao() {
 }
 
 function reordenarColuna(indexOrigem, indexDestino) {
-    // Reordena a coluna em TODAS as linhas (cabeçalho e corpo)
     const todasAsLinhas = tabelaDados.querySelectorAll('tr');
 
     todasAsLinhas.forEach(linha => {
@@ -62,12 +59,12 @@ function reordenarColuna(indexOrigem, indexDestino) {
         if (celulas[indexOrigem]) {
             const celulaMovida = celulas[indexOrigem];
             
-            // Move a célula usando insertBefore
+            // Lógica para inserir antes ou depois do alvo
             if (indexOrigem > indexDestino) {
                 // Mover para a esquerda: insere antes da célula alvo
                 linha.insertBefore(celulaMovida, celulas[indexDestino]);
             } else {
-                // Mover para a direita: insere antes do próximo elemento (que efetivamente o move para depois do alvo)
+                // Mover para a direita: insere antes do próximo elemento
                 linha.insertBefore(celulaMovida, celulas[indexDestino].nextSibling);
             }
         }
@@ -103,7 +100,6 @@ function handleDrop(e) {
     const indexArrastado = colunasHead.indexOf(colunaArrastada);
     const indexAlvo = colunasHead.indexOf(this);
     
-    // Garante que não está movendo para a própria posição
     if (indexArrastado !== indexAlvo) {
         reordenarColuna(indexArrastado, indexAlvo);
     }
@@ -122,7 +118,7 @@ function handleDragEnd() {
 function adicionarLinha() {
     const novaLinha = tabelaBody.insertRow();
     
-    // As células são inseridas na ordem padrão (Nome, Valor, Ação)
+    // As células são inseridas na ordem padrão (o JS as moverá se necessário)
     let celulaNome = novaLinha.insertCell(0);
     celulaNome.innerHTML = '<input type="text" class="input-nome" placeholder="Digite o nome">';
 
@@ -141,9 +137,7 @@ function salvarDados() {
     const linhas = tabelaBody.querySelectorAll('tr');
     let dadosParaEnviar = [];
     
-    // 1. Coletar os dados mais recentes da tabela
-    // IMPORTANTE: Aqui, os dados são coletados pela classe, não pela posição, 
-    // para funcionar mesmo se as colunas forem movidas!
+    // 1. Coletar os dados (usando classes para serem resistentes à movimentação de colunas)
     linhas.forEach(linha => {
         const inputNome = linha.querySelector('.input-nome');
         const inputValor = linha.querySelector('.input-valor');
@@ -162,6 +156,7 @@ function salvarDados() {
     }
 
     // 2. Enviar os dados para o script PHP
+    // ATENÇÃO: Se o erro 405 persistir, mude esta URL para o seu servidor PHP!
     fetch('salvar.php', { 
         method: 'POST',
         headers: {
@@ -171,7 +166,6 @@ function salvarDados() {
     })
     .then(response => {
         if (!response.ok) {
-            // Lança um erro se o status HTTP não for 2xx (por exemplo, 404, 500)
             throw new Error('Erro na rede ou no servidor. Status: ' + response.status);
         }
         return response.json();
@@ -185,6 +179,6 @@ function salvarDados() {
     })
     .catch((error) => {
         console.error('Erro de requisição:', error);
-        alert('Falha ao tentar conectar com o servidor. Verifique o console. (Certifique-se que o salvar.php está no ar)');
+        alert('Falha ao tentar conectar com o servidor. (Erro de rede ou permissão, verifique se o salvar.php está no ar)');
     });
 }
