@@ -1,33 +1,83 @@
+/* style.css */
 body {
     font-family: Arial, sans-serif;
     padding: 20px;
+    background-color: #f4f4f4;
+}
+
+h1 {
+    color: #333;
+}
+
+.controles {
+    margin-bottom: 20px;
 }
 
 #tabelaDados {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
 #tabelaDados th, #tabelaDados td {
-    border: 1px solid #ccc;
-    padding: 8px;
+    border: 1px solid #ddd;
+    padding: 10px;
     text-align: left;
+}
+
+#tabelaDados th {
+    background-color: #007bff;
+    color: white;
+    user-select: none; /* Evita seleção de texto ao arrastar */
 }
 
 #tabelaDados input {
     width: 90%;
     padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
+
+/* --- Estilos de Edição e Drag and Drop --- */
+
+#tabelaDados th.draggable {
+    cursor: grab; /* Indica que a coluna pode ser arrastada */
+    transition: background-color 0.2s;
+}
+
+#tabelaDados th.dragging {
+    opacity: 0.4; /* Torna a coluna arrastada transparente */
+}
+
+#tabelaDados th.drag-over {
+    /* Indicador visual de onde a coluna será inserida */
+    box-shadow: inset 0 0 0 3px gold; 
+}
+
+/* --- Estilos dos Botões --- */
 
 button {
     padding: 10px 15px;
     margin-right: 10px;
     cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+#btnAdicionarLinha {
+    background-color: #28a745;
+    color: white;
+}
+
+#btnToggleEdicao {
+    background-color: #ffc107;
+    color: #333;
 }
 
 #btnSalvarTudo {
-    background-color: #4CAF50;
+    background-color: #007bff;
     color: white;
-    border: none;
 }
