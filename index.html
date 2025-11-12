@@ -7,31 +7,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        
-        <h1>Calculadora de Juros Compostos</h1>
-        
-        <form id="calculator-form">
-            <label for="initial-investment">Investimento Inicial (R$):</label>
-            <input type="number" id="initial-investment" value="1000" min="0" required>
-
-            <label for="monthly-contribution">Aportes Mensais (R$):</label>
-            <input type="number" id="monthly-contribution" value="100" min="0" required>
-
-            <label for="annual-rate">Taxa Anual de Juros (%):</label>
-            <input type="number" id="annual-rate" value="10" min="0" step="0.01" required>
-
-            <label for="years">Período de Acumulação (Anos):</label>
-            <input type="number" id="years" value="10" min="1" required>
-
-            <button type="submit">Calcular e Salvar no DB</button>
-        </form>
-
-        <div class="result-area">
-            <h2>Resultado do Cálculo</h2>
-            <p id="final-amount">O valor final será exibido aqui.</p>
-        </div>
-    </div>
     
     <div class="table-container">
         <h2>Minha Tabela de Investimentos Personalizada</h2>
@@ -47,7 +22,7 @@
             <thead>
                 <tr id="table-header">
                     <th contenteditable="true" draggable="true">Nome do Ativo</th>
-                    <th contenteditable="true" draggable="true">Valor Atual (R$)</th>
+                    <th contenteditable="true" draggable="true">Valor Atual (R$)</th> 
                     <th contenteditable="true" draggable="true">Percentual (%)</th>
                     <th>Ações</th>
                 </tr>
