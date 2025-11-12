@@ -99,15 +99,15 @@ button:active {
     color: #333;
 }
 
-#btnSalvarTudo {
-    /* Estilo para botão desativado */
+#btnStatus { /* Estilo do indicador de status */
     background-color: #e9ecef;
     color: #6c757d;
-    cursor: not-allowed;
+    cursor: default; /* Não é clicável, é um indicador */
+    border: 1px solid #ccc;
 }
 
-#btnSalvarTudo:disabled {
-    opacity: 0.7;
+#btnStatus:disabled {
+    opacity: 1; /* Garante que a cor de fundo definida pelo JS permaneça */
 }
 
 /* Responsividade */
