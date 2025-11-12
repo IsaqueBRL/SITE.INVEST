@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Tabela Dinâmica</title>
+    <title>Gerenciador de Tabela Dinâmica com Firebase</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <h1>Gerenciador de Dados</h1>
+    <h1>Gerenciador de Dados com Firebase</h1>
+    <p>Seu ID de Usuário: <span id="userIdDisplay">Carregando...</span></p>
 
     <table id="tabelaDados">
         <thead>
@@ -18,16 +19,16 @@
                 <th contenteditable="false" draggable="false">Ação</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="tabelaBody">
             </tbody>
     </table>
 
     <div class="controles">
         <button id="btnAdicionarLinha">➕ Adicionar Linha</button>
         <button id="btnToggleEdicao">⚙️ Ativar Edição da Tabela</button> 
-        <button id="btnSalvarTudo">💾 Salvar Tudo</button>
+        <button id="btnSalvarTudo" disabled>💾 Salvando Automaticamente...</button>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
