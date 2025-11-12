@@ -1,77 +1,51 @@
-// Funções para manipular a interface
-const chatBox = document.getElementById('chat-box');
-const userInput = document.getElementById('user-input');
-const sendButton = document.getElementById('send-button');
+// script.js (Parte 2: Modificações)
+// ... (mantenha as definições de variáveis e a função addMessage) ...
 
-// Adiciona uma mensagem ao chat
-function addMessage(text, sender) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${sender}-message`;
-    messageDiv.textContent = text;
-    chatBox.appendChild(messageDiv);
-    // Rola para a mensagem mais recente
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-// Lógica de Resposta do Chatbot (nossa "IA" simples)
-function getBotResponse(userMessage) {
-    // 1. Converte a mensagem para minúsculas e remove espaços extras para facilitar a comparação
-    const message = userMessage.toLowerCase().trim();
-
-    // 2. Dicionário de Previsões Fictícias
-    const previsoes = {
-        'manaus': 'Hoje em Manaus a temperatura será 32°C com chuva leve no final da tarde.',
-        'são paulo': 'Em São Paulo teremos 25°C e céu nublado com sol tímido.',
-        'rio': 'No Rio de Janeiro a máxima é de 38°C com sol escaldante, ideal para a praia!',
-        'florianópolis': 'Florianópolis terá 22°C e ventos fortes. Traga seu casaco.',
-        'recife': 'Recife terá 29°C e umidade alta, sem previsão de chuva.',
-        'curitiba': 'Curitiba terá um dia frio de 15°C e céu parcialmente encoberto.',
-        'paraná': 'Curitiba terá um dia frio de 15°C e céu parcialmente encoberto.',
-        'sp': 'Em São Paulo teremos 25°C e céu nublado com sol tímido.',
-        'rj': 'No Rio de Janeiro a máxima é de 38°C com sol escaldante, ideal para a praia!',
-    };
-
-    // 3. Verifica a mensagem do usuário
-    if (message.includes('olá') || message.includes('oi') || message.includes('bom dia')) {
-        return 'Olá! Que bom ter você por aqui. Qual cidade fictícia você quer a previsão?';
-    }
-
-    if (message.includes('como você está') || message.includes('tudo bem')) {
-        return 'Eu estou ótimo, pronto para te dar a previsão do tempo! E você?';
-    }
-
-    if (message.includes('quem é você') || message.includes('o que você faz')) {
-        return 'Eu sou o ClimaBot, um assistente fictício de previsão do tempo. Posso te dar a previsão para algumas cidades do Brasil (fictícia, claro!).';
-    }
-
-    // 4. Procura por uma cidade conhecida no dicionário
-    for (const cidade in previsoes) {
-        if (message.includes(cidade)) {
-            return previsoes[cidade];
-        }
-    }
-
-    // 5. Resposta padrão (Fallback)
-    return 'Desculpe, não consegui entender essa cidade ou comando. Tente perguntar sobre "Manaus", "São Paulo" ou "Rio", ou digite "quem é você".';
-}
-
-// Função principal de envio de mensagem
+// Função principal de envio de mensagem MODIFICADA
 function handleUserInput() {
     const userText = userInput.value.trim();
 
     if (userText === '') {
-        return; // Não envia mensagem vazia
+        return;
     }
 
     // 1. Adiciona a mensagem do usuário
     addMessage(userText, 'user');
-    userInput.value = ''; // Limpa o campo de input
+    userInput.value = '';
 
-    // 2. Obtém a resposta do bot após um pequeno atraso para simular o "pensamento"
-    setTimeout(() => {
-        const botResponse = getBotResponse(userText);
-        addMessage(botResponse, 'bot');
-    }, 500); // Atraso de 0.5 segundo
+    // 2. Chama a API do Python/Flask
+    callPythonAPI(userText);
+}
+
+// 🌐 Função que chama o servidor Python
+async function callPythonAPI(message) {
+    const apiUrl = 'http://127.0.0.1:5000/api/chat'; // Endereço do seu servidor Flask
+
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message: message })
+        });
+
+        // Simula um "pensamento"
+        setTimeout(async () => {
+            if (!response.ok) {
+                // Trata erros HTTP
+                throw new Error(`Erro de rede: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const botResponse = data.response;
+            addMessage(botResponse, 'bot');
+        }, 500); // Atraso de 0.5 segundo
+
+    } catch (error) {
+        console.error('Erro ao conectar com o servidor Python:', error);
+        addMessage(`ERRO: Não consegui me conectar com a IA (Servidor Python). Verifique se o 'app.py' está rodando.`, 'bot');
+    }
 }
 
 // Event Listeners (para cliques e tecla Enter)
