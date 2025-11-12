@@ -1,53 +1,258 @@
-// script.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { 
+    getAuth, 
+    signInAnonymously, 
+    signInWithCustomToken, 
+    onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { 
+    getFirestore, 
+    collection, 
+    onSnapshot, 
+    addDoc, 
+    updateDoc, 
+    deleteDoc, 
+    doc 
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// Constantes para elementos do DOM
+// Ativar logs para debug
+setLogLevel('debug'); 
+
+// ----------------------------------------------------
+// 1. CONFIGURAÇÃO E AUTENTICAÇÃO DO FIREBASE
+// ----------------------------------------------------
+
+// Configuração de Firebase (usando valores do ambiente ou fallback)
+const firebaseConfigFallback = {
+    apiKey: "AIzaSyCaVDJ4LtJu-dlvSi4QrDygfhx1hBGSdDM",
+    authDomain: "banco-de-dados-invest.firebaseapp.com",
+    databaseURL: "https://banco-de-dados-invest-default-rtdb.firebaseio.com",
+    projectId: "banco-de-dados-invest",
+    storageBucket: "banco-de-dados-invest.firebasestorage.app",
+    messagingSenderId: "5603892998",
+    appId: "1:5603892998:web:459556f888d31629050887",
+};
+
+const firebaseConfig = typeof __firebase_config !== 'undefined' 
+    ? JSON.parse(__firebase_config) 
+    : firebaseConfigFallback;
+
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+// Inicializa o Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+let userId = null;
+let dbReady = false;
+
+// ----------------------------------------------------
+// 2. ELEMENTOS DO DOM E VARIÁVEIS DE ESTADO
+// ----------------------------------------------------
+
 const tabelaDados = document.getElementById('tabelaDados');
-const tabelaBody = tabelaDados.querySelector('tbody');
+const tabelaBody = document.getElementById('tabelaBody');
 const tabelaHeadRow = tabelaDados.querySelector('thead tr');
 const btnAdicionar = document.getElementById('btnAdicionarLinha');
-const btnSalvar = document.getElementById('btnSalvarTudo');
 const btnToggleEdicao = document.getElementById('btnToggleEdicao');
+const userIdDisplay = document.getElementById('userIdDisplay');
 
-// Variáveis de estado
 let modoEdicaoAtivo = false;
 let colunaArrastada = null;
 
-// --- Event Listeners Iniciais ---
-btnAdicionar.addEventListener('click', adicionarLinha);
-btnSalvar.addEventListener('click', salvarDados);
-btnToggleEdicao.addEventListener('click', toggleModoEdicao);
+// --- Início da Autenticação ---
+async function initializeAuthAndDatabase() {
+    try {
+        if (typeof __initial_auth_token !== 'undefined') {
+            await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+            await signInAnonymously(auth);
+        }
+    } catch (error) {
+        console.error("Erro na autenticação:", error);
+    }
+}
 
-// Anexa os listeners de Drag and Drop a todos os cabeçalhos (TH)
-tabelaHeadRow.querySelectorAll('th').forEach(th => {
-    th.addEventListener('dragstart', handleDragStart);
-    th.addEventListener('dragover', handleDragOver);
-    th.addEventListener('dragleave', handleDragLeave);
-    th.addEventListener('drop', handleDrop);
-    th.addEventListener('dragend', handleDragEnd);
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        userId = user.uid;
+        userIdDisplay.textContent = userId;
+        dbReady = true;
+        
+        // 1. Ativa listeners de UI
+        btnAdicionar.addEventListener('click', adicionarLinha);
+        btnToggleEdicao.addEventListener('click', toggleModoEdicao);
+        
+        // 2. Inicializa Drag and Drop nos cabeçalhos
+        tabelaHeadRow.querySelectorAll('th').forEach(th => {
+            th.addEventListener('dragstart', handleDragStart);
+            th.addEventListener('dragover', handleDragOver);
+            th.addEventListener('dragleave', handleDragLeave);
+            th.addEventListener('drop', handleDrop);
+            th.addEventListener('dragend', handleDragEnd);
+        });
+
+        // 3. Inicia a escuta em tempo real do Firestore
+        setupRealtimeListener();
+
+    } else {
+        userIdDisplay.textContent = 'Não autenticado';
+        dbReady = false;
+    }
 });
 
+initializeAuthAndDatabase();
 
-// --- Funções de Edição e Movimentação ---
+// --- Firestore Helpers ---
+
+// Define o caminho da coleção privada: /artifacts/{appId}/users/{userId}/dados_tabela
+function getCollectionRef() {
+    if (!dbReady || !userId) {
+        console.error("Firebase/Auth não pronto. userId:", userId);
+        return null;
+    }
+    // Cria a referência para a coleção privada do usuário
+    return collection(db, `artifacts/${appId}/users/${userId}/dados_tabela`);
+}
+
+function setupRealtimeListener() {
+    const colRef = getCollectionRef();
+    if (!colRef) return;
+
+    // Escuta as mudanças em tempo real
+    onSnapshot(colRef, (snapshot) => {
+        // Limpa a tabela
+        tabelaBody.innerHTML = '';
+        
+        snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            data.id = doc.id; // Adiciona o ID do documento
+            adicionarLinhaNaUI(data);
+        });
+
+        // Adiciona uma linha inicial se a tabela estiver vazia
+        if (snapshot.empty) {
+            console.log("Nenhum dado encontrado. Adicionando linha inicial.");
+            adicionarLinha(); 
+        }
+    }, (error) => {
+        console.error("Erro ao ouvir snapshot do Firestore:", error);
+    });
+}
+
+// ----------------------------------------------------
+// 3. FUNÇÕES CRUD (FIREBASE)
+// ----------------------------------------------------
+
+async function adicionarLinha() {
+    // Adiciona uma nova linha com valores padrão no Firestore
+    const colRef = getCollectionRef();
+    if (!colRef) return;
+    
+    try {
+        await addDoc(colRef, {
+            nome: 'Novo Item',
+            valor: 0,
+            timestamp: Date.now() // Pode ser usado para ordenação
+        });
+        // A UI é atualizada pelo onSnapshot, então não faz nada aqui
+    } catch (e) {
+        console.error("Erro ao adicionar documento:", e);
+        // Não usar alert(), usar console.error ou modal customizado
+    }
+}
+
+async function atualizarCampo(element, id, campo) {
+    if (!dbReady || !userId) return;
+
+    // Converte para número se for o campo 'valor'
+    const valor = campo === 'valor' ? parseFloat(element.value) : element.value.trim();
+
+    try {
+        const docRef = doc(db, `artifacts/${appId}/users/${userId}/dados_tabela`, id);
+        await updateDoc(docRef, { [campo]: valor });
+        
+        // Feedback visual de salvamento
+        element.style.backgroundColor = '#d4edda'; 
+        setTimeout(() => { element.style.backgroundColor = ''; }, 500);
+        
+    } catch (e) {
+        console.error("Erro ao atualizar documento:", e);
+    }
+}
+
+// Funções de UI (chamadas pelo HTML globalmente)
+window.removerLinha = async function(botao, id) {
+    if (!dbReady || !userId) {
+        console.warn("Banco de dados não está pronto para remover.");
+        return;
+    }
+
+    try {
+        const docRef = doc(db, `artifacts/${appId}/users/${userId}/dados_tabela`, id);
+        await deleteDoc(docRef);
+        // A UI será atualizada automaticamente
+    } catch (e) {
+        console.error("Erro ao remover documento:", e);
+    }
+}
+
+// ----------------------------------------------------
+// 4. FUNÇÕES DA TABELA (UI e Drag/Drop)
+// ----------------------------------------------------
+
+function adicionarLinhaNaUI(data) {
+    const novaLinha = tabelaBody.insertRow();
+    novaLinha.setAttribute('data-doc-id', data.id); // ID do documento Firestore
+
+    // 1. Célula Nome (Salva ao perder o foco - onblur)
+    let celulaNome = novaLinha.insertCell();
+    celulaNome.innerHTML = `
+        <input 
+            type="text" 
+            class="input-nome" 
+            value="${data.nome || ''}"
+            onblur="atualizarCampo(this, '${data.id}', 'nome')"
+        >`;
+
+    // 2. Célula Valor (Salva ao valor mudar - onchange)
+    let celulaValor = novaLinha.insertCell();
+    celulaValor.innerHTML = `
+        <input 
+            type="number" 
+            class="input-valor" 
+            value="${data.valor || 0}"
+            onchange="atualizarCampo(this, '${data.id}', 'valor')"
+        >`;
+    
+    // 3. Célula Ação (Botão de Remover)
+    let celulaAcao = novaLinha.insertCell();
+    celulaAcao.innerHTML = `<button onclick="removerLinha(this, '${data.id}')">Remover</button>`;
+}
+
+
+// --- Funções de Edição (Drag and Drop) ---
 
 function toggleModoEdicao() {
-    modoEdicaoAtivo = !modoEdicaoAtivo; // Inverte o estado
+    modoEdicaoAtivo = !modoEdicaoAtivo;
     
     btnToggleEdicao.textContent = modoEdicaoAtivo ? '✅ Desativar Edição' : '⚙️ Ativar Edição da Tabela';
     
     const ths = tabelaHeadRow.querySelectorAll('th');
     ths.forEach(th => {
-        // Habilita/Desabilita a edição e o drag and drop
         th.contentEditable = modoEdicaoAtivo; 
         th.draggable = modoEdicaoAtivo; 
         th.classList.toggle('draggable', modoEdicaoAtivo);
 
-        // Desativa a edição de texto na célula "Ação"
+        // Garante que a coluna Ação não seja editável
         if (th.textContent.trim() === 'Ação') {
              th.contentEditable = false;
         }
     });
 
-    alert(modoEdicaoAtivo ? 'Modo de Edição ATIVADO. Edite os títulos ou arraste as colunas.' : 'Modo de Edição DESATIVADO.');
+    console.log(modoEdicaoAtivo ? 'Modo de Edição ATIVADO.' : 'Modo de Edição DESATIVADO.');
 }
 
 function reordenarColuna(indexOrigem, indexDestino) {
@@ -59,12 +264,10 @@ function reordenarColuna(indexOrigem, indexDestino) {
         if (celulas[indexOrigem]) {
             const celulaMovida = celulas[indexOrigem];
             
-            // Lógica para inserir antes ou depois do alvo
+            // Lógica para mover a célula (cabeçalho ou dados)
             if (indexOrigem > indexDestino) {
-                // Mover para a esquerda: insere antes da célula alvo
                 linha.insertBefore(celulaMovida, celulas[indexDestino]);
             } else {
-                // Mover para a direita: insere antes do próximo elemento
                 linha.insertBefore(celulaMovida, celulas[indexDestino].nextSibling);
             }
         }
@@ -113,72 +316,5 @@ function handleDragEnd() {
     document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
 }
 
-// --- Funções de Adicionar e Salvar ---
-
-function adicionarLinha() {
-    const novaLinha = tabelaBody.insertRow();
-    
-    // As células são inseridas na ordem padrão (o JS as moverá se necessário)
-    let celulaNome = novaLinha.insertCell(0);
-    celulaNome.innerHTML = '<input type="text" class="input-nome" placeholder="Digite o nome">';
-
-    let celulaValor = novaLinha.insertCell(1);
-    celulaValor.innerHTML = '<input type="number" class="input-valor" value="0">';
-    
-    let celulaAcao = novaLinha.insertCell(2);
-    celulaAcao.innerHTML = '<button onclick="removerLinha(this)">Remover</button>';
-}
-
-function removerLinha(botao) {
-    botao.closest('tr').remove();
-}
-
-function salvarDados() {
-    const linhas = tabelaBody.querySelectorAll('tr');
-    let dadosParaEnviar = [];
-    
-    // 1. Coletar os dados (usando classes para serem resistentes à movimentação de colunas)
-    linhas.forEach(linha => {
-        const inputNome = linha.querySelector('.input-nome');
-        const inputValor = linha.querySelector('.input-valor');
-        
-        if (inputNome && inputValor && inputNome.value.trim() !== '') {
-            dadosParaEnviar.push({
-                nome: inputNome.value.trim(),
-                valor: parseFloat(inputValor.value) || 0
-            });
-        }
-    });
-
-    if (dadosParaEnviar.length === 0) {
-        alert('Nenhuma linha válida para salvar.');
-        return;
-    }
-
-    // 2. Enviar os dados para o script PHP
-    // ATENÇÃO: Se o erro 405 persistir, mude esta URL para o seu servidor PHP!
-    fetch('salvar.php', { 
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dadosParaEnviar),
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Erro na rede ou no servidor. Status: ' + response.status);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.status === 'success') {
-            alert('Dados salvos com sucesso!');
-        } else {
-            alert('Erro ao salvar no servidor: ' + data.message);
-        }
-    })
-    .catch((error) => {
-        console.error('Erro de requisição:', error);
-        alert('Falha ao tentar conectar com o servidor. (Erro de rede ou permissão, verifique se o salvar.php está no ar)');
-    });
-}
+// Expõe a função de atualização para ser usada no HTML
+window.atualizarCampo = atualizarCampo;
