@@ -1,7 +1,7 @@
 // script.js
 
-// 1. IMPORTAÇÕES DO FIREBASE (Precisa estar no mesmo diretório ou ter o caminho correto)
-import { db, ref, push } from './firebase-init.js'; 
+// Variável global do banco de dados (acessada via window.db, definido em firebase-init.js)
+const db = window.db; 
 
 // 2. VARIÁVEIS GLOBAIS DA TABELA
 const table = document.getElementById('editable-table');
@@ -46,7 +46,7 @@ document.getElementById('calculator-form').addEventListener('submit', function(e
          resultElement.style.color = '#28a745';
     }
 
-    // 3. Armazenar os dados no Firebase
+    // 3. Armazenar os dados no Firebase (USANDO .ref() e .push() do DB)
     const calculationData = {
         data_registro: new Date().toISOString(),
         investimento_inicial: initialInvestment,
@@ -56,8 +56,8 @@ document.getElementById('calculator-form').addEventListener('submit', function(e
         valor_final_calculado: finalAmount
     };
 
-    const calculationsRef = ref(db, 'calculos_juros_compostos'); 
-    push(calculationsRef, calculationData)
+    const calculationsRef = db.ref('calculos_juros_compostos'); 
+    calculationsRef.push(calculationData)
         .then(() => {
             console.log("Cálculo armazenado com sucesso no Firebase!");
         })
@@ -186,6 +186,11 @@ document.getElementById('add-column-left').addEventListener('click', () => addCo
 // =========================================================================
 
 document.getElementById('save-table').addEventListener('click', () => {
+    if (!db) {
+        alert("Erro: O Firebase não foi inicializado corretamente.");
+        return;
+    }
+
     const tableData = [];
     const headers = [];
     const rows = table.querySelectorAll('tbody tr');
@@ -217,8 +222,8 @@ document.getElementById('save-table').addEventListener('click', () => {
         tabela_investimentos: tableData
     };
 
-    const tableRef = ref(db, 'tabelas_personalizadas');
-    push(tableRef, dataToSave)
+    const tableRef = db.ref('tabelas_personalizadas');
+    tableRef.push(dataToSave)
         .then(() => {
             alert("Tabela de investimentos salva com sucesso!");
         })
