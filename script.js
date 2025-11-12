@@ -23,30 +23,34 @@ setLogLevel('debug');
 // 1. CONFIGURAÇÃO E AUTENTICAÇÃO DO FIREBASE
 // ----------------------------------------------------
 
-// Tenta carregar a configuração de ambiente, se disponível
-const firebaseConfig = typeof __firebase_config !== 'undefined' 
-    ? JSON.parse(__firebase_config) 
-    : null; 
-
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+// SUA CONFIGURAÇÃO INCLUÍDA DIRETAMENTE, CONFORME AUTORIZADO
+const firebaseConfig = {
+    apiKey: "AIzaSyCaVDJ4LtJu-dlvSi4QrDygfhx1hBGSdDM",
+    authDomain: "banco-de-dados-invest.firebaseapp.com",
+    databaseURL: "https://banco-de-dados-invest-default-rtdb.firebaseio.com",
+    projectId: "banco-de-dados-invest",
+    storageBucket: "banco-de-dados-invest.firebasestorage.app",
+    messagingSenderId: "5603892998",
+    appId: "1:5603892998:web:459556f888d31629050887",
+    measurementId: "G-JJWKMYXHTH"
+};
+// Usaremos o projectId no caminho do Firestore para criar uma coleção única
+// Não precisamos do appId diretamente no código, mas o mantemos na config.
 
 // Inicializa o Firebase
 let app = null;
 let db = null;
 let auth = null;
 
-if (firebaseConfig) {
-    try {
-        app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-        auth = getAuth(app);
-        console.log("Firebase inicializado com sucesso.");
-    } catch (e) {
-        console.error("Erro ao inicializar Firebase (configuração inválida):", e);
-    }
-} else {
-    console.error("Configuração do Firebase não encontrada. O aplicativo não funcionará.");
+try {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app); // Usamos Firestore para a tabela
+    auth = getAuth(app);
+    console.log("Firebase inicializado com a configuração fixa.");
+} catch (e) {
+    console.error("Erro CRÍTICO ao inicializar Firebase com a configuração fixa:", e);
 }
+
 
 let userId = null;
 let dbReady = false;
@@ -90,21 +94,22 @@ function updateStatus(text, color) {
 // --- Início da Autenticação ---
 async function initializeAuthAndDatabase() {
     if (!auth) {
-        userIdDisplay.textContent = 'ERRO: Sem Configuração Firebase';
+        userIdDisplay.textContent = 'ERRO: Inicialização de Auth Falhou';
         updateStatus('❌ Configuração Inválida', '#dc3545'); 
         return;
     }
 
     try {
+        // Tentativa de signInWithCustomToken (se a variável de ambiente for injetada)
         if (typeof __initial_auth_token !== 'undefined') {
             await signInWithCustomToken(auth, __initial_auth_token);
         } else {
-            // Tenta o login anônimo como fallback seguro
+            // Se não houver token customizado, faz o login anônimo
             await signInAnonymously(auth);
         }
     } catch (error) {
-        // Se a autenticação falhar (e.g., auth/configuration-not-found)
-        console.error("Erro na autenticação:", error);
+        // Agora, se houver falha, é provável que a Autenticação não esteja ativada no Firebase
+        console.error("Erro na autenticação (Verifique se o login Anônimo está ativo):", error);
         userIdDisplay.textContent = 'ERRO DE AUTH (Verifique o console)';
         updateStatus('❌ Falha na Autenticação', '#dc3545'); 
     }
@@ -141,20 +146,20 @@ if (auth) {
 
     initializeAuthAndDatabase();
 } else {
-     userIdDisplay.textContent = 'ERRO: Sem Configuração Firebase';
+     userIdDisplay.textContent = 'ERRO: Inicialização Firebase Falhou';
 }
 
 
 // --- Firestore Helpers ---
 
-// Define o caminho da coleção privada: /artifacts/{appId}/users/{userId}/dados_tabela
+// Define o caminho da coleção privada: /artifacts/{projectId}/users/{userId}/dados_tabela
 function getCollectionRef() {
     if (!dbReady || !userId || !db) {
         console.error("Firebase/Auth ou Firestore não pronto. userId:", userId);
         return null;
     }
-    // Cria a referência para a coleção privada do usuário
-    return collection(db, `artifacts/${appId}/users/${userId}/dados_tabela`);
+    // Cria a referência para a coleção privada do usuário, usando projectId como parte do caminho
+    return collection(db, `artifacts/${firebaseConfig.projectId}/users/${userId}/dados_tabela`);
 }
 
 
@@ -223,7 +228,7 @@ async function atualizarCampo(element, id, campo) {
     updateStatus('🔄 Salvando...', '#007bff'); // Saving indicator
 
     try {
-        const docRef = doc(db, `artifacts/${appId}/users/${userId}/dados_tabela`, id);
+        const docRef = doc(db, `artifacts/${firebaseConfig.projectId}/users/${userId}/dados_tabela`, id);
         await updateDoc(docRef, { [campo]: valor });
         
         // Feedback visual de salvamento na célula
@@ -248,7 +253,7 @@ window.removerLinha = async function(botao, id) {
     updateStatus('🔄 Removendo...', '#007bff'); // Saving indicator
 
     try {
-        const docRef = doc(db, `artifacts/${appId}/users/${userId}/dados_tabela`, id);
+        const docRef = doc(db, `artifacts/${firebaseConfig.projectId}/users/${userId}/dados_tabela`, id);
         await deleteDoc(docRef);
         updateStatus('✅ Removido e Salvo!', '#28a745'); // Success
     } catch (e) {
