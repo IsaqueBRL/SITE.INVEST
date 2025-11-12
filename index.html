@@ -1,27 +1,69 @@
-<div class="table-container">
-    <h2>Minha Tabela de Investimentos Personalizada</h2>
-    <div class="controls">
-        <button id="add-column-left">Adicionar Coluna (Esquerda)</button>
-        <button id="add-column-right">Adicionar Coluna (Direita)</button>
-        <button id="add-row">Adicionar Linha</button>
-        <p class="note">⚠️ Clique duas vezes no cabeçalho ou célula para editar o texto.</p>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investimentos Pessoais - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        
+        <h1>Calculadora de Juros Compostos</h1>
+        
+        <form id="calculator-form">
+            <label for="initial-investment">Investimento Inicial (R$):</label>
+            <input type="number" id="initial-investment" value="1000" min="0" required>
+
+            <label for="monthly-contribution">Aportes Mensais (R$):</label>
+            <input type="number" id="monthly-contribution" value="100" min="0" required>
+
+            <label for="annual-rate">Taxa Anual de Juros (%):</label>
+            <input type="number" id="annual-rate" value="10" min="0" step="0.01" required>
+
+            <label for="years">Período de Acumulação (Anos):</label>
+            <input type="number" id="years" value="10" min="1" required>
+
+            <button type="submit">Calcular e Salvar no DB</button>
+        </form>
+
+        <div class="result-area">
+            <h2>Resultado do Cálculo</h2>
+            <p id="final-amount">O valor final será exibido aqui.</p>
+        </div>
+    </div>
+    
+    <div class="table-container">
+        <h2>Minha Tabela de Investimentos Personalizada</h2>
+        <div class="controls">
+            <button id="add-column-left">Adicionar Coluna (Esquerda)</button>
+            <button id="add-column-right">Adicionar Coluna (Direita)</button>
+            <button id="add-row">Adicionar Linha</button>
+            <button id="save-table">Salvar Tabela no DB</button>
+            <p class="note">⚠️ Clique duas vezes no cabeçalho ou célula para editar o texto.</p>
+        </div>
+
+        <table id="editable-table">
+            <thead>
+                <tr id="table-header">
+                    <th contenteditable="true" draggable="true">Nome do Ativo</th>
+                    <th contenteditable="true" draggable="true">Valor Atual (R$)</th>
+                    <th contenteditable="true" draggable="true">Percentual (%)</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td contenteditable="true">Tesouro Selic</td>
+                    <td contenteditable="true">1000.00</td>
+                    <td contenteditable="true">10.0</td>
+                    <td><button class="delete-row">Excluir</button></td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
-    <table id="editable-table">
-        <thead>
-            <tr id="table-header">
-                <th contenteditable="true" data-col-id="1" draggable="true">Nome do Ativo</th>
-                <th contenteditable="true" data-col-id="2" draggable="true">Valor Atual (R$)</th>
-                <th contenteditable="true" data-col-id="3" draggable="true">Percentual (%)</th>
-                <th>Ações</th> </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td contenteditable="true">Tesouro Selic</td>
-                <td contenteditable="true">1000.00</td>
-                <td contenteditable="true">10.0</td>
-                <td><button class="delete-row">Excluir</button></td>
-            </tr>
-        </tbody>
-    </table>
-</div>
+    <script type="module" src="firebase-init.js"></script>
+    <script type="module" src="script.js"></script>
+</body>
+</html>
