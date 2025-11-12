@@ -1,12 +1,11 @@
-// script.js - CÓDIGO AJUSTADO PARA GARANTIR O ENVIO
+// script.js - AJUSTADO PARA CORRIGIR O ReferenceError
 
-// --- 1. Definição das Variáveis (Garante que os elementos foram carregados) ---
-// É importante que este script.js seja carregado no final do index.html (como fizemos).
+// --- 1. Definição das Variáveis (CORREÇÃO DE ReferenceError) ---
+// Garante que os elementos do HTML sejam capturados corretamente pelo ID.
 const chatBox = document.getElementById('chat-box');
 const userInput = document.getElementById('user-input');
-const sendButton = document.getElementById('send-button');
+const sendButton = document.getElementById('send-button'); // OK!
 
-// Variável de controle para evitar múltiplos envios enquanto espera a resposta
 let isWaitingForResponse = false; 
 
 // --- 2. Funções de Interface ---
@@ -23,9 +22,10 @@ function addMessage(text, sender) {
 async function callPythonAPI(message) {
     const apiUrl = 'http://127.0.0.1:5000/api/chat'; // Endereço do seu servidor Flask
 
-    // Impede novo envio
+    // Bloqueia novo envio enquanto espera a resposta
     isWaitingForResponse = true;
-    sendButton.disabled = true; // Desabilita o botão
+    sendButton.disabled = true; 
+    userInput.disabled = true;
 
     try {
         const response = await fetch(apiUrl, {
@@ -39,22 +39,23 @@ async function callPythonAPI(message) {
         // Simula um "pensamento" (mantemos o delay, mas o fetch já espera)
         setTimeout(async () => {
             if (!response.ok) {
-                // Se a resposta HTTP for um erro (ex: 404, 500)
-                throw new Error(`Erro no servidor (código ${response.status}). Verifique o console do servidor Flask.`);
+                // Trata erros HTTP
+                throw new Error(`Erro de rede: ${response.status}. Verifique o console do servidor Flask.`);
             }
 
             const data = await response.json();
             const botResponse = data.response;
             addMessage(botResponse, 'bot');
-        }, 500);
+        }, 500); 
 
     } catch (error) {
         console.error('ERRO FATAL: Não foi possível conectar com o servidor Python.', error);
-        addMessage(`ERRO: Falha ao comunicar com a IA (Servidor Python). Verifique se o 'app.py' está rodando no endereço ${apiUrl}.`, 'bot');
+        addMessage(`ERRO: Falha ao comunicar com a IA. Verifique se o 'app.py' está rodando no endereço ${apiUrl}.`, 'bot');
     } finally {
-        // Libera o envio, independentemente de sucesso ou falha
+        // Libera o envio
         isWaitingForResponse = false;
         sendButton.disabled = false;
+        userInput.disabled = false;
         userInput.focus(); // Coloca o cursor de volta
     }
 }
@@ -81,13 +82,20 @@ function handleUserInput() {
     callPythonAPI(userText);
 }
 
-// --- 5. Event Listeners ---
-// Aciona a função no clique do botão
-sendButton.addEventListener('click', handleUserInput); 
+// --- 5. Event Listeners (Garantindo que estão no final) ---
 
-// Aciona a função ao pressionar a tecla Enter no campo de input
-userInput.addEventListener('keypress', function (e) {
-    if (e.key === 'Enter') {
-        handleUserInput();
-    }
-});
+// Verifica se os elementos foram encontrados antes de adicionar listeners
+if (sendButton && userInput) {
+    // Aciona a função no clique do botão
+    sendButton.addEventListener('click', handleUserInput); 
+
+    // Aciona a função ao pressionar a tecla Enter no campo de input
+    userInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            handleUserInput();
+        }
+    });
+} else {
+    // Caso ainda haja um problema, exibe um erro útil no console
+    console.error("Erro: Elementos 'send-button' ou 'user-input' não foram encontrados no DOM. Verifique os IDs no index.html.");
+}
