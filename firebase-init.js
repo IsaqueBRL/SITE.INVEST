@@ -1,11 +1,8 @@
 // firebase-init.js
 
-// Importa as funções necessárias do Firebase SDK
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getDatabase, ref, push } from "firebase/database"; 
+// REMOVIDOS OS IMPORTS - As funções agora são carregadas globalmente pelo CDN no index.html
 
-// Sua configuração do Firebase (MANTENHA ESTA CHAVE PRIVADA EM AMBIENTES REAIS!)
+// Sua configuração do Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyCaVDJ4LtJu-dlvSi4QrDygfhx1hBGSdDM",
     authDomain: "banco-de-dados-invest.firebaseapp.com",
@@ -17,10 +14,9 @@ const firebaseConfig = {
     measurementId: "G-JJWKMYXHTH"
 };
 
-// Inicializa o Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+// Inicializa o Firebase usando a variável global 'firebase'
+const app = firebase.initializeApp(firebaseConfig);
+const analytics = firebase.analytics();
 
-// Inicializa e exporta o Realtime Database e suas funções
-export const db = getDatabase(app);
-export { ref, push };
+// Inicializa o Realtime Database e o armazena em uma variável global para acesso em script.js
+window.db = app.database();
