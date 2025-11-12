@@ -23,7 +23,7 @@ setLogLevel('debug');
 // 1. CONFIGURAÇÃO E AUTENTICAÇÃO DO FIREBASE
 // ----------------------------------------------------
 
-// Configuração de Firebase (usando valores do ambiente ou fallback)
+// Configuração de Firebase (usando valores do ambiente ou fallback com as suas credenciais)
 const firebaseConfigFallback = {
     apiKey: "AIzaSyCaVDJ4LtJu-dlvSi4QrDygfhx1hBGSdDM",
     authDomain: "banco-de-dados-invest.firebaseapp.com",
@@ -57,6 +57,7 @@ const tabelaBody = document.getElementById('tabelaBody');
 const tabelaHeadRow = tabelaDados.querySelector('thead tr');
 const btnAdicionar = document.getElementById('btnAdicionarLinha');
 const btnToggleEdicao = document.getElementById('btnToggleEdicao');
+const btnStatus = document.getElementById('btnStatus'); // Novo ID
 const userIdDisplay = document.getElementById('userIdDisplay');
 
 let modoEdicaoAtivo = false;
@@ -117,12 +118,39 @@ function getCollectionRef() {
     return collection(db, `artifacts/${appId}/users/${userId}/dados_tabela`);
 }
 
+/**
+ * Atualiza o status visual do botão indicador.
+ * @param {string} text - O texto a ser exibido.
+ * @param {string} color - A cor de fundo.
+ */
+function updateStatus(text, color) {
+    btnStatus.textContent = text;
+    btnStatus.style.backgroundColor = color;
+    btnStatus.style.color = color === '#e9ecef' ? '#6c757d' : 'white';
+    
+    // Reset status após 3 segundos se for uma mensagem de sucesso
+    if (color === '#28a745') { // Green for success
+        setTimeout(() => {
+            btnStatus.textContent = '💾 Salvando Automaticamente';
+            btnStatus.style.backgroundColor = '#e9ecef';
+            btnStatus.style.color = '#6c757d';
+        }, 3000);
+    }
+}
+
+
 function setupRealtimeListener() {
     const colRef = getCollectionRef();
     if (!colRef) return;
 
+    // Antes de escutar, mostra que está conectando
+    updateStatus('🔗 Conectando...', '#007bff'); 
+
     // Escuta as mudanças em tempo real
     onSnapshot(colRef, (snapshot) => {
+        // Se a primeira conexão for bem sucedida, mostra que está ativo
+        updateStatus('✅ Conectado', '#28a745'); // Success status on initial load/sync
+        
         // Limpa a tabela
         tabelaBody.innerHTML = '';
         
@@ -139,6 +167,7 @@ function setupRealtimeListener() {
         }
     }, (error) => {
         console.error("Erro ao ouvir snapshot do Firestore:", error);
+        updateStatus('❌ Erro de Conexão', '#dc3545'); // Error status
     });
 }
 
@@ -151,35 +180,41 @@ async function adicionarLinha() {
     const colRef = getCollectionRef();
     if (!colRef) return;
     
+    updateStatus('🔄 Salvando...', '#007bff'); // Saving indicator
+    
     try {
         await addDoc(colRef, {
             nome: 'Novo Item',
             valor: 0,
-            timestamp: Date.now() // Pode ser usado para ordenação
+            timestamp: Date.now() 
         });
-        // A UI é atualizada pelo onSnapshot, então não faz nada aqui
+        updateStatus('✅ Salvo!', '#28a745'); // Success
     } catch (e) {
         console.error("Erro ao adicionar documento:", e);
-        // Não usar alert(), usar console.error ou modal customizado
+        updateStatus('❌ Erro ao Salvar', '#dc3545'); // Error
     }
 }
 
 async function atualizarCampo(element, id, campo) {
     if (!dbReady || !userId) return;
 
-    // Converte para número se for o campo 'valor'
     const valor = campo === 'valor' ? parseFloat(element.value) : element.value.trim();
+
+    updateStatus('🔄 Salvando...', '#007bff'); // Saving indicator
 
     try {
         const docRef = doc(db, `artifacts/${appId}/users/${userId}/dados_tabela`, id);
         await updateDoc(docRef, { [campo]: valor });
         
-        // Feedback visual de salvamento
+        // Feedback visual de salvamento na célula
         element.style.backgroundColor = '#d4edda'; 
         setTimeout(() => { element.style.backgroundColor = ''; }, 500);
+
+        updateStatus('✅ Salvo!', '#28a745'); // Success
         
     } catch (e) {
         console.error("Erro ao atualizar documento:", e);
+        updateStatus('❌ Erro ao Salvar', '#dc3545'); // Error
     }
 }
 
@@ -189,13 +224,16 @@ window.removerLinha = async function(botao, id) {
         console.warn("Banco de dados não está pronto para remover.");
         return;
     }
+    
+    updateStatus('🔄 Removendo...', '#007bff'); // Saving indicator
 
     try {
         const docRef = doc(db, `artifacts/${appId}/users/${userId}/dados_tabela`, id);
         await deleteDoc(docRef);
-        // A UI será atualizada automaticamente
+        updateStatus('✅ Removido e Salvo!', '#28a745'); // Success
     } catch (e) {
         console.error("Erro ao remover documento:", e);
+        updateStatus('❌ Erro ao Remover', '#dc3545'); // Error
     }
 }
 
