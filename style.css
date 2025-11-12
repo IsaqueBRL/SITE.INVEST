@@ -30,7 +30,7 @@ h1 {
 #tabelaDados th {
     background-color: #007bff;
     color: white;
-    user-select: none; /* Evita seleção de texto ao arrastar */
+    user-select: none; 
 }
 
 #tabelaDados input {
@@ -43,12 +43,12 @@ h1 {
 /* --- Estilos de Edição e Drag and Drop --- */
 
 #tabelaDados th.draggable {
-    cursor: grab; /* Indica que a coluna pode ser arrastada */
+    cursor: grab; /* Cursor de arrastar */
     transition: background-color 0.2s;
 }
 
 #tabelaDados th.dragging {
-    opacity: 0.4; /* Torna a coluna arrastada transparente */
+    opacity: 0.4;
 }
 
 #tabelaDados th.drag-over {
