@@ -1,11 +1,11 @@
 # app.py
 
 from flask import Flask, request, jsonify
-from flask_cors import CORS # Essencial para comunicação JS/Python
+from flask_cors import CORS 
 
 # Inicializa o aplicativo Flask
 app = Flask(__name__)
-# Habilita CORS para permitir que o JavaScript (http://127.0.0.1) se comunique com o Python (http://127.0.0.1:5000)
+# Habilita CORS
 CORS(app) 
 
 # Dicionário de Previsões Fictícias
@@ -41,14 +41,9 @@ def get_python_bot_response(user_message):
 # 🌐 Rota da API que o JavaScript irá chamar
 @app.route('/api/chat', methods=['POST'])
 def chat():
-    # Pega os dados JSON enviados pelo JavaScript
     data = request.get_json()
     user_message = data.get('message', '')
-
-    # Chama a função de IA em Python
     bot_response = get_python_bot_response(user_message)
-
-    # Retorna a resposta como JSON
     return jsonify({'response': bot_response})
 
 # 🚀 Executa o servidor
