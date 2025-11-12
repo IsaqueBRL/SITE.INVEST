@@ -1,1 +1,33 @@
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+}
 
+#tabelaDados {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+#tabelaDados th, #tabelaDados td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+}
+
+#tabelaDados input {
+    width: 90%;
+    padding: 5px;
+}
+
+button {
+    padding: 10px 15px;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+#btnSalvarTudo {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+}
