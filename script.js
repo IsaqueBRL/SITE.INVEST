@@ -23,27 +23,30 @@ setLogLevel('debug');
 // 1. CONFIGURAÇÃO E AUTENTICAÇÃO DO FIREBASE
 // ----------------------------------------------------
 
-// Configuração de Firebase (usando valores do ambiente ou fallback com as suas credenciais)
-const firebaseConfigFallback = {
-    apiKey: "AIzaSyCaVDJ4LtJu-dlvSi4QrDygfhx1hBGSdDM",
-    authDomain: "banco-de-dados-invest.firebaseapp.com",
-    databaseURL: "https://banco-de-dados-invest-default-rtdb.firebaseio.com",
-    projectId: "banco-de-dados-invest",
-    storageBucket: "banco-de-dados-invest.firebasestorage.app",
-    messagingSenderId: "5603892998",
-    appId: "1:5603892998:web:459556f888d31629050887",
-};
-
+// Tenta carregar a configuração de ambiente, se disponível
 const firebaseConfig = typeof __firebase_config !== 'undefined' 
     ? JSON.parse(__firebase_config) 
-    : firebaseConfigFallback;
+    : null; 
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 // Inicializa o Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+let app = null;
+let db = null;
+let auth = null;
+
+if (firebaseConfig) {
+    try {
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        console.log("Firebase inicializado com sucesso.");
+    } catch (e) {
+        console.error("Erro ao inicializar Firebase (configuração inválida):", e);
+    }
+} else {
+    console.error("Configuração do Firebase não encontrada. O aplicativo não funcionará.");
+}
 
 let userId = null;
 let dbReady = false;
@@ -57,71 +60,17 @@ const tabelaBody = document.getElementById('tabelaBody');
 const tabelaHeadRow = tabelaDados.querySelector('thead tr');
 const btnAdicionar = document.getElementById('btnAdicionarLinha');
 const btnToggleEdicao = document.getElementById('btnToggleEdicao');
-const btnStatus = document.getElementById('btnStatus'); // Novo ID
+const btnStatus = document.getElementById('btnStatus'); 
 const userIdDisplay = document.getElementById('userIdDisplay');
 
 let modoEdicaoAtivo = false;
 let colunaArrastada = null;
 
-// --- Início da Autenticação ---
-async function initializeAuthAndDatabase() {
-    try {
-        if (typeof __initial_auth_token !== 'undefined') {
-            await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-            await signInAnonymously(auth);
-        }
-    } catch (error) {
-        console.error("Erro na autenticação:", error);
-    }
-}
-
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        userId = user.uid;
-        userIdDisplay.textContent = userId;
-        dbReady = true;
-        
-        // 1. Ativa listeners de UI
-        btnAdicionar.addEventListener('click', adicionarLinha);
-        btnToggleEdicao.addEventListener('click', toggleModoEdicao);
-        
-        // 2. Inicializa Drag and Drop nos cabeçalhos
-        tabelaHeadRow.querySelectorAll('th').forEach(th => {
-            th.addEventListener('dragstart', handleDragStart);
-            th.addEventListener('dragover', handleDragOver);
-            th.addEventListener('dragleave', handleDragLeave);
-            th.addEventListener('drop', handleDrop);
-            th.addEventListener('dragend', handleDragEnd);
-        });
-
-        // 3. Inicia a escuta em tempo real do Firestore
-        setupRealtimeListener();
-
-    } else {
-        userIdDisplay.textContent = 'Não autenticado';
-        dbReady = false;
-    }
-});
-
-initializeAuthAndDatabase();
-
-// --- Firestore Helpers ---
-
-// Define o caminho da coleção privada: /artifacts/{appId}/users/{userId}/dados_tabela
-function getCollectionRef() {
-    if (!dbReady || !userId) {
-        console.error("Firebase/Auth não pronto. userId:", userId);
-        return null;
-    }
-    // Cria a referência para a coleção privada do usuário
-    return collection(db, `artifacts/${appId}/users/${userId}/dados_tabela`);
-}
 
 /**
  * Atualiza o status visual do botão indicador.
  * @param {string} text - O texto a ser exibido.
- * @param {string} color - A cor de fundo.
+ * @param {string} color - A cor de fundo (em hexadecimal).
  */
 function updateStatus(text, color) {
     btnStatus.textContent = text;
@@ -136,6 +85,76 @@ function updateStatus(text, color) {
             btnStatus.style.color = '#6c757d';
         }, 3000);
     }
+}
+
+// --- Início da Autenticação ---
+async function initializeAuthAndDatabase() {
+    if (!auth) {
+        userIdDisplay.textContent = 'ERRO: Sem Configuração Firebase';
+        updateStatus('❌ Configuração Inválida', '#dc3545'); 
+        return;
+    }
+
+    try {
+        if (typeof __initial_auth_token !== 'undefined') {
+            await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+            // Tenta o login anônimo como fallback seguro
+            await signInAnonymously(auth);
+        }
+    } catch (error) {
+        // Se a autenticação falhar (e.g., auth/configuration-not-found)
+        console.error("Erro na autenticação:", error);
+        userIdDisplay.textContent = 'ERRO DE AUTH (Verifique o console)';
+        updateStatus('❌ Falha na Autenticação', '#dc3545'); 
+    }
+}
+
+if (auth) {
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            userId = user.uid;
+            userIdDisplay.textContent = userId;
+            dbReady = true;
+            
+            // 1. Ativa listeners de UI
+            btnAdicionar.addEventListener('click', adicionarLinha);
+            btnToggleEdicao.addEventListener('click', toggleModoEdicao);
+            
+            // 2. Inicializa Drag and Drop nos cabeçalhos
+            tabelaHeadRow.querySelectorAll('th').forEach(th => {
+                th.addEventListener('dragstart', handleDragStart);
+                th.addEventListener('dragover', handleDragOver);
+                th.addEventListener('dragleave', handleDragLeave);
+                th.addEventListener('drop', handleDrop);
+                th.addEventListener('dragend', handleDragEnd);
+            });
+
+            // 3. Inicia a escuta em tempo real do Firestore
+            setupRealtimeListener();
+
+        } else if (!userIdDisplay.textContent.startsWith('ERRO')) {
+            userIdDisplay.textContent = 'Não autenticado';
+            dbReady = false;
+        }
+    });
+
+    initializeAuthAndDatabase();
+} else {
+     userIdDisplay.textContent = 'ERRO: Sem Configuração Firebase';
+}
+
+
+// --- Firestore Helpers ---
+
+// Define o caminho da coleção privada: /artifacts/{appId}/users/{userId}/dados_tabela
+function getCollectionRef() {
+    if (!dbReady || !userId || !db) {
+        console.error("Firebase/Auth ou Firestore não pronto. userId:", userId);
+        return null;
+    }
+    // Cria a referência para a coleção privada do usuário
+    return collection(db, `artifacts/${appId}/users/${userId}/dados_tabela`);
 }
 
 
@@ -198,6 +217,7 @@ async function adicionarLinha() {
 async function atualizarCampo(element, id, campo) {
     if (!dbReady || !userId) return;
 
+    // Converte para número se for o campo 'valor', senão pega o valor trimado
     const valor = campo === 'valor' ? parseFloat(element.value) : element.value.trim();
 
     updateStatus('🔄 Salvando...', '#007bff'); // Saving indicator
