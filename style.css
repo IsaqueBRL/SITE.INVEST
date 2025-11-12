@@ -1,1 +1,47 @@
+/* Estilos para a nova seção de Tabela */
+.table-container {
+    margin: 40px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+}
 
+#editable-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+#editable-table th, #editable-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    min-width: 80px; /* Garante que as colunas não fiquem muito estreitas */
+}
+
+#editable-table th {
+    background-color: #f2f2f2;
+    cursor: grab; /* Indica que o cabeçalho é arrastável */
+}
+
+/* Estilo para elementos editáveis (Conteúdo) */
+[contenteditable="true"]:focus {
+    background-color: #fffacd; /* Amarelo claro para indicar edição ativa */
+    outline: none;
+}
+
+.controls {
+    margin-bottom: 15px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.note {
+    font-size: 0.8em;
+    color: #888;
+    margin: 0;
+}
