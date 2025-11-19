@@ -1,48 +1,7 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Investimentos Pessoais - Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+<table border="1">  
+<tr>
+    <th>Nome</th>
+    <th>Email</th>
+    <th>telefone</th>
+    <th>cpf</th>
     
-    <div class="table-container">
-        <h2>Minha Tabela de Investimentos Personalizada</h2>
-        <div class="controls">
-            <button id="add-column-left">Adicionar Coluna (Esquerda)</button>
-            <button id="add-column-right">Adicionar Coluna (Direita)</button>
-            <button id="add-row">Adicionar Linha</button>
-            <button id="save-table">Salvar Tabela no DB</button>
-            <p class="note">⚠️ Clique duas vezes no cabeçalho ou célula para editar o texto.</p>
-        </div>
-
-        <table id="editable-table">
-            <thead>
-                <tr id="table-header">
-                    <th contenteditable="true" draggable="true">Nome do Ativo</th>
-                    <th contenteditable="true" draggable="true">Valor Atual (R$)</th> 
-                    <th contenteditable="true" draggable="true">Percentual (%)</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td contenteditable="true">Tesouro Selic</td>
-                    <td contenteditable="true">1000.00</td>
-                    <td contenteditable="true">10.0</td>
-                    <td><button class="delete-row">Excluir</button></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-
-    <script src="firebase-init.js"></script>
-    <script src="script.js"></script>
-</body>
-</html>
