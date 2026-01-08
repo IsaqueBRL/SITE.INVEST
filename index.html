@@ -137,10 +137,13 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        
+        // NOVA CHAVE ATUALIZADA
         const BRAPI_TOKEN = "1EG6ybrvNVpDimcMwbtYwn";
 
         let todosDados = {}, todasMetas = {}, categoriaAtiva = null, pendingAction = null;
 
+        // --- LISTENERS FIREBASE ---
         onValue(ref(db, 'categorias_list'), s => {
             const d = s.val() || {};
             const sel = document.getElementById('categoria_select'), list = document.getElementById('lista_categorias_edit');
@@ -158,7 +161,41 @@
             renderizarInterface();
         });
 
-        // FUNÇÃO DE ATUALIZAÇÃO REFORÇADA
+        // --- AJUSTE: BUSCA DE PREÇO NO INPUT DO TICKER ---
+        const inputTicker = document.getElementById('ticker');
+        const inputPreco = document.getElementById('valor_unit_input');
+        let timerBusca;
+
+        inputTicker.addEventListener('input', () => {
+            clearTimeout(timerBusca);
+            const tk = inputTicker.value.trim().toUpperCase();
+            
+            if (tk.length >= 4) {
+                inputPreco.placeholder = "Buscando...";
+                timerBusca = setTimeout(async () => {
+                    try {
+                        const r = await fetch(`https://brapi.dev/api/quote/${tk}?token=${BRAPI_TOKEN}`);
+                        
+                        if (r.status === 429) {
+                            inputPreco.placeholder = "Limite Excedido (Manual)";
+                            return;
+                        }
+
+                        const d = await r.json();
+                        if (d.results && d.results[0] && d.results[0].regularMarketPrice) {
+                            inputPreco.value = d.results[0].regularMarketPrice.toFixed(2);
+                            inputPreco.placeholder = "";
+                        } else {
+                            inputPreco.placeholder = "Ticker inválido (Manual)";
+                        }
+                    } catch (e) { 
+                        inputPreco.placeholder = "Erro na busca (Manual)";
+                    }
+                }, 1000); 
+            }
+        });
+
+        // --- ATUALIZAÇÃO MANUAL (BOTÃO) ---
         window.forceRefresh = async () => {
             const idsAtivos = Object.keys(todosDados);
             if (idsAtivos.length === 0) return;
@@ -174,7 +211,7 @@
                 const response = await fetch(`https://brapi.dev/api/quote/${tickersUnicos}?token=${BRAPI_TOKEN}`);
                 
                 if (response.status === 429) {
-                    statusTxt.innerText = "Limite da API atingido. Tente mais tarde.";
+                    statusTxt.innerText = "Limite da API atingido.";
                     statusTxt.classList.add('text-red-600');
                 } else {
                     const data = await response.json();
@@ -191,13 +228,11 @@
                         statusTxt.classList.remove('text-red-600');
                     }
                 }
-            } catch (e) { 
-                statusTxt.innerText = "Erro na conexão.";
-            }
+            } catch (e) { statusTxt.innerText = "Erro na conexão."; }
             setTimeout(() => { indicador.style.opacity = '0'; }, 4000);
         };
 
-        // Renderização e demais funções...
+        // --- RENDERIZAÇÃO ---
         function renderizarInterface() {
             const corpo = document.getElementById('tabelaCorpo'), det = document.getElementById('tabelaAtivosDetalhe');
             corpo.innerHTML = ""; det.innerHTML = "";
@@ -221,6 +256,7 @@
             });
         }
 
+        // --- FUNÇÕES GLOBAIS ---
         window.updateQtd = (id, n) => update(ref(db, `investimentos/${id}`), { quantidade: parseFloat(n) || 0 });
         window.toggleModal = (id) => { const m = document.getElementById(id); m.classList.toggle('opacity-0'); m.classList.toggle('pointer-events-none'); };
         window.openCat = (c) => { categoriaAtiva = c; document.getElementById('visao-estrategica').classList.add('hidden-view'); document.getElementById('visao-detalhada').classList.remove('hidden-view'); document.getElementById('titulo-categoria-detalhe').innerText = c; renderizarInterface(); };
@@ -243,14 +279,17 @@
                 pendingAction = () => { action(); modal.classList.add('opacity-0', 'pointer-events-none'); };
             }
         }
+
         document.getElementById('btnConfirm').onclick = () => pendingAction();
         document.getElementById('btnCancel').onclick = () => document.getElementById('confirmModal').classList.add('opacity-0', 'pointer-events-none');
 
         window.askRmAtv = (id, t) => showConfirm("Excluir Ativo", `Deseja apagar ${t}?`, () => remove(ref(db, `investimentos/${id}`)));
+        
+        // TRAVA DE EXCLUSÃO DE CATEGORIA
         window.askRmCat = (id, nomeCat) => {
             const ativosVinculados = Object.values(todosDados).filter(a => a.categoria === nomeCat);
             if (ativosVinculados.length > 0) {
-                showConfirm("Bloqueado", `Não é possível excluir "${nomeCat}" pois existem ${ativosVinculados.length} ativos nela.`, null, true);
+                showConfirm("Bloqueado", `Não é possível excluir "${nomeCat}" pois existem ativos nela.`, null, true);
             } else {
                 showConfirm("Excluir Categoria", `Deseja apagar "${nomeCat}"?`, () => remove(ref(db, `categorias_list/${id}`)));
             }
