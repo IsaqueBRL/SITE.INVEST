@@ -11,7 +11,13 @@
         .gradient-bg { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
         .hidden-view { display: none !important; }
         .confirm-modal-bg { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); }
-        [contenteditable="true"]:focus { outline: none; background: #eff6ff; border-radius: 4px; padding: 2px 4px; }
+        [contenteditable="true"]:focus { outline: none; background: #eff6ff; border-radius: 4px; padding: 2px 4px; border: 1px solid #3b82f6; }
+        
+        /* Estilos para o Slot (Accordion) */
+        .slot-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; }
+        .slot-open { max-height: 1000px; transition: max-height 0.6s ease-in; }
+        .chevron { transition: transform 0.3s ease; }
+        .chevron-rotate { transform: rotate(180deg); }
     </style>
 </head>
 <body class="text-slate-900 min-h-screen">
@@ -30,65 +36,107 @@
         <main class="container mx-auto mt-8 p-4">
             <div class="max-w-md mx-auto mb-8 text-center relative">
                 <div id="sync-indicator" class="absolute -top-6 left-0 right-0 flex justify-center items-center gap-2 opacity-0 transition-opacity">
-                    <span id="sync-text" class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Sincronizando Preços...</span>
+                    <span id="sync-text" class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Sincronizando...</span>
                 </div>
-                
-                <div class="glass p-8 rounded-[2rem] shadow-xl border-b-4 border-blue-600 relative">
-                    <p class="text-slate-400 text-base font-black uppercase mb-1 tracking-widest">Patrimônio Consolidado</p>
-                    <h2 id="patrimonio-total" class="text-4xl font-black text-slate-800 tracking-tighter italic">R$ 0,00</h2>
-                    <div class="mt-2 text-[9px] text-slate-400 font-bold uppercase tracking-widest">Atualização automática ativa</div>
+                <div class="glass p-8 rounded-[2rem] shadow-xl border-b-4 border-blue-600 transition-all duration-500">
+                    <p id="label-patrimonio" class="text-slate-400 text-base font-black uppercase mb-1 tracking-widest">Patrimônio Consolidado</p>
+                    <h2 id="patrimonio-exibido" class="text-4xl font-black text-slate-800 tracking-tighter italic">R$ 0,00</h2>
                 </div>
             </div>
 
             <div id="visao-estrategica" class="glass rounded-[2rem] shadow-2xl overflow-hidden">
-                <table class="w-full text-left text-base">
-                    <thead class="bg-slate-50 text-base font-black text-slate-400 uppercase">
+                <table class="w-full text-left text-base uppercase">
+                    <thead class="bg-slate-50 text-base font-black text-slate-400">
                         <tr>
                             <th class="p-5">Ver</th>
                             <th class="p-5">Categoria</th>
                             <th class="p-5 text-center">Meta %</th>
                             <th class="p-5 text-center">Atual %</th>
                             <th class="p-5 text-right">Valor Atual</th>
-                            <th class="p-5 text-right text-blue-600">Sugestão de Aporte</th>
+                            <th class="p-5 text-right text-blue-600">Sugestão</th>
                         </tr>
                     </thead>
-                    <tbody id="tabelaCorpo" class="divide-y divide-slate-100 font-bold uppercase"></tbody>
+                    <tbody id="tabelaCorpo" class="divide-y divide-slate-100 font-bold"></tbody>
                 </table>
             </div>
 
-            <div id="visao-detalhada" class="hidden-view glass rounded-[2rem] shadow-2xl overflow-hidden">
-                <div class="p-6 flex items-center border-b">
-                    <button onclick="window.voltarParaCategorias()" class="bg-slate-100 px-4 py-2 rounded-xl font-bold text-base uppercase">← Voltar</button>
-                    <h3 id="titulo-categoria-detalhe" class="font-black uppercase text-xl ml-6 text-blue-600"></h3>
+            <div id="visao-detalhada" class="hidden-view space-y-6">
+                <div class="flex items-center">
+                    <button onclick="window.voltarParaCategorias()" class="bg-white px-6 py-3 rounded-2xl font-black shadow-sm hover:shadow-md transition-all">← VOLTAR</button>
+                    <h3 id="titulo-categoria-detalhe" class="font-black uppercase text-2xl ml-6 text-blue-600 italic"></h3>
                 </div>
-                <table class="w-full text-left text-base uppercase">
-                    <thead class="bg-slate-50 text-base font-black text-slate-400 uppercase">
-                        <tr>
-                            <th class="p-5">Ativo</th>
-                            <th class="p-5 text-center">Quantidade</th>
-                            <th class="p-5 text-center">Valor Unitário</th>
-                            <th class="p-5 text-center">Valor Total</th>
-                            <th class="p-5 text-center">Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaAtivosDetalhe" class="divide-y divide-slate-100 font-bold"></tbody>
-                </table>
+
+                <div class="glass rounded-[2rem] shadow-xl overflow-hidden border-2 border-blue-100">
+                    <div onclick="window.toggleSlot()" class="bg-blue-600 p-5 text-white font-black uppercase tracking-widest text-sm flex justify-between items-center cursor-pointer hover:bg-blue-700 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <span id="chevron-icon" class="chevron text-xl">▼</span>
+                            <span>Planejamento de <span id="span-cat-name"></span></span>
+                        </div>
+                        <button onclick="event.stopPropagation(); window.addSeguimento()" class="bg-white text-blue-600 px-4 py-1.5 rounded-xl text-[10px] font-black hover:scale-105 transition-transform">+ Seguimento</button>
+                    </div>
+                    
+                    <div id="slot-planejamento" class="slot-content">
+                        <table class="w-full text-left text-sm uppercase">
+                            <thead class="bg-slate-50 text-slate-400 font-black border-b">
+                                <tr>
+                                    <th class="p-4">Seguimentos</th>
+                                    <th class="p-4 text-center">Meta %</th>
+                                    <th class="p-4 text-center">Carteira %</th>
+                                    <th class="p-4 text-right">Patrimônio</th>
+                                    <th class="p-4 text-right">Aportar</th>
+                                    <th class="p-4 text-center">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaPlanejamento" class="divide-y divide-slate-100 font-bold"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="glass rounded-[2rem] shadow-xl overflow-hidden">
+                    <div class="bg-slate-800 p-4 text-white font-black uppercase tracking-widest text-sm">Ativos em <span class="cat-label"></span></div>
+                    <table class="w-full text-left text-sm uppercase">
+                        <thead class="bg-slate-50 text-slate-400 font-black border-b">
+                            <tr>
+                                <th class="p-4">Ativo</th>
+                                <th class="p-4">Seguimento</th>
+                                <th class="p-4 text-center">Qtd</th>
+                                <th class="p-4 text-center">Preço</th>
+                                <th class="p-4 text-center text-blue-600">Peso na Categoria %</th>
+                                <th class="p-4 text-right">Total</th>
+                                <th class="p-4 text-center">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaAtivosDetalhe" class="divide-y divide-slate-100 font-bold text-slate-600"></tbody>
+                    </table>
+                </div>
             </div>
         </main>
+    </div>
+
+    <div id="confirmModal" class="fixed inset-0 flex items-center justify-center z-[200] opacity-0 pointer-events-none transition-all">
+        <div class="absolute inset-0 confirm-modal-bg"></div>
+        <div class="glass w-full max-w-xs rounded-[2rem] p-8 relative z-[210] text-center shadow-2xl border border-white/50">
+            <h3 id="confirmTitle" class="font-black text-slate-800 uppercase text-lg mb-2">Atenção</h3>
+            <p id="confirmMessage" class="text-slate-500 text-xs font-bold uppercase mb-8"></p>
+            <div class="flex gap-3">
+                <button id="btnCancel" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-black text-xs uppercase">Sair</button>
+                <button id="btnConfirm" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg">Confirmar</button>
+            </div>
+        </div>
     </div>
 
     <div id="modalAtivo" class="fixed inset-0 flex items-center justify-center z-[100] opacity-0 pointer-events-none transition-all">
         <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="window.toggleModal('modalAtivo')"></div>
         <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 relative z-[110] shadow-2xl">
-            <h2 class="text-xl font-black mb-6 uppercase italic text-center">Novo Ativo</h2>
+            <h2 class="text-xl font-black mb-6 uppercase italic text-center text-blue-600">Novo Ativo</h2>
             <form id="formInvestimento" class="space-y-4">
-                <div><label class="text-[10px] font-black text-slate-400 ml-2 uppercase">Ticker</label><input type="text" id="ticker" placeholder="PETR4" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black uppercase outline-none focus:border-blue-600" required></div>
-                <div><label class="text-[10px] font-black text-slate-400 ml-2 uppercase">Categoria</label><select id="categoria_select" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-bold uppercase outline-none"></select></div>
+                <input type="text" id="ticker" placeholder="TICKER" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black uppercase outline-none focus:border-blue-600" required>
+                <select id="categoria_select" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-bold uppercase outline-none"></select>
                 <div class="grid grid-cols-2 gap-3">
-                    <div><label class="text-[10px] font-black text-slate-400 ml-2 uppercase">Qtd</label><input type="number" step="any" id="quantidade_input" placeholder="0" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black" required></div>
-                    <div><label class="text-[10px] font-black text-slate-400 ml-2 uppercase">Preço R$</label><input type="text" id="valor_unit_input" placeholder="..." class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black text-blue-600" required></div>
+                    <input type="number" step="any" id="quantidade_input" placeholder="QTD" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black" required>
+                    <input type="text" id="valor_unit_input" placeholder="PREÇO" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black text-blue-600" required>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase shadow-lg mt-2">Salvar Ativo</button>
+                <button type="submit" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase">Salvar</button>
             </form>
         </div>
     </div>
@@ -96,24 +144,12 @@
     <div id="modalCategorias" class="fixed inset-0 flex items-center justify-center z-[100] opacity-0 pointer-events-none transition-all">
         <div class="absolute inset-0 bg-slate-900/50" onclick="window.toggleModal('modalCategorias')"></div>
         <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 relative z-[110]">
-            <h2 class="text-xl font-black mb-4 uppercase text-center">Configurações</h2>
+            <h2 class="text-xl font-black mb-4 uppercase text-center italic">Categorias</h2>
             <div class="flex gap-2 mb-4">
-                <input type="text" id="nome_nova_categoria" placeholder="NOME" class="flex-1 bg-slate-50 border-2 p-4 rounded-2xl font-bold uppercase outline-none text-xs">
+                <input type="text" id="nome_nova_categoria" placeholder="NOME" class="flex-1 bg-slate-50 border-2 p-4 rounded-2xl font-bold uppercase text-xs">
                 <button id="btn-add-cat" class="bg-blue-600 text-white px-6 rounded-2xl font-black text-2xl">+</button>
             </div>
-            <div id="lista_categorias_edit" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
-        </div>
-    </div>
-
-    <div id="confirmModal" class="fixed inset-0 flex items-center justify-center z-[200] opacity-0 pointer-events-none transition-all">
-        <div class="absolute inset-0 confirm-modal-bg"></div>
-        <div class="glass w-full max-w-xs rounded-[2rem] p-8 relative z-[210] text-center shadow-2xl border border-white/50">
-            <h3 id="confirmTitle" class="font-black text-slate-800 uppercase text-lg mb-2">Confirmar?</h3>
-            <p id="confirmMessage" class="text-slate-500 text-base font-bold uppercase mb-8"></p>
-            <div class="flex gap-3">
-                <button id="btnCancel" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-black text-base uppercase">Sair</button>
-                <button id="btnConfirm" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-black text-base uppercase shadow-lg">Confirmar</button>
-            </div>
+            <div id="lista_categorias_edit" class="space-y-2 max-h-60 overflow-y-auto"></div>
         </div>
     </div>
 
@@ -135,16 +171,17 @@
         const db = getDatabase(app);
         const BRAPI_TOKEN = "1EG6ybrvNVpDimcMwbtYwn";
 
-        let todosDados = {}, todasMetas = {}, categoriaAtiva = null, pendingAction = null;
+        let todosDados = {}, todasMetas = {}, todasCategorias = {}, planejamSetores = {}, categoriaAtiva = null, pendingAction = null;
 
-        // --- FIREBASE SYNC ---
+        // --- DATABASE SYNC ---
         onValue(ref(db, 'categorias_list'), s => {
-            const d = s.val() || {};
+            todasCategorias = s.val() || {};
             const sel = document.getElementById('categoria_select'), list = document.getElementById('lista_categorias_edit');
             sel.innerHTML = ""; list.innerHTML = "";
-            Object.keys(d).forEach(id => {
-                sel.innerHTML += `<option value="${d[id]}">${d[id]}</option>`;
-                list.innerHTML += `<div class="flex justify-between p-4 bg-slate-50 rounded-2xl mb-2 font-black text-[10px]"><span>${d[id]}</span><button onclick="window.askRmCat('${id}', '${d[id]}')" class="text-red-500 uppercase">Remover</button></div>`;
+            Object.keys(todasCategorias).forEach(id => {
+                const nome = todasCategorias[id];
+                sel.innerHTML += `<option value="${nome}">${nome}</option>`;
+                list.innerHTML += `<div class="flex justify-between p-4 bg-slate-50 rounded-2xl mb-2 font-black text-[10px]"><span>${nome}</span><button onclick="window.askRmCat('${id}', '${nome}')" class="text-red-500">REMOVER</button></div>`;
             });
         });
 
@@ -152,132 +189,150 @@
             const d = s.val() || {};
             todosDados = d.investimentos || {};
             todasMetas = d.metas || {};
+            planejamSetores = d.planejamento_setores || {};
             renderizarInterface();
         });
 
-        // --- ATUALIZAÇÃO AUTOMÁTICA ---
-        async function fetchIndividualPrice(ticker) {
-            try {
-                const r = await fetch(`https://brapi.dev/api/quote/${ticker}?token=${BRAPI_TOKEN}`);
-                if (!r.ok) return null;
-                const data = await r.json();
-                return (data.results && data.results[0]) ? data.results[0].regularMarketPrice : null;
-            } catch (e) { return null; }
-        }
+        // --- NAVEGAÇÃO & SLOT CONTROL ---
+        window.toggleSlot = () => {
+            const slot = document.getElementById('slot-planejamento');
+            const chevron = document.getElementById('chevron-icon');
+            slot.classList.toggle('slot-open');
+            chevron.classList.toggle('chevron-rotate');
+        };
 
-        async function startAutoRefresh() {
-            const idsAtivos = Object.keys(todosDados);
-            if (idsAtivos.length === 0) return;
-
-            const indicador = document.getElementById('sync-indicator');
-            const statusTxt = document.getElementById('sync-text');
-            indicador.style.opacity = '1';
+        window.openCat = (cat) => {
+            categoriaAtiva = cat;
+            document.getElementById('visao-estrategica').classList.add('hidden-view');
+            document.getElementById('visao-detalhada').classList.remove('hidden-view');
+            document.getElementById('titulo-categoria-detalhe').innerText = cat;
+            document.getElementById('span-cat-name').innerText = cat;
+            document.querySelectorAll('.cat-label').forEach(el => el.innerText = cat);
             
-            const tickersUnicos = [...new Set(idsAtivos.map(id => todosDados[id].ticker))];
+            // Sempre fechar o slot ao entrar em uma nova categoria
+            document.getElementById('slot-planejamento').classList.remove('slot-open');
+            document.getElementById('chevron-icon').classList.remove('chevron-rotate');
             
-            for (let i = 0; i < tickersUnicos.length; i++) {
-                const tk = tickersUnicos[i];
-                statusTxt.innerText = `Atualizando ${tk}...`;
-                
-                const novoPreco = await fetchIndividualPrice(tk);
-                if (novoPreco) {
-                    const idsParaAtualizar = idsAtivos.filter(id => todosDados[id].ticker === tk);
-                    for (const id of idsParaAtualizar) {
-                        await update(ref(db, `investimentos/${id}`), { valorUnitario: novoPreco });
-                    }
-                }
-                await new Promise(res => setTimeout(res, 600)); 
-            }
+            renderizarInterface();
+        };
 
-            statusTxt.innerText = "Preços Sincronizados";
-            setTimeout(() => { indicador.style.opacity = '0'; }, 3000);
-        }
+        window.voltarParaCategorias = () => {
+            categoriaAtiva = null;
+            document.getElementById('visao-estrategica').classList.remove('hidden-view');
+            document.getElementById('visao-detalhada').classList.add('hidden-view');
+            renderizarInterface();
+        };
 
-        setTimeout(startAutoRefresh, 2000); 
-        setInterval(startAutoRefresh, 600000);
-
-        // --- INPUT AUTO-SEARCH ---
-        const inputTicker = document.getElementById('ticker');
-        const inputPreco = document.getElementById('valor_unit_input');
-        let timerBusca;
-
-        inputTicker.addEventListener('input', () => {
-            clearTimeout(timerBusca);
-            const tk = inputTicker.value.trim().toUpperCase();
-            if (tk.length >= 4) {
-                inputPreco.placeholder = "Buscando...";
-                timerBusca = setTimeout(async () => {
-                    const preco = await fetchIndividualPrice(tk);
-                    if (preco) {
-                        inputPreco.value = preco.toFixed(2);
-                        inputPreco.placeholder = "";
-                    } else {
-                        inputPreco.placeholder = "Manual...";
-                    }
-                }, 1000);
-            }
-        });
-
-        // --- RENDERIZAÇÃO COM LÓGICA DE COR ---
+        // --- RENDER LOGIC ---
         function renderizarInterface() {
-            const corpo = document.getElementById('tabelaCorpo'), det = document.getElementById('tabelaAtivosDetalhe');
-            corpo.innerHTML = ""; det.innerHTML = "";
-            let totalGeral = 0; const resumo = {};
+            let totalGeral = 0; let totalCategoriaAtiva = 0; const resumo = {};
 
-            Object.keys(todosDados).forEach(id => {
-                const item = todosDados[id];
-                const vT = (item.quantidade || 0) * (item.valorUnitario || 0);
-                totalGeral += vT;
-                resumo[item.categoria] = (resumo[item.categoria] || 0) + vT;
-                if (item.categoria === categoriaAtiva) {
-                    det.innerHTML += `<tr><td class="p-5 font-black text-slate-800 text-sm">${item.ticker}</td><td class="p-5 text-center"><span contenteditable="true" onblur="window.updateQtd('${id}', this.innerText)" class="bg-slate-100 px-3 py-1 rounded-lg text-blue-600 font-black">${item.quantidade}</span></td><td class="p-5 text-center text-slate-400 font-bold">R$ ${item.valorUnitario.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td><td class="p-5 text-center font-black text-slate-800 italic">R$ ${vT.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td><td class="p-5 text-center"><button onclick="window.askRmAtv('${id}', '${item.ticker}')" class="text-red-400">✕</button></td></tr>`;
-                }
+            Object.values(todosDados).forEach(atv => {
+                const v = (atv.quantidade || 0) * (atv.valorUnitario || 0);
+                totalGeral += v;
+                resumo[atv.categoria] = (resumo[atv.categoria] || 0) + v;
+                if (categoriaAtiva && atv.categoria === categoriaAtiva) totalCategoriaAtiva += v;
             });
 
-            document.getElementById('patrimonio-total').innerText = `R$ ${totalGeral.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            
-            Object.keys(resumo).forEach(cat => {
-                const vAtual = resumo[cat], pAtual = totalGeral > 0 ? parseFloat((vAtual/totalGeral*100).toFixed(1)) : 0;
-                const mDefinida = parseFloat(todasMetas[cat] || 0);
-                const vIdeal = totalGeral * (mDefinida / 100), aporte = vIdeal - vAtual;
-                
-                // Lógica de Cor: Vermelho se pAtual > mDefinida, senão Preto
-                const corAtual = pAtual > mDefinida ? 'text-rose-600' : 'text-slate-800';
+            document.getElementById('label-patrimonio').innerText = categoriaAtiva ? `Patrimônio em ${categoriaAtiva}` : "Patrimônio Consolidado";
+            document.getElementById('patrimonio-exibido').innerText = (categoriaAtiva ? totalCategoriaAtiva : totalGeral).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
 
-                corpo.innerHTML += `<tr><td class="p-5"><button onclick="window.openCat('${cat}')" class="bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center">🔍</button></td><td class="p-5 font-black text-slate-700">${cat}</td><td class="p-5 text-center"><span contenteditable="true" onblur="window.svMeta('${cat}', this)" class="bg-blue-50 px-3 py-1.5 rounded-lg text-blue-600 font-black">${mDefinida}</span>%</td><td class="p-5 text-center font-black ${corAtual}">${pAtual}%</td><td class="p-5 text-right font-black italic text-slate-800">R$ ${vAtual.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td><td class="p-5 text-right font-black ${aporte > 0 ? 'text-emerald-500' : 'text-rose-400'}">${aporte > 0 ? '▲ R$ ' + aporte.toLocaleString('pt-BR', {minimumFractionDigits:2}) : '▼ R$ ' + Math.abs(aporte).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td></tr>`;
+            renderizarTabelaCategorias(totalGeral, resumo);
+            if (categoriaAtiva) renderizarDetalhes(totalCategoriaAtiva);
+        }
+
+        function renderizarTabelaCategorias(totalGeral, resumo) {
+            const corpo = document.getElementById('tabelaCorpo');
+            corpo.innerHTML = "";
+            Object.values(todasCategorias).forEach(cat => {
+                const vAtual = resumo[cat] || 0;
+                const pAtual = totalGeral > 0 ? (vAtual / totalGeral * 100).toFixed(1) : 0;
+                const meta = todasMetas[cat] || 0;
+                const corAtual = parseFloat(pAtual) > meta ? 'text-rose-600' : 'text-slate-800';
+                const vIdeal = totalGeral * (meta / 100);
+                const aporte = vIdeal - vAtual;
+
+                corpo.innerHTML += `<tr><td class="p-5"><button onclick="window.openCat('${cat}')" class="bg-blue-600 text-white w-10 h-10 rounded-xl">🔍</button></td><td class="p-5 font-black text-slate-700">${cat}</td><td class="p-5 text-center"><span contenteditable="true" onblur="window.svMeta('${cat}', this.innerText)" class="bg-blue-50 px-3 py-1 rounded-lg text-blue-600">${meta}</span>%</td><td class="p-5 text-center ${corAtual}">${pAtual}%</td><td class="p-5 text-right italic font-black">R$ ${vAtual.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td><td class="p-5 text-right font-black ${aporte > 0 ? 'text-emerald-500' : 'text-rose-400'}">${aporte > 0 ? '▲ R$ '+aporte.toLocaleString('pt-BR', {minimumFractionDigits:2}) : 'V R$ '+Math.abs(aporte).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td></tr>`;
             });
         }
 
-        window.updateQtd = (id, n) => update(ref(db, `investimentos/${id}`), { quantidade: parseFloat(n) || 0 });
-        window.toggleModal = (id) => { const m = document.getElementById(id); m.classList.toggle('opacity-0'); m.classList.toggle('pointer-events-none'); };
-        window.openCat = (c) => { categoriaAtiva = c; document.getElementById('visao-estrategica').classList.add('hidden-view'); document.getElementById('visao-detalhada').classList.remove('hidden-view'); document.getElementById('titulo-categoria-detalhe').innerText = c; renderizarInterface(); };
-        window.voltarParaCategorias = () => { categoriaAtiva = null; document.getElementById('visao-estrategica').classList.remove('hidden-view'); document.getElementById('visao-detalhada').classList.add('hidden-view'); };
-        window.svMeta = (cat, el) => set(ref(db, `metas/${cat}`), parseFloat(el.innerText) || 0);
+        function renderizarDetalhes(totalDaCat) {
+            const tPlan = document.getElementById('tabelaPlanejamento');
+            const tAtv = document.getElementById('tabelaAtivosDetalhe');
+            tPlan.innerHTML = ""; tAtv.innerHTML = "";
+            
+            const ativosDaCat = Object.entries(todosDados).filter(([id, a]) => a.categoria === categoriaAtiva);
+            const seguimentosDaCat = Object.entries(planejamSetores[categoriaAtiva] || {});
+            
+            ativosDaCat.forEach(([id, atv]) => {
+                const vTotal = atv.quantidade * atv.valorUnitario;
+                const pesoNaCat = totalDaCat > 0 ? (vTotal / totalDaCat * 100).toFixed(1) : 0;
+                let options = `<option value="">ESCOLHER...</option>`;
+                seguimentosDaCat.forEach(([sId, sData]) => options += `<option value="${sData.nome}" ${atv.seguimento === sData.nome ? 'selected' : ''}>${sData.nome}</option>`);
 
-        function showConfirm(title, msg, action, isAlert = false) {
+                tAtv.innerHTML += `<tr><td class="p-4 font-black text-slate-800">${atv.ticker}</td><td class="p-4"><select onchange="window.updateAtv('${id}', 'seguimento', this.value)" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none border-none">${options}</select></td><td class="p-4 text-center"><span contenteditable="true" onblur="window.updateAtv('${id}', 'quantidade', this.innerText)" class="bg-blue-50 px-2 py-1 rounded-lg">${atv.quantidade}</span></td><td class="p-4 text-center text-slate-400 font-bold">R$ ${atv.valorUnitario.toFixed(2)}</td><td class="p-4 text-center text-blue-600 font-black">${pesoNaCat}%</td><td class="p-4 text-right italic font-black text-slate-800">R$ ${vTotal.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td><td class="p-4 text-center"><button onclick="window.askRmAtv('${id}', '${atv.ticker}')" class="text-rose-400">✕</button></td></tr>`;
+            });
+
+            seguimentosDaCat.forEach(([sId, sData]) => {
+                const vSetor = ativosDaCat.filter(([id, a]) => a.seguimento === sData.nome).reduce((acc, [id, a]) => acc + (a.quantidade * a.valorUnitario), 0);
+                const pSetor = totalDaCat > 0 ? (vSetor / totalDaCat * 100).toFixed(1) : 0;
+                const vIdealSetor = totalDaCat * (sData.meta / 100);
+                const aporteSetor = vIdealSetor - vSetor;
+
+                tPlan.innerHTML += `<tr><td class="p-4"><span contenteditable="true" onblur="window.updateSeg('${sId}', 'nome', this.innerText)" class="text-slate-800">${sData.nome}</span></td><td class="p-4 text-center"><span contenteditable="true" onblur="window.updateSeg('${sId}', 'meta', this.innerText)" class="bg-blue-50 px-3 py-1 rounded-lg text-blue-600">${sData.meta}</span>%</td><td class="p-4 text-center ${parseFloat(pSetor) > sData.meta ? 'text-rose-600' : ''}">${pSetor}%</td><td class="p-4 text-right font-black">R$ ${vSetor.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td><td class="p-4 text-right ${aporteSetor > 0 ? 'text-emerald-500 font-black' : 'text-slate-400 font-bold'}">${aporteSetor > 0 ? 'R$ '+aporteSetor.toLocaleString('pt-BR', {minimumFractionDigits:2}) : '--'}</td><td class="p-4 text-center"><button onclick="window.askRmSeg('${sId}', '${sData.nome}')" class="text-rose-300 hover:text-rose-600 text-[10px] font-black uppercase">Excluir</button></td></tr>`;
+            });
+        }
+
+        // --- POP-UP HELPERS & ACTIONS ---
+        function showConfirm(title, msg, action, isError = false) {
+            const modal = document.getElementById('confirmModal');
             document.getElementById('confirmTitle').innerText = title;
             document.getElementById('confirmMessage').innerText = msg;
-            const modal = document.getElementById('confirmModal');
             const btnConfirm = document.getElementById('btnConfirm');
             modal.classList.remove('opacity-0', 'pointer-events-none');
-            if(isAlert) {
-                btnConfirm.innerText = "OK";
-                btnConfirm.classList.replace('bg-red-500', 'bg-blue-600');
+            if(isError) {
+                btnConfirm.innerText = "ENTENDI";
+                btnConfirm.className = "flex-1 bg-blue-600 text-white py-3 rounded-xl font-black text-xs uppercase";
                 pendingAction = () => modal.classList.add('opacity-0', 'pointer-events-none');
             } else {
-                btnConfirm.innerText = "Confirmar";
-                btnConfirm.classList.replace('bg-blue-600', 'bg-red-500');
+                btnConfirm.innerText = "CONFIRMAR";
+                btnConfirm.className = "flex-1 bg-red-500 text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg";
                 pendingAction = () => { action(); modal.classList.add('opacity-0', 'pointer-events-none'); };
             }
         }
 
-        document.getElementById('btnConfirm').onclick = () => pendingAction();
+        document.getElementById('btnConfirm').onclick = () => pendingAction && pendingAction();
         document.getElementById('btnCancel').onclick = () => document.getElementById('confirmModal').classList.add('opacity-0', 'pointer-events-none');
-        window.askRmAtv = (id, t) => showConfirm("Excluir", `Apagar ${t}?`, () => remove(ref(db, `investimentos/${id}`)));
+
+        window.askRmSeg = (id, nomeSeg) => {
+            const vinculados = Object.values(todosDados).filter(a => a.categoria === categoriaAtiva && a.seguimento === nomeSeg);
+            if (vinculados.length > 0) showConfirm("Bloqueado", `Existem ativos vinculados ao seguimento "${nomeSeg}".`, null, true);
+            else showConfirm("Excluir", `Apagar "${nomeSeg}"?`, () => remove(ref(db, `planejamento_setores/${categoriaAtiva}/${id}`)));
+        };
+
         window.askRmCat = (id, nomeCat) => {
             const ativos = Object.values(todosDados).filter(a => a.categoria === nomeCat);
-            if (ativos.length > 0) showConfirm("Bloqueado", "Remova os ativos desta categoria primeiro.", null, true);
+            if (ativos.length > 0) showConfirm("Bloqueado", "Exclua os ativos da categoria primeiro.", null, true);
             else showConfirm("Excluir", `Apagar "${nomeCat}"?`, () => remove(ref(db, `categorias_list/${id}`)));
+        };
+
+        window.askRmAtv = (id, ticker) => showConfirm("Excluir", `Remover ${ticker}?`, () => remove(ref(db, `investimentos/${id}`)));
+        window.svMeta = (cat, val) => set(ref(db, `metas/${cat}`), parseFloat(val) || 0);
+        window.addSeguimento = () => categoriaAtiva && push(ref(db, `planejamento_setores/${categoriaAtiva}`), { nome: "NOVO SEGUIMENTO", meta: 0 });
+        window.updateSeg = (id, field, val) => update(ref(db, `planejamento_setores/${categoriaAtiva}/${id}`), { [field]: field === 'meta' ? parseFloat(val) || 0 : val.toUpperCase() });
+        window.updateAtv = (id, field, val) => update(ref(db, `investimentos/${id}`), { [field]: field === 'quantidade' ? parseFloat(val) || 0 : val });
+        window.toggleModal = (id) => { const m = document.getElementById(id); m.classList.toggle('opacity-0'); m.classList.toggle('pointer-events-none'); };
+
+        document.getElementById('formInvestimento').onsubmit = (e) => {
+            e.preventDefault();
+            push(ref(db, 'investimentos'), {
+                ticker: document.getElementById('ticker').value.toUpperCase(),
+                categoria: document.getElementById('categoria_select').value,
+                quantidade: parseFloat(document.getElementById('quantidade_input').value) || 0,
+                valorUnitario: parseFloat(document.getElementById('valor_unit_input').value.replace(',', '.')) || 0,
+                seguimento: ""
+            });
+            window.toggleModal('modalAtivo'); e.target.reset();
         };
 
         document.getElementById('btn-add-cat').onclick = () => {
@@ -286,16 +341,6 @@
             document.getElementById('nome_nova_categoria').value = "";
         };
 
-        document.getElementById('formInvestimento').onsubmit = (e) => {
-            e.preventDefault();
-            push(ref(db, 'investimentos'), {
-                ticker: document.getElementById('ticker').value.toUpperCase(),
-                categoria: document.getElementById('categoria_select').value,
-                quantidade: parseFloat(document.getElementById('quantidade_input').value) || 0,
-                valorUnitario: parseFloat(document.getElementById('valor_unit_input').value.replace(',', '.')) || 0
-            });
-            window.toggleModal('modalAtivo'); e.target.reset();
-        };
     </script>
 </body>
 </html>
