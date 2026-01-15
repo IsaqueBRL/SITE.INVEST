@@ -20,13 +20,11 @@
         .chevron { transition: transform 0.3s ease; }
         .chevron-rotate { transform: rotate(180deg); }
         
-        #sync-indicator { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; border: 2px solid rgba(255,255,255,0.2); }
-        .sync-idle { background-color: #10b981; }
-        .sync-active { background-color: #3b82f6; animation: pulse 1s infinite; }
+        #sync-indicator { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; border: 2px solid rgba(255,255,255,0.2); }
+        .sync-idle { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+        .sync-active { background-color: #3b82f6; animation: pulse 1s infinite; box-shadow: 0 0 8px #3b82f6; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-        
-        /* Efeito de carregamento no input de preço */
-        .loading-input { animation: pulse 1s infinite; background-color: #fefce8 !important; }
+        .loading-input { animation: pulse 1s infinite; background-color: #fefce8 !important; border-color: #eab308 !important; }
     </style>
 </head>
 <body class="text-slate-900 min-h-screen pb-10">
@@ -130,7 +128,7 @@
         <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-6 relative z-[110] shadow-2xl">
             <h2 class="text-xl font-black mb-6 uppercase text-center text-blue-600 italic">Novo Ativo</h2>
             <form id="formInvestimento" class="space-y-3">
-                <input type="text" id="ticker" placeholder="TICKER (Ex: PETR4)" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black uppercase outline-none focus:border-blue-600" required>
+                <input type="text" id="ticker" placeholder="TICKER (EX: PETR4)" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black uppercase outline-none focus:border-blue-600" required>
                 <select id="categoria_select" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-bold uppercase outline-none"></select>
                 <div class="grid grid-cols-2 gap-2">
                     <input type="number" step="any" id="quantidade_input" placeholder="QTD" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black" required>
@@ -198,66 +196,58 @@
             atualizarListaCategorias();
         });
 
-        // --- BUSCA NO MODAL (QUANDO DIGITA O TICKER) ---
+        // --- 1. BUSCA INDIVIDUAL NO MODAL (NOVO ATIVO) ---
         document.getElementById('ticker').addEventListener('blur', async (e) => {
-            const ticker = e.target.value.trim().toUpperCase();
-            const inputPreco = document.getElementById('valor_unit_input');
-            
-            if (ticker.length >= 4) {
-                inputPreco.classList.add('loading-input');
-                inputPreco.placeholder = "Buscando...";
-                
+            const tk = e.target.value.trim().toUpperCase();
+            const field = document.getElementById('valor_unit_input');
+            if (tk.length >= 4) {
+                field.classList.add('loading-input');
                 try {
-                    const res = await fetch(`https://brapi.dev/api/quote/${ticker}?token=${MEU_TOKEN}`);
-                    const data = await res.json();
-                    
-                    if (data.results && data.results[0]) {
-                        inputPreco.value = data.results[0].regularMarketPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    const r = await fetch(`https://brapi.dev/api/quote/${tk}?token=${MEU_TOKEN}`);
+                    const d = await r.json();
+                    if (d.results && d.results[0]?.regularMarketPrice) {
+                        field.value = d.results[0].regularMarketPrice.toLocaleString('pt-BR', {minimumFractionDigits: 2});
                     }
-                } catch (err) {
-                    console.error("Erro ao buscar no modal:", err);
-                } finally {
-                    inputPreco.classList.remove('loading-input');
-                }
+                } catch (err) { console.error("Erro modal:", err); }
+                finally { field.classList.remove('loading-input'); }
             }
         });
 
-        // --- ATUALIZAÇÃO AUTOMÁTICA EM GRUPO (INDIVIDUAL NA API) ---
+        // --- 2. BUSCA INDIVIDUAL PARALELA NA TABELA (EXISTENTES) ---
         async function autoUpdatePrecos() {
             const indicator = document.getElementById('sync-indicator');
-            const tickerList = [...new Set(Object.values(todosDados).map(a => a.ticker.trim().toUpperCase()))].filter(t => t.length >= 4);
+            const tickers = [...new Set(Object.values(todosDados).map(a => a.ticker.trim().toUpperCase()))].filter(t => t.length >= 4);
             
-            if (tickerList.length === 0) return;
+            if (tickers.length === 0) return;
             indicator.className = 'sync-active';
             
-            const processarUm = async (ticker) => {
+            const fetchPreco = async (t) => {
                 try {
-                    const res = await fetch(`https://brapi.dev/api/quote/${ticker}?token=${MEU_TOKEN}`);
-                    if (res.status === 429) return;
-                    const data = await res.json();
-                    if (data.results && data.results[0]) {
-                        const novoPreco = data.results[0].regularMarketPrice;
-                        const updates = {};
-                        Object.entries(todosDados).forEach(([id, atv]) => {
-                            if (atv.ticker.trim().toUpperCase() === ticker) updates[`investimentos/${id}/valorUnitario`] = novoPreco;
+                    const r = await fetch(`https://brapi.dev/api/quote/${t}?token=${MEU_TOKEN}`);
+                    const d = await r.json();
+                    if (d.results && d.results[0]?.regularMarketPrice) {
+                        const novoP = d.results[0].regularMarketPrice;
+                        const ups = {};
+                        Object.entries(todosDados).forEach(([id, a]) => {
+                            if (a.ticker.trim().toUpperCase() === t) ups[`investimentos/${id}/valorUnitario`] = novoP;
                         });
-                        if (Object.keys(updates).length > 0) await update(ref(db), updates);
+                        if (Object.keys(ups).length > 0) await update(ref(db), ups);
                     }
-                } catch (e) { console.error(e); }
+                } catch (e) { console.warn(`Falha no ticker ${t}`); }
             };
 
-            const chunk = 5; 
-            for (let i = 0; i < tickerList.length; i += chunk) {
-                const grupo = tickerList.slice(i, i + chunk);
-                await Promise.all(grupo.map(t => processarUm(t)));
-                await new Promise(r => setTimeout(r, 600)); 
+            const chunk = 5;
+            for (let i = 0; i < tickers.length; i += chunk) {
+                const grupo = tickers.slice(i, i + chunk);
+                await Promise.all(grupo.map(t => fetchPreco(t)));
+                await new Promise(res => setTimeout(res, 600));
             }
             indicator.className = 'sync-idle';
         }
 
         setTimeout(() => { autoUpdatePrecos(); setInterval(autoUpdatePrecos, 1800000); }, 5000);
 
-        // --- RENDERIZAÇÃO ---
+        // --- RENDERIZAÇÃO E UI ---
         function renderizarInterface() {
             let totalGeral = 0, totalCatAtiva = 0; const resumo = {};
             Object.values(todosDados).forEach(a => {
@@ -320,6 +310,7 @@
             });
         }
 
+        // --- FUNÇÕES GLOBAIS ---
         window.toggleModal = (id) => { const m = document.getElementById(id); m.classList.toggle('opacity-0'); m.classList.toggle('pointer-events-none'); };
         window.openCat = (cat) => { categoriaAtiva = cat; document.getElementById('visao-estrategica').classList.add('hidden-view'); document.getElementById('visao-detalhada').classList.remove('hidden-view'); document.getElementById('titulo-categoria-detalhe').innerText = cat; document.getElementById('span-cat-name').innerText = cat; renderizarInterface(); };
         window.voltarParaCategorias = () => { categoriaAtiva = null; document.getElementById('visao-estrategica').classList.remove('hidden-view'); document.getElementById('visao-detalhada').classList.add('hidden-view'); renderizarInterface(); };
