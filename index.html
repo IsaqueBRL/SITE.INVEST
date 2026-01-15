@@ -13,7 +13,7 @@
         .hidden-view { display: none !important; }
         .confirm-modal-bg { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); }
         .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        table { min-width: 700px; } /* Aumentado para acomodar o texto maior sem quebra */
+        table { min-width: 750px; }
         [contenteditable="true"]:focus { outline: none; background: #eff6ff; border-radius: 4px; padding: 2px 4px; border: 1px solid #3b82f6; }
         .slot-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; }
         .slot-open { max-height: 2000px; transition: max-height 0.6s ease-in; }
@@ -24,6 +24,9 @@
         .sync-idle { background-color: #10b981; }
         .sync-active { background-color: #3b82f6; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        
+        /* Efeito de carregamento no input de preço */
+        .loading-input { animation: pulse 1s infinite; background-color: #fefce8 !important; }
     </style>
 </head>
 <body class="text-slate-900 min-h-screen pb-10">
@@ -127,7 +130,7 @@
         <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-6 relative z-[110] shadow-2xl">
             <h2 class="text-xl font-black mb-6 uppercase text-center text-blue-600 italic">Novo Ativo</h2>
             <form id="formInvestimento" class="space-y-3">
-                <input type="text" id="ticker" placeholder="TICKER" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black uppercase outline-none focus:border-blue-600" required>
+                <input type="text" id="ticker" placeholder="TICKER (Ex: PETR4)" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black uppercase outline-none focus:border-blue-600" required>
                 <select id="categoria_select" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-bold uppercase outline-none"></select>
                 <div class="grid grid-cols-2 gap-2">
                     <input type="number" step="any" id="quantidade_input" placeholder="QTD" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black" required>
@@ -195,13 +198,36 @@
             atualizarListaCategorias();
         });
 
-        // --- BUSCA ACELERADA POR ATIVO (GRUPOS DE 5 EM PARALELO) ---
+        // --- BUSCA NO MODAL (QUANDO DIGITA O TICKER) ---
+        document.getElementById('ticker').addEventListener('blur', async (e) => {
+            const ticker = e.target.value.trim().toUpperCase();
+            const inputPreco = document.getElementById('valor_unit_input');
+            
+            if (ticker.length >= 4) {
+                inputPreco.classList.add('loading-input');
+                inputPreco.placeholder = "Buscando...";
+                
+                try {
+                    const res = await fetch(`https://brapi.dev/api/quote/${ticker}?token=${MEU_TOKEN}`);
+                    const data = await res.json();
+                    
+                    if (data.results && data.results[0]) {
+                        inputPreco.value = data.results[0].regularMarketPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    }
+                } catch (err) {
+                    console.error("Erro ao buscar no modal:", err);
+                } finally {
+                    inputPreco.classList.remove('loading-input');
+                }
+            }
+        });
+
+        // --- ATUALIZAÇÃO AUTOMÁTICA EM GRUPO (INDIVIDUAL NA API) ---
         async function autoUpdatePrecos() {
             const indicator = document.getElementById('sync-indicator');
             const tickerList = [...new Set(Object.values(todosDados).map(a => a.ticker.trim().toUpperCase()))].filter(t => t.length >= 4);
             
             if (tickerList.length === 0) return;
-
             indicator.className = 'sync-active';
             
             const processarUm = async (ticker) => {
@@ -226,13 +252,12 @@
                 await Promise.all(grupo.map(t => processarUm(t)));
                 await new Promise(r => setTimeout(r, 600)); 
             }
-            
             indicator.className = 'sync-idle';
         }
 
         setTimeout(() => { autoUpdatePrecos(); setInterval(autoUpdatePrecos, 1800000); }, 5000);
 
-        // --- UI E EVENTOS ---
+        // --- RENDERIZAÇÃO ---
         function renderizarInterface() {
             let totalGeral = 0, totalCatAtiva = 0; const resumo = {};
             Object.values(todosDados).forEach(a => {
