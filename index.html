@@ -204,6 +204,59 @@
             atualizarListaCategorias();
         });
 
+        // FUNÇÃO DE AUXÍLIO PARA DELAY (EVITA ERRO 429)
+        const delay = (ms) => new Promise(res => setTimeout(res, ms));
+
+        // NOVA ROTINA DE ATUALIZAÇÃO (BUSCA POR ATIVO INDIVIDUAL COM INTERVALO)
+        async function atualizarPrecosAutomaticamente() {
+            const ids = Object.keys(todosDados);
+            if (ids.length === 0) return;
+
+            const indicador = document.getElementById('sync-indicator');
+            indicador.className = 'sync-active';
+
+            // Criamos uma lista de tickers únicos para não buscar o mesmo preço duas vezes
+            const tickers = [...new Set(Object.values(todosDados).map(a => a.ticker))];
+            
+            for (const tk of tickers) {
+                try {
+                    // Chamada para cada ativo individualmente
+                    const r = await fetch(`https://brapi.dev/api/quote/${tk}?token=${MEU_TOKEN}`);
+                    
+                    if (r.status === 429) {
+                        console.warn("Limite de API atingido. Pausando sincronização.");
+                        break; // Para a execução para evitar bloqueios maiores
+                    }
+
+                    const data = await r.json();
+
+                    if (data.results && data.results[0]) {
+                        const precoNovo = data.results[0].regularMarketPrice;
+                        
+                        // Atualiza todos os registros no Firebase que usam esse ticker
+                        const registrosParaAtualizar = ids.filter(id => todosDados[id].ticker === tk);
+                        
+                        for (const id of registrosParaAtualizar) {
+                            if (precoNovo && precoNovo !== todosDados[id].valorUnitario) {
+                                await update(ref(db, `investimentos/${id}`), { valorUnitario: precoNovo });
+                            }
+                        }
+                    }
+                    
+                    // Espera 800ms entre cada ativo para respeitar o limite da API
+                    await delay(800);
+
+                } catch (err) {
+                    console.error(`Erro ao buscar ${tk}:`, err);
+                }
+            }
+            
+            indicador.className = 'sync-idle';
+        }
+
+        setInterval(atualizarPrecosAutomaticamente, 600000); // 10 Minutos
+        setTimeout(atualizarPrecosAutomaticamente, 3000); // Inicia após carregar o site
+
         window.sortTab = (tipo, key) => {
             if (sortConfig[tipo].key === key) {
                 sortConfig[tipo].asc = !sortConfig[tipo].asc;
@@ -259,9 +312,7 @@
             });
 
             ordenar(listaCat, sortConfig.cat).forEach(item => {
-                // LÓGICA DE COR: Vermelho se Atual > Meta
                 const corAlerta = item.atual > item.meta ? 'text-red-600' : 'text-slate-900';
-                
                 corpo.innerHTML += `<tr>
                     <td class="p-4 text-center"><button onclick="window.openCat('${item.nome}')" class="bg-blue-600 text-white w-10 h-10 rounded-xl shadow-md">🔍</button></td>
                     <td class="p-4">${item.nome}</td>
@@ -293,9 +344,7 @@
 
             ordenar(listaAtv, sortConfig.atv).forEach(atv => {
                 let opt = `<option value="">ESCOLHER...</option>`;
-                listaSegsRaw.forEach(([sid, s]) => {
-                    opt += `<option value="${s.nome}" ${atv.seguimento === s.nome ? 'selected' : ''}>${s.nome}</option>`;
-                });
+                listaSegsRaw.forEach(([sid, s]) => { opt += `<option value="${s.nome}" ${atv.seguimento === s.nome ? 'selected' : ''}>${s.nome}</option>`; });
                 tAtv.innerHTML += `<tr>
                     <td class="p-4">${atv.ticker}</td>
                     <td class="p-4"><select onchange="window.updateAtv('${atv.id}', 'seguimento', this.value)" class="bg-slate-100 p-2 rounded font-bold text-base outline-none">${opt}</select></td>
@@ -314,9 +363,7 @@
             });
 
             ordenar(listaSegFinal, sortConfig.seg).forEach(s => {
-                // LÓGICA DE COR: Vermelho se Atual > Meta
                 const corAlertaSeg = s.atual > s.meta ? 'text-red-600' : 'text-slate-900';
-
                 tPlan.innerHTML += `<tr>
                     <td class="p-4"><span contenteditable="true" onblur="window.updateSeg('${s.id}', 'nome', this.innerText)">${s.nome}</span></td>
                     <td class="p-4 text-center"><span contenteditable="true" onblur="window.updateSeg('${s.id}', 'meta', this.innerText)" class="bg-blue-50 px-3 py-1 rounded">${s.meta}</span>%</td>
@@ -335,15 +382,12 @@
             m.classList.remove('opacity-0', 'pointer-events-none');
             pendingAction = action; 
         };
-
         window.closeConfirm = () => {
             document.getElementById('btnConfirmAction').style.display = 'block';
             document.getElementById('confirmModal').classList.add('opacity-0', 'pointer-events-none');
             pendingAction = null;
         };
-
         document.getElementById('btnConfirmAction').onclick = () => { if (pendingAction) { pendingAction(); window.closeConfirm(); } };
-
         window.askRmSeg = (id, n) => {
             const ativosNoSeg = Object.values(todosDados).filter(a => a.categoria === categoriaAtiva && a.seguimento === n);
             if (ativosNoSeg.length > 0) {
@@ -353,7 +397,6 @@
                 window.showConfirm("Remover Seguimento", `Deseja apagar "${n}"?`, () => remove(ref(db, `planejamento_setores/${categoriaAtiva}/${id}`)));
             }
         };
-
         window.askRmCat = (id, n) => {
             const ativosNaCat = Object.values(todosDados).filter(a => a.categoria === n);
             if (ativosNaCat.length > 0) {
@@ -363,7 +406,6 @@
                 window.showConfirm("Remover Categoria", `Apagar "${n}"?`, () => remove(ref(db, `categorias_list/${id}`)));
             }
         };
-
         window.toggleModal = (id) => { const m = document.getElementById(id); m.classList.toggle('opacity-0'); m.classList.toggle('pointer-events-none'); };
         window.openCat = (cat) => { categoriaAtiva = cat; document.getElementById('visao-estrategica').classList.add('hidden-view'); document.getElementById('visao-detalhada').classList.remove('hidden-view'); document.getElementById('titulo-categoria-detalhe').innerText = cat; document.getElementById('span-cat-name').innerText = cat; renderizarInterface(); };
         window.voltarParaCategorias = () => { categoriaAtiva = null; document.getElementById('visao-estrategica').classList.remove('hidden-view'); document.getElementById('visao-detalhada').classList.add('hidden-view'); renderizarInterface(); };
