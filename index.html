@@ -14,7 +14,6 @@
         .confirm-modal-bg { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); }
         .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { min-width: 750px; border-collapse: collapse; }
-        /* Linhas de Grade */
         th, td { border: 1px solid #e2e8f0; }
         [contenteditable="true"]:focus { outline: none; background: #eff6ff; border-radius: 4px; padding: 2px 4px; border: 1px solid #3b82f6; }
         .slot-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; }
@@ -165,7 +164,7 @@
         <div class="glass w-full max-w-xs rounded-[2rem] p-8 relative z-[510] text-center shadow-2xl">
             <h3 id="confirmTitle" class="font-black text-slate-800 uppercase text-lg mb-2">Atenção</h3>
             <p id="confirmMessage" class="text-slate-500 text-[10px] font-bold uppercase mb-8"></p>
-            <div class="flex gap-3">
+            <div id="confirmButtons" class="flex gap-3">
                 <button onclick="window.closeConfirm()" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-black text-xs">Sair</button>
                 <button id="btnConfirmAction" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-black text-xs shadow-lg font-bold">Confirmar</button>
             </div>
@@ -211,10 +210,8 @@
             atualizarListaCategorias();
         });
 
-        // FUNÇÃO DE AUXÍLIO PARA DELAY (EVITA ERRO 429)
         const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
-        // ATUALIZAÇÃO AUTOMÁTICA (10 MIN)
         async function atualizarPrecosAutomaticamente() {
             const ids = Object.keys(todosDados);
             if (ids.length === 0) return;
@@ -243,7 +240,6 @@
         setInterval(atualizarPrecosAutomaticamente, 600000);
         setTimeout(atualizarPrecosAutomaticamente, 3000);
 
-        // LÓGICA DE AVISO DE METAS 100%
         function verificarSomaMetas(objetoMetas, elementId) {
             const soma = Object.values(objetoMetas).reduce((a, b) => a + b, 0);
             const aviso = document.getElementById(elementId);
@@ -265,7 +261,6 @@
             });
             document.getElementById('patrimonio-exibido').innerText = fmtCur(categoriaAtiva ? totalCatAtiva : totalGeral);
             
-            // Verifica metas gerais
             verificarSomaMetas(todasMetas, 'aviso-meta-geral');
 
             const corpo = document.getElementById('tabelaCorpo');
@@ -307,7 +302,6 @@
             const segsObjeto = planejamSetores[categoriaAtiva] || {};
             const listaSegsRaw = Object.entries(segsObjeto);
 
-            // Verifica metas de seguimento
             const metasSeg = {}; listaSegsRaw.forEach(([id, s]) => metasSeg[id] = s.meta);
             verificarSomaMetas(metasSeg, 'aviso-meta-seguimento');
 
@@ -344,7 +338,7 @@
             });
         }
 
-        // Funções Window (Iguais ao código anterior)
+        // --- WINDOW FUNCTIONS ---
         window.sortTab = (tipo, key) => { if (sortConfig[tipo].key === key) { sortConfig[tipo].asc = !sortConfig[tipo].asc; } else { sortConfig[tipo].key = key; sortConfig[tipo].asc = true; } renderizarInterface(); };
         function ordenar(lista, config) { return lista.sort((a, b) => { let vA = a[config.key], vB = b[config.key]; if (typeof vA === 'string') { vA = vA.toUpperCase(); vB = vB.toUpperCase(); } if (vA < vB) return config.asc ? -1 : 1; if (vA > vB) return config.asc ? 1 : -1; return 0; }); }
         window.toggleModal = (id) => { const m = document.getElementById(id); m.classList.toggle('opacity-0'); m.classList.toggle('pointer-events-none'); };
@@ -355,11 +349,56 @@
         window.updateAtv = (id, f, v) => update(ref(db, `investimentos/${id}`), { [f]: (f === 'quantidade' || f === 'valorUnitario') ? parseReal(v) : v });
         window.addSeguimento = () => { if (categoriaAtiva) { const r = push(ref(db, `planejamento_setores/${categoriaAtiva}`)); set(r, { nome: "NOVO SEGUIMENTO", meta: 0 }); } };
         window.toggleSlot = () => { document.getElementById('slot-planejamento').classList.toggle('slot-open'); document.getElementById('chevron-icon').classList.toggle('chevron-rotate'); };
-        window.closeConfirm = () => { document.getElementById('btnConfirmAction').style.display = 'block'; document.getElementById('confirmModal').classList.add('opacity-0', 'pointer-events-none'); pendingAction = null; };
-        window.askRmAtv = (id, t) => window.showConfirm("Remover Ativo", `Deseja apagar o ativo ${t}?`, () => remove(ref(db, `investimentos/${id}`)));
-        window.showConfirm = (title, msg, action) => { const m = document.getElementById('confirmModal'); document.getElementById('confirmTitle').innerText = title; document.getElementById('confirmMessage').innerText = msg; m.classList.remove('opacity-0', 'pointer-events-none'); pendingAction = action; };
-        document.getElementById('btnConfirmAction').onclick = () => { if (pendingAction) { pendingAction(); window.closeConfirm(); } };
         
+        window.closeConfirm = () => { 
+            document.getElementById('confirmModal').classList.add('opacity-0', 'pointer-events-none'); 
+            document.getElementById('btnConfirmAction').classList.remove('hidden'); 
+            pendingAction = null; 
+        };
+
+        window.showConfirm = (title, msg, action, isAlertOnly = false) => { 
+            const m = document.getElementById('confirmModal'); 
+            document.getElementById('confirmTitle').innerText = title; 
+            document.getElementById('confirmMessage').innerText = msg; 
+            if(isAlertOnly) document.getElementById('btnConfirmAction').classList.add('hidden');
+            else document.getElementById('btnConfirmAction').classList.remove('hidden');
+            m.classList.remove('opacity-0', 'pointer-events-none'); 
+            pendingAction = action; 
+        };
+
+        // --- LÓGICA DE EXCLUSÃO COM TRAVAS ---
+        
+        window.askRmAtv = (id, t) => window.showConfirm("Remover Ativo", `Deseja apagar o ativo ${t}?`, () => remove(ref(db, `investimentos/${id}`)));
+
+        window.askRmSeg = (id, nome) => {
+            // Travas: Procura se algum ativo usa este seguimento dentro da categoria ativa
+            const ativosNoSeg = Object.values(todosDados).filter(a => a.categoria === categoriaAtiva && a.seguimento === nome);
+            
+            if (ativosNoSeg.length > 0) {
+                window.showConfirm("Ação Bloqueada", `Não é possível excluir o seguimento "${nome}" pois existem ${ativosNoSeg.length} ativos vinculados a ele. Remova os ativos primeiro.`, null, true);
+            } else {
+                window.showConfirm("Remover Seguimento", `Deseja apagar o seguimento ${nome}?`, () => remove(ref(db, `planejamento_setores/${categoriaAtiva}/${id}`)));
+            }
+        };
+
+        window.askRmCat = (id, nome) => {
+            // Travas: Procura se algum ativo usa esta categoria em todo o banco
+            const ativosNaCat = Object.values(todosDados).filter(a => a.categoria === nome);
+
+            if (ativosNaCat.length > 0) {
+                window.showConfirm("Ação Bloqueada", `Não é possível excluir a categoria "${nome}" pois existem ${ativosNaCat.length} ativos cadastrados nela. Exclua os ativos antes de prosseguir.`, null, true);
+            } else {
+                window.showConfirm("Remover Categoria", `Deseja apagar a categoria ${nome}?`, () => {
+                    remove(ref(db, `categorias_list/${id}`));
+                    remove(ref(db, `metas/${nome}`));
+                    remove(ref(db, `planejamento_setores/${nome}`));
+                    if (categoriaAtiva === nome) window.voltarParaCategorias();
+                });
+            }
+        };
+
+        document.getElementById('btnConfirmAction').onclick = () => { if (pendingAction) { pendingAction(); window.closeConfirm(); } };
+
         document.getElementById('formInvestimento').onsubmit = (e) => {
             e.preventDefault();
             push(ref(db, 'investimentos'), { 
