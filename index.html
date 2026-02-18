@@ -11,31 +11,26 @@
         .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); }
         .gradient-bg { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
         .hidden-view { display: none !important; }
-        .confirm-modal-bg { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); }
-        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        table { min-width: 750px; border-collapse: collapse; }
-        th, td { border: 1px solid #e2e8f0; }
-        [contenteditable="true"]:focus { outline: none; background: #eff6ff; border-radius: 4px; border: 1px solid #3b82f6; }
         
         .suggestions-box { 
-            position: absolute; width: 100%; max-height: 280px; overflow-y: auto; 
+            position: absolute; width: 100%; max-height: 320px; overflow-y: auto; 
             background: white; border: 2px solid #3b82f6; border-radius: 1.5rem; 
-            z-index: 200; margin-top: 8px; display: none; box-shadow: 0 15px 30px -10px rgba(0,0,0,0.2);
+            z-index: 200; margin-top: 8px; display: none; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
         }
         .suggestion-item { padding: 14px 20px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: all 0.2s; }
         .suggestion-item:hover { background: #f8faff; }
 
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { min-width: 800px; border-collapse: collapse; }
+        th, td { border: 1px solid #e2e8f0; }
+        [contenteditable="true"]:focus { outline: none; background: #eff6ff; border-radius: 4px; }
+        
         .slot-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; }
-        .slot-open { max-height: 2000px; transition: max-height 0.6s ease-in; }
+        .slot-open { max-height: 2000px; }
         .chevron { transition: transform 0.3s ease; }
         .chevron-rotate { transform: rotate(180deg); }
-        th { cursor: pointer; user-select: none; background-color: #f8fafc; }
-
-        #sync-indicator { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; border: 2px solid rgba(255,255,255,0.2); }
-        .sync-idle { background-color: #10b981; }
-        .sync-active { background-color: #3b82f6; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-        .warning-banner { font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 8px; margin-bottom: 8px; display: inline-block; }
+        
+        #sync-indicator { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; background-color: #10b981; }
     </style>
 </head>
 <body class="text-slate-900 min-h-screen pb-10">
@@ -43,7 +38,7 @@
     <nav class="gradient-bg p-5 text-white shadow-2xl sticky top-0 z-40">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
-                <div id="sync-indicator" class="sync-idle"></div>
+                <div id="sync-indicator"></div>
                 <h1 class="text-xl md:text-2xl font-black italic uppercase tracking-tighter">PAVÃO INVEST | PRIVATE</h1>
             </div>
             <div class="flex gap-2">
@@ -54,26 +49,26 @@
     </nav>
 
     <main class="container mx-auto mt-8 p-4">
-        <div class="max-w-md mx-auto mb-6 text-center">
+        <div class="max-w-md mx-auto mb-8 text-center">
             <div class="glass p-8 rounded-[2.5rem] shadow-xl border-b-4 border-blue-600">
                 <p class="text-slate-400 text-[10px] font-black uppercase mb-1 tracking-widest">Patrimônio Consolidado</p>
                 <h2 id="patrimonio-exibido" class="text-4xl font-black text-slate-800 tracking-tighter italic">R$ 0,00</h2>
             </div>
         </div>
 
-        <div id="visao-estrategica" class="space-y-2">
+        <div id="visao-estrategica" class="space-y-4">
             <div id="aviso-meta-geral"></div>
             <div class="glass rounded-[2.5rem] shadow-2xl overflow-hidden">
                 <div class="table-container">
                     <table class="w-full text-left text-base uppercase font-bold">
                         <thead class="bg-slate-50 text-slate-400 border-b">
                             <tr>
-                                <th class="p-5 w-16 text-center cursor-default">Ver</th>
-                                <th onclick="window.sortTab('cat', 'nome')" class="p-5">Categoria ↕</th>
-                                <th onclick="window.sortTab('cat', 'meta')" class="p-5 text-center">Meta % ↕</th>
-                                <th onclick="window.sortTab('cat', 'atual')" class="p-5 text-center">Atual % ↕</th>
-                                <th onclick="window.sortTab('cat', 'valor')" class="p-5 text-right">Valor ↕</th>
-                                <th onclick="window.sortTab('cat', 'sugestao')" class="p-5 text-right">Sugestão ↕</th>
+                                <th class="p-5 w-16 text-center">Ver</th>
+                                <th class="p-5">Categoria</th>
+                                <th class="p-5 text-center">Meta %</th>
+                                <th class="p-5 text-center">Atual %</th>
+                                <th class="p-5 text-right">Valor</th>
+                                <th class="p-5 text-right">Sugestão</th>
                             </tr>
                         </thead>
                         <tbody id="tabelaCorpo" class="divide-y divide-slate-100 bg-white"></tbody>
@@ -87,49 +82,45 @@
                 <button onclick="window.voltarParaCategorias()" class="bg-white px-6 py-3 rounded-2xl font-black shadow-sm border border-slate-200">← VOLTAR</button>
                 <h3 id="titulo-categoria-detalhe" class="font-black uppercase text-2xl text-blue-600 italic"></h3>
             </div>
-
-            <div class="space-y-2">
-                <div id="aviso-meta-seguimento"></div>
-                <div class="glass rounded-[2.5rem] shadow-xl overflow-hidden border-2 border-blue-100">
-                    <div onclick="window.toggleSlot()" class="bg-blue-600 p-5 text-white font-black uppercase text-sm flex justify-between items-center cursor-pointer">
-                        <div class="flex items-center gap-3">
-                            <span id="chevron-icon" class="chevron">▼</span>
-                            <span>PLANEJAMENTO DE <span id="span-cat-name"></span></span>
-                        </div>
-                        <button onclick="event.stopPropagation(); window.addSeguimento()" class="bg-white text-blue-600 px-4 py-2 rounded-xl text-xs font-black">+ SEGUIMENTO</button>
+            <div class="glass rounded-[2.5rem] shadow-xl overflow-hidden border-2 border-blue-100">
+                <div onclick="window.toggleSlot()" class="bg-blue-600 p-5 text-white font-black uppercase text-sm flex justify-between items-center cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <span id="chevron-icon" class="chevron">▼</span>
+                        <span>PLANEJAMENTO DE <span id="span-cat-name"></span></span>
                     </div>
-                    <div id="slot-planejamento" class="slot-content">
-                        <div class="table-container">
-                            <table class="w-full text-left text-base uppercase font-bold">
-                                <thead class="bg-slate-50 text-slate-400 border-b">
-                                    <tr>
-                                        <th onclick="window.sortTab('seg', 'nome')" class="p-4">Seguimento ↕</th>
-                                        <th onclick="window.sortTab('seg', 'meta')" class="p-4 text-center">Meta % ↕</th>
-                                        <th onclick="window.sortTab('seg', 'atual')" class="p-4 text-center">Atual % ↕</th>
-                                        <th onclick="window.sortTab('seg', 'valor')" class="p-4 text-right">Patrimônio ↕</th>
-                                        <th onclick="window.sortTab('seg', 'sugestao')" class="p-4 text-right">Aportar ↕</th>
-                                        <th class="p-4 text-center">Ação</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabelaPlanejamento" class="divide-y divide-slate-100 bg-white"></tbody>
-                            </table>
-                        </div>
+                    <button onclick="event.stopPropagation(); window.addSeguimento()" class="bg-white text-blue-600 px-4 py-2 rounded-xl text-xs font-black">+ SEGUIMENTO</button>
+                </div>
+                <div id="slot-planejamento" class="slot-content">
+                    <div class="table-container">
+                        <table class="w-full text-left text-base uppercase font-bold">
+                            <thead class="bg-slate-50 text-slate-400 border-b">
+                                <tr>
+                                    <th class="p-4">Seguimento</th>
+                                    <th class="p-4 text-center">Meta %</th>
+                                    <th class="p-4 text-center">Atual %</th>
+                                    <th class="p-4 text-right">Patrimônio</th>
+                                    <th class="p-4 text-right">Aportar</th>
+                                    <th class="p-4 text-center">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaPlanejamento" class="divide-y divide-slate-100 bg-white"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
             <div class="glass rounded-[2.5rem] shadow-xl overflow-hidden">
-                <div class="bg-slate-800 p-5 text-white font-black uppercase text-sm">ATIVOS ADICIONADOS</div>
+                <div class="bg-slate-800 p-5 text-white font-black uppercase text-sm">ATIVOS NESTA CATEGORIA</div>
                 <div class="table-container">
                     <table class="w-full text-left text-base uppercase font-bold">
                         <thead class="bg-slate-50 text-slate-400 border-b">
                             <tr>
-                                <th onclick="window.sortTab('atv', 'ticker')" class="p-4">Ativo ↕</th>
-                                <th onclick="window.sortTab('atv', 'seguimento')" class="p-4">Seguimento ↕</th>
-                                <th onclick="window.sortTab('atv', 'quantidade')" class="p-4 text-center">Qtd ↕</th>
-                                <th onclick="window.sortTab('atv', 'valorUnitario')" class="p-4 text-center">Preço ↕</th>
-                                <th onclick="window.sortTab('atv', 'peso')" class="p-4 text-center">Peso % ↕</th>
-                                <th onclick="window.sortTab('atv', 'total')" class="p-4 text-right">Total ↕</th>
+                                <th class="p-4">Ativo</th>
+                                <th class="p-4">Seguimento</th>
+                                <th class="p-4 text-center">Qtd</th>
+                                <th class="p-4 text-center">Preço</th>
+                                <th class="p-4 text-center">Peso %</th>
+                                <th class="p-4 text-right">Total</th>
                                 <th class="p-4 text-center">Ação</th>
                             </tr>
                         </thead>
@@ -142,20 +133,20 @@
 
     <div id="modalAtivo" class="fixed inset-0 flex items-center justify-center z-[100] opacity-0 pointer-events-none transition-all p-4">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="window.toggleModal('modalAtivo')"></div>
-        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 relative z-[110] shadow-2xl">
+        <div class="bg-white w-full max-w-sm rounded-[3rem] p-8 relative z-[110] shadow-2xl">
             <h2 class="text-2xl font-black mb-6 uppercase text-center text-blue-600 italic">Novo Ativo</h2>
             <form id="formInvestimento" class="space-y-4">
                 <div class="relative">
-                    <label class="text-[10px] font-black text-slate-400 uppercase mb-1 block ml-4">Ticker / Empresa</label>
-                    <input type="text" id="ticker" placeholder="BUSCAR..." class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black uppercase outline-none focus:border-blue-600" autocomplete="off" required>
+                    <label class="text-[10px] font-black text-slate-400 uppercase mb-1 block ml-4">Ticker (B3 ou Exterior)</label>
+                    <input type="text" id="ticker" placeholder="EX: PETR4 OU CVX..." class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black uppercase outline-none focus:border-blue-600" autocomplete="off" required>
                     <div id="suggestions" class="suggestions-box"></div>
                 </div>
-                <select id="categoria_select" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-bold uppercase outline-none"></select>
+                <select id="categoria_select" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-bold uppercase outline-none mb-2"></select>
                 <div class="grid grid-cols-2 gap-3">
                     <input type="number" step="any" id="quantidade_input" placeholder="QTD" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black" required>
                     <input type="text" id="valor_unit_input" placeholder="PREÇO" class="w-full bg-slate-50 border-2 p-4 rounded-2xl font-black text-blue-600" required>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase">Salvar Ativo</button>
+                <button type="submit" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase mt-4 shadow-lg">Salvar Ativo</button>
             </form>
         </div>
     </div>
@@ -168,15 +159,15 @@
                 <input type="text" id="nome_nova_categoria" placeholder="NOME" class="flex-1 bg-slate-50 border-2 p-4 rounded-2xl font-bold uppercase">
                 <button id="btn-add-cat" class="bg-blue-600 text-white px-5 rounded-2xl font-black text-xl">+</button>
             </div>
-            <div id="lista_categorias_edit" class="space-y-2 max-h-60 overflow-y-auto"></div>
+            <div id="lista_categorias_edit" class="space-y-2 max-h-64 overflow-y-auto"></div>
         </div>
     </div>
 
     <div id="confirmModal" class="fixed inset-0 flex items-center justify-center z-[500] opacity-0 pointer-events-none transition-all p-6">
-        <div class="absolute inset-0 confirm-modal-bg" onclick="window.closeConfirm()"></div>
-        <div class="glass w-full max-w-xs rounded-[2rem] p-8 relative z-[510] text-center shadow-2xl">
+        <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onclick="window.closeConfirm()"></div>
+        <div class="bg-white w-full max-w-xs rounded-[2rem] p-8 relative z-[510] text-center shadow-2xl">
             <h3 id="confirmTitle" class="font-black text-slate-800 uppercase text-lg mb-2">Atenção</h3>
-            <p id="confirmMessage" class="text-slate-500 text-[10px] font-bold uppercase mb-8"></p>
+            <p id="confirmMessage" class="text-slate-500 text-xs font-bold uppercase mb-8"></p>
             <div class="flex gap-3">
                 <button onclick="window.closeConfirm()" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-black text-xs">Sair</button>
                 <button id="btnConfirmAction" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-black text-xs">Confirmar</button>
@@ -198,14 +189,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const BRAPI_TOKEN = "1EG6ybrvNVpDimcMwbtYwn";
-        const ALPHA_KEY = "DL560AJTHBORC5LH";
 
         let todosDados = {}, todasMetas = {}, todasCategorias = {}, planejamSetores = {}, categoriaAtiva = null, pendingAction = null;
-        let sortConfig = { cat: { key: 'nome', asc: true }, seg: { key: 'nome', asc: true }, atv: { key: 'ticker', asc: true } };
-
-        const tickerInput = document.getElementById('ticker');
-        const suggestionsBox = document.getElementById('suggestions');
-        let searchTimeout;
 
         const fmtCur = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const parseReal = (s) => typeof s === 'string' ? parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0 : (parseFloat(s) || 0);
@@ -220,108 +205,86 @@
             atualizarListaCategorias();
         });
 
-        // BUSCA HÍBRIDA
+        const tickerInput = document.getElementById('ticker');
+        const suggestionsBox = document.getElementById('suggestions');
+        let searchTimeout;
+
         tickerInput.addEventListener('input', (e) => {
             clearTimeout(searchTimeout);
             const q = e.target.value.toUpperCase().trim();
             if (q.length < 2) { suggestionsBox.style.display = 'none'; return; }
-            searchTimeout = setTimeout(() => executaBusca(q), 500);
+            searchTimeout = setTimeout(() => executaBuscaBrapi(q), 500);
         });
 
-        async function executaBusca(query) {
-            let html = "";
+        // BUSCA AJUSTADA PARA ATIVOS GLOBAIS
+        async function executaBuscaBrapi(query) {
             try {
-                const resB3 = await fetch(`https://brapi.dev/api/quote/list?search=${query}&token=${BRAPI_TOKEN}`);
-                const dataB3 = await resB3.json();
-                if (dataB3.stocks) {
-                    dataB3.stocks.slice(0, 4).forEach(s => {
+                // A busca por "list" com search traz ativos de todos os mercados suportados
+                const res = await fetch(`https://brapi.dev/api/quote/list?search=${query}&token=${BRAPI_TOKEN}`);
+                const data = await res.json();
+                let html = "";
+                if (data.stocks) {
+                    data.stocks.slice(0, 10).forEach(s => {
+                        const isIntl = !(/[0-9]/.test(s.stock));
+                        const market = isIntl ? 'USA' : 'B3';
+                        const color = isIntl ? 'text-emerald-500 bg-emerald-50 border-emerald-100' : 'text-blue-500 bg-blue-50 border-blue-100';
                         html += `
-                        <div class="suggestion-item" onclick="window.selectAsset('${s.stock}', '${(s.name || '').replace(/'/g, "")}', false)">
+                        <div class="suggestion-item" onclick="window.selectAsset('${s.stock}')">
                             <div class="flex justify-between items-center">
                                 <div class="flex flex-col">
                                     <span class="font-black text-slate-800 text-lg leading-tight">${s.stock}</span>
-                                    <span class="text-blue-500 text-[10px] font-bold uppercase tracking-wide">${s.name || 'Empresa B3'}</span>
+                                    <span class="text-[10px] font-bold text-slate-400 truncate w-40">${s.name || ''}</span>
                                 </div>
-                                <span class="bg-blue-100 text-blue-600 text-[9px] font-black px-2 py-1 rounded-md">B3</span>
+                                <span class="${color} text-[9px] font-black px-2 py-1 rounded-md border">${market}</span>
                             </div>
                         </div>`;
                     });
                 }
-                const resUS = await fetch(`https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${query}&apikey=${ALPHA_KEY}`);
-                const dataUS = await resUS.json();
-                if (dataUS.bestMatches) {
-                    dataUS.bestMatches.slice(0, 4).forEach(m => {
-                        const ticker = m["1. symbol"];
-                        const name = m["2. name"];
-                        html += `
-                        <div class="suggestion-item" onclick="window.selectAsset('${ticker}', '${name.replace(/'/g, "")}', true)">
-                            <div class="flex justify-between items-center">
-                                <div class="flex flex-col">
-                                    <span class="font-black text-slate-800 text-lg leading-tight">${ticker}</span>
-                                    <span class="text-emerald-500 text-[10px] font-bold uppercase tracking-wide">${name}</span>
-                                </div>
-                                <span class="bg-emerald-100 text-emerald-600 text-[9px] font-black px-2 py-1 rounded-md">USA</span>
-                            </div>
-                        </div>`;
-                    });
-                }
+                suggestionsBox.innerHTML = html;
+                suggestionsBox.style.display = html ? 'block' : 'none';
             } catch (err) { console.error(err); }
-            suggestionsBox.innerHTML = html;
-            suggestionsBox.style.display = html ? 'block' : 'none';
         }
 
-        window.selectAsset = async (ticker, nome, isUS) => {
+        window.selectAsset = async (ticker) => {
             tickerInput.value = ticker;
             suggestionsBox.style.display = 'none';
-            const priceInput = document.getElementById('valor_unit_input');
-            priceInput.value = ""; priceInput.placeholder = "COTANDO...";
+            const priceField = document.getElementById('valor_unit_input');
+            priceField.value = ""; 
+            priceField.placeholder = "COTANDO...";
             try {
-                let p = 0;
-                if (isUS) {
-                    const r = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${ALPHA_KEY}`);
-                    const d = await r.json(); p = parseFloat(d["Global Quote"]?.["05. price"]) || 0;
-                } else {
-                    const r = await fetch(`https://brapi.dev/api/quote/${ticker}?token=${BRAPI_TOKEN}`);
-                    const d = await r.json(); p = d.results[0]?.regularMarketPrice || 0;
+                // Mesma chamada direta que a planilha faz
+                const r = await fetch(`https://brapi.dev/api/quote/${ticker}?token=${BRAPI_TOKEN}`);
+                const d = await r.json();
+                if (d.results && d.results[0]) {
+                    const p = d.results[0].regularMarketPrice;
+                    priceField.value = p.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    priceField.placeholder = "PREÇO";
                 }
-                priceInput.value = p > 0 ? p.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : "";
-                priceInput.placeholder = "PREÇO";
-            } catch (e) { priceInput.placeholder = "PREÇO MANUAL"; }
+            } catch (e) { priceField.placeholder = "PREÇO MANUAL"; }
         };
 
-        function verificarSomaMetas(obj, id) {
-            const soma = Object.values(obj).reduce((a, b) => a + b, 0);
-            const aviso = document.getElementById(id);
-            if (!aviso) return;
-            aviso.innerHTML = soma === 100 ? "" : `<div class="warning-banner ${soma > 100 ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'}">⚠️ SOMA: ${soma}% (AJUSTE PARA 100%)</div>`;
-        }
-
         function renderizarInterface() {
-            let totalGeral = 0, totalCatAtiva = 0; const resumo = {};
+            let totalGeral = 0, totalCatAtiva = 0; 
+            const resumo = {};
             Object.values(todosDados).forEach(a => {
                 const v = (a.quantidade || 0) * (a.valorUnitario || 0);
                 totalGeral += v; resumo[a.categoria] = (resumo[a.categoria] || 0) + v;
                 if (categoriaAtiva && a.categoria === categoriaAtiva) totalCatAtiva += v;
             });
             document.getElementById('patrimonio-exibido').innerText = fmtCur(categoriaAtiva ? totalCatAtiva : totalGeral);
-            verificarSomaMetas(todasMetas, 'aviso-meta-geral');
-
             const corpo = document.getElementById('tabelaCorpo');
             corpo.innerHTML = "";
-            let listaCat = Object.values(todasCategorias).map(cat => {
+            Object.values(todasCategorias).forEach(cat => {
                 const val = resumo[cat] || 0, meta = todasMetas[cat] || 0;
                 const atual = totalGeral > 0 ? (val / totalGeral * 100) : 0;
-                return { nome: cat, meta, atual, valor: val, sugestao: Math.max(0, (totalGeral * (meta / 100)) - val) };
-            });
-
-            ordenar(listaCat, sortConfig.cat).forEach(item => {
+                const sug = Math.max(0, (totalGeral * (meta / 100)) - val);
                 corpo.innerHTML += `<tr>
-                    <td class="p-5 text-center"><button onclick="window.openCat('${item.nome}')" class="bg-blue-600 text-white w-10 h-10 rounded-xl">🔍</button></td>
-                    <td class="p-5">${item.nome}</td>
-                    <td class="p-5 text-center"><span contenteditable="true" onblur="window.svMeta('${item.nome}', this.innerText)" class="bg-blue-50 px-3 py-1 rounded-lg">${item.meta}</span>%</td>
-                    <td class="p-5 text-center ${item.atual > item.meta ? 'text-red-600' : ''}">${item.atual.toFixed(1)}%</td>
-                    <td class="p-5 text-right">${fmtCur(item.valor)}</td>
-                    <td class="p-5 text-right ${item.sugestao > 0 ? 'text-emerald-500' : 'text-slate-300'}">${item.sugestao > 0 ? fmtCur(item.sugestao) : '--'}</td>
+                    <td class="p-5 text-center"><button onclick="window.openCat('${cat}')" class="bg-blue-600 text-white w-10 h-10 rounded-xl">🔍</button></td>
+                    <td class="p-5">${cat}</td>
+                    <td class="p-5 text-center"><span contenteditable="true" onblur="window.svMeta('${cat}', this.innerText)" class="bg-blue-50 px-3 py-1 rounded-lg font-black">${meta}</span>%</td>
+                    <td class="p-5 text-center">${atual.toFixed(1)}%</td>
+                    <td class="p-5 text-right font-bold">${fmtCur(val)}</td>
+                    <td class="p-5 text-right font-black ${sug > 1 ? 'text-emerald-500' : 'text-slate-300'}">${sug > 1 ? fmtCur(sug) : '--'}</td>
                 </tr>`;
             });
             if (categoriaAtiva) renderizarDetalhes(totalCatAtiva);
@@ -330,65 +293,51 @@
         function renderizarDetalhes(totalCat) {
             const tPlan = document.getElementById('tabelaPlanejamento'), tAtv = document.getElementById('tabelaAtivosDetalhe');
             tPlan.innerHTML = ""; tAtv.innerHTML = "";
-            let listaAtv = Object.entries(todosDados).filter(([id, a]) => a.categoria === categoriaAtiva).map(([id, a]) => ({ 
-                id, ...a, total: (a.quantidade || 0) * (a.valorUnitario || 0),
-                peso: totalCat > 0 ? ((a.quantidade * a.valorUnitario) / totalCat * 100) : 0 
-            }));
-            const segsObj = planejamSetores[categoriaAtiva] || {};
-            const listaSegsRaw = Object.entries(segsObj);
-            verificarSomaMetas(Object.fromEntries(listaSegsRaw.map(([id, s]) => [id, s.meta])), 'aviso-meta-seguimento');
-
-            ordenar(listaAtv, sortConfig.atv).forEach(atv => {
+            const ativosDaCat = Object.entries(todosDados).filter(([id, a]) => a.categoria === categoriaAtiva).map(([id, a]) => ({ id, ...a, total: a.quantidade * a.valorUnitario }));
+            
+            ativosDaCat.forEach(atv => {
+                const peso = totalCat > 0 ? (atv.total / totalCat * 100) : 0;
                 let opt = `<option value="">ESCOLHER...</option>`;
-                listaSegsRaw.forEach(([sid, s]) => { opt += `<option value="${s.nome}" ${atv.seguimento === s.nome ? 'selected' : ''}>${s.nome}</option>`; });
+                Object.values(planejamSetores[categoriaAtiva] || {}).forEach(s => { opt += `<option value="${s.nome}" ${atv.seguimento === s.nome ? 'selected' : ''}>${s.nome}</option>`; });
                 tAtv.innerHTML += `<tr>
-                    <td class="p-4">${atv.ticker}</td>
-                    <td class="p-4"><select onchange="window.updateAtv('${atv.id}', 'seguimento', this.value)" class="bg-slate-100 p-2 rounded outline-none">${opt}</select></td>
-                    <td class="p-4 text-center"><span contenteditable="true" onblur="window.updateAtv('${atv.id}', 'quantidade', this.innerText)" class="bg-blue-50 px-3 py-1 rounded">${atv.quantidade}</span></td>
-                    <td class="p-4 text-center">${fmtCur(atv.valorUnitario)}</td>
-                    <td class="p-4 text-center text-blue-600">${atv.peso.toFixed(1)}%</td>
-                    <td class="p-4 text-right italic font-black">${fmtCur(atv.total)}</td>
-                    <td class="p-4 text-center"><button onclick="window.askRmAtv('${atv.id}', '${atv.ticker}')" class="text-rose-400 font-black">✕</button></td>
+                    <td class="p-4 font-black">${atv.ticker}</td>
+                    <td class="p-4"><select onchange="window.updateAtv('${atv.id}', 'seguimento', this.value)" class="bg-slate-100 p-2 rounded-lg text-xs w-full font-bold outline-none">${opt}</select></td>
+                    <td class="p-4 text-center"><span contenteditable="true" onblur="window.updateAtv('${atv.id}', 'quantidade', this.innerText)" class="bg-slate-50 px-3 py-1 rounded font-black">${atv.quantidade}</span></td>
+                    <td class="p-4 text-center font-bold">${fmtCur(atv.valorUnitario)}</td>
+                    <td class="p-4 text-center text-blue-600">${peso.toFixed(1)}%</td>
+                    <td class="p-4 text-right font-black italic">${fmtCur(atv.total)}</td>
+                    <td class="p-4 text-center"><button onclick="window.askRmAtv('${atv.id}', '${atv.ticker}')" class="text-rose-400">✕</button></td>
                 </tr>`;
             });
 
-            let listaSegFinal = listaSegsRaw.map(([sid, s]) => {
-                const val = listaAtv.filter(a => a.seguimento === s.nome).reduce((acc, a) => acc + a.total, 0);
-                return { id: sid, nome: s.nome, meta: s.meta, atual: (totalCat > 0 ? val/totalCat*100 : 0), valor: val, sugestao: Math.max(0, (totalCat * (s.meta / 100)) - val) };
-            });
-
-            ordenar(listaSegFinal, sortConfig.seg).forEach(s => {
+            Object.entries(planejamSetores[categoriaAtiva] || {}).forEach(([sid, s]) => {
+                const val = ativosDaCat.filter(a => a.seguimento === s.nome).reduce((acc, a) => acc + a.total, 0);
+                const atual = totalCat > 0 ? (val / totalCat * 100) : 0;
+                const sug = Math.max(0, (totalCat * (s.meta / 100)) - val);
                 tPlan.innerHTML += `<tr>
-                    <td class="p-4"><span contenteditable="true" onblur="window.updateSeg('${s.id}', 'nome', this.innerText)">${s.nome}</span></td>
-                    <td class="p-4 text-center"><span contenteditable="true" onblur="window.updateSeg('${s.id}', 'meta', this.innerText)" class="bg-blue-50 px-3 py-1 rounded">${s.meta}</span>%</td>
-                    <td class="p-4 text-center ${s.atual > s.meta ? 'text-red-600' : ''}">${s.atual.toFixed(1)}%</td>
-                    <td class="p-4 text-right">${fmtCur(s.valor)}</td>
-                    <td class="p-4 text-right ${s.sugestao > 0 ? 'text-emerald-500' : ''}">${s.sugestao > 0 ? fmtCur(s.sugestao) : '--'}</td>
-                    <td class="p-4 text-center"><button onclick="window.askRmSeg('${s.id}', '${s.nome}')" class="text-rose-300">EXCLUIR</button></td>
+                    <td class="p-4 font-bold">${s.nome}</td>
+                    <td class="p-4 text-center"><span contenteditable="true" onblur="window.updateSeg('${sid}', 'meta', this.innerText)" class="bg-blue-50 px-3 py-1 rounded font-black">${s.meta}</span>%</td>
+                    <td class="p-4 text-center">${atual.toFixed(1)}%</td>
+                    <td class="p-4 text-right">${fmtCur(val)}</td>
+                    <td class="p-4 text-right text-emerald-500">${sug > 1 ? fmtCur(sug) : '--'}</td>
+                    <td class="p-4 text-center"><button onclick="window.askRmSeg('${sid}', '${s.nome}')" class="text-rose-300 text-[10px]">EXCLUIR</button></td>
                 </tr>`;
             });
         }
 
-        window.sortTab = (tipo, key) => { sortConfig[tipo].asc = sortConfig[tipo].key === key ? !sortConfig[tipo].asc : true; sortConfig[tipo].key = key; renderizarInterface(); };
-        function ordenar(l, c) { return l.sort((a,b) => { let vA = a[c.key], vB = b[c.key]; if(typeof vA==='string'){vA=vA.toUpperCase(); vB=vB.toUpperCase();} return c.asc ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1); }); }
-        
         window.toggleModal = (id) => { const m = document.getElementById(id); m.classList.toggle('opacity-0'); m.classList.toggle('pointer-events-none'); };
         window.openCat = (cat) => { categoriaAtiva = cat; document.getElementById('visao-estrategica').classList.add('hidden-view'); document.getElementById('visao-detalhada').classList.remove('hidden-view'); document.getElementById('titulo-categoria-detalhe').innerText = cat; document.getElementById('span-cat-name').innerText = cat; renderizarInterface(); };
         window.voltarParaCategorias = () => { categoriaAtiva = null; document.getElementById('visao-estrategica').classList.remove('hidden-view'); document.getElementById('visao-detalhada').classList.add('hidden-view'); renderizarInterface(); };
         window.toggleSlot = () => { document.getElementById('slot-planejamento').classList.toggle('slot-open'); document.getElementById('chevron-icon').classList.toggle('chevron-rotate'); };
-
         window.svMeta = (cat, v) => set(ref(db, `metas/${cat}`), parseFloat(v) || 0);
         window.updateSeg = (id, f, v) => update(ref(db, `planejamento_setores/${categoriaAtiva}/${id}`), { [f]: f === 'meta' ? parseFloat(v) || 0 : v.toUpperCase() });
         window.updateAtv = (id, f, v) => update(ref(db, `investimentos/${id}`), { [f]: (f === 'quantidade' || f === 'valorUnitario') ? parseReal(v) : v });
         window.addSeguimento = () => categoriaAtiva && set(push(ref(db, `planejamento_setores/${categoriaAtiva}`)), { nome: "NOVO", meta: 0 });
-
-        window.showConfirm = (t, m, a) => { document.getElementById('confirmTitle').innerText = t; document.getElementById('confirmMessage').innerText = m; pendingAction = a; window.toggleModal('confirmModal'); };
         window.closeConfirm = () => { window.toggleModal('confirmModal'); pendingAction = null; };
         document.getElementById('btnConfirmAction').onclick = () => { pendingAction?.(); window.closeConfirm(); };
-        
-        window.askRmAtv = (id, t) => window.showConfirm("Excluir Ativo", `Apagar ${t}?`, () => remove(ref(db, `investimentos/${id}`)));
-        window.askRmSeg = (id, n) => window.showConfirm("Excluir Seguimento", `Apagar ${n}?`, () => remove(ref(db, `planejamento_setores/${categoriaAtiva}/${id}`)));
-        window.askRmCat = (id, n) => window.showConfirm("Excluir Categoria", `Apagar ${n}?`, () => remove(ref(db, `categorias_list/${id}`)));
+        window.askRmAtv = (id, t) => { document.getElementById('confirmMessage').innerText = `Remover ${t}?`; pendingAction = () => remove(ref(db, `investimentos/${id}`)); window.toggleModal('confirmModal'); };
+        window.askRmSeg = (id, n) => { document.getElementById('confirmMessage').innerText = `Remover ${n}?`; pendingAction = () => remove(ref(db, `planejamento_setores/${categoriaAtiva}/${id}`)); window.toggleModal('confirmModal'); };
+        window.askRmCat = (id, n) => { document.getElementById('confirmMessage').innerText = `Apagar categoria ${n}?`; pendingAction = () => remove(ref(db, `categorias_list/${id}`)); window.toggleModal('confirmModal'); };
 
         document.getElementById('formInvestimento').onsubmit = (e) => {
             e.preventDefault();
@@ -412,7 +361,7 @@
             if(!sel || !list) return; sel.innerHTML = ""; list.innerHTML = "";
             Object.entries(todasCategorias).forEach(([id, nome]) => {
                 sel.innerHTML += `<option value="${nome}">${nome}</option>`;
-                list.innerHTML += `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl mb-2 font-bold text-xs"><span>${nome}</span><button onclick="window.askRmCat('${id}', '${nome}')" class="text-red-500 px-2">X</button></div>`;
+                list.innerHTML += `<div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl mb-2 font-black text-xs uppercase"><span>${nome}</span><button onclick="window.askRmCat('${id}', '${nome}')" class="text-rose-500 font-black text-lg">✕</button></div>`;
             });
         }
     </script>
